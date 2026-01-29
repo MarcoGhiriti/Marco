@@ -101,3 +101,43 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+## user_problem_statement: "Build Moto GO (premium motorcycle app): routes, events, live map, community, gamification, anti-fraud km. Current focus: routes/events + app shell + Google Maps key wiring."
+## backend:
+##   - task: "Routes & Events API (CRUD: create/list) with automatic distance/duration/cost + optional Google Directions"
+##     implemented: true
+##     working: "NA"
+##     file: "backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Implemented /api/routes (POST+GET) and /api/events (POST+GET), /api/health. Distance via haversine over polyline, duration heuristic by difficulty, cost estimate fuel+tolls. Added optional compute via Google Directions when use_google_directions=true. Added GOOGLE_MAPS_API_KEY to backend/.env."
+## frontend:
+##   - task: "Expo Router app shell with tab navigation + Home fetch routes"
+##     implemented: true
+##     working: "NA"
+##     file: "frontend/app/(tabs)/home.tsx"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: false
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Created /(tabs) layout with Home/Map/Events/Profile. Home fetches /api/routes and renders premium Route cards. Events fetches /api/events."
+## metadata:
+##   created_by: "main_agent"
+##   version: "1.0"
+##   test_sequence: 1
+##   run_ui: false
+## test_plan:
+##   current_focus:
+##     - "Routes & Events API (CRUD: create/list) with automatic distance/duration/cost + optional Google Directions"
+##   stuck_tasks: []
+##   test_all: false
+##   test_priority: "high_first"
+## agent_communication:
+##   - agent: "main"
+##     message: "Please test backend endpoints: GET /api/health, POST+GET /api/routes, POST+GET /api/events. Verify validation (participants_min<=max). Ensure JSON outputs match schemas."
