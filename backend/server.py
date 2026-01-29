@@ -739,6 +739,21 @@ async def dm_messages(other_user_id: str, limit: int = Query(default=50, ge=1, l
     docs = await cursor.to_list(length=limit)
     out: list[MessageOut] = []
 
+    for m in reversed(docs):
+        out.append(
+            MessageOut(
+                id=oid_str(m.get("_id")),
+                thread_id=m.get("thread_id"),
+                kind=m.get("kind"),
+                from_user_id=m.get("from_user_id"),
+                to_user_id=m.get("to_user_id"),
+                group_id=m.get("group_id"),
+                text=m.get("text", ""),
+                created_at=m.get("created_at") or datetime.utcnow(),
+            )
+        )
+    return out
+
 
 @api_router.post("/events/{event_id}/join")
 async def event_join(event_id: str, current_user: dict = Depends(get_current_user)):
@@ -756,21 +771,6 @@ async def event_leave(event_id: str, current_user: dict = Depends(get_current_us
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Event not found")
     return {"ok": True}
-
-    for m in reversed(docs):
-        out.append(
-            MessageOut(
-                id=oid_str(m.get("_id")),
-                thread_id=m.get("thread_id"),
-                kind=m.get("kind"),
-                from_user_id=m.get("from_user_id"),
-                to_user_id=m.get("to_user_id"),
-                group_id=m.get("group_id"),
-                text=m.get("text", ""),
-                created_at=m.get("created_at") or datetime.utcnow(),
-            )
-        )
-    return out
 
 
 @api_router.post("/dm/{other_user_id}/messages", response_model=MessageOut)
