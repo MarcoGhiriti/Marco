@@ -121,15 +121,18 @@
 ## frontend:
 ##   - task: "Expo Router app shell with tab navigation + Home fetch routes"
 ##     implemented: true
-##     working: "NA"
+##     working: true
 ##     file: "frontend/app/(tabs)/home.tsx"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
 ##         comment: "Created /(tabs) layout with Home/Map/Events/Profile. Home fetches /api/routes and renders premium Route cards. Events fetches /api/events."
+##       - working: true
+##         agent: "testing"
+##         comment: "Comprehensive mobile UI testing completed successfully on both iPhone (390x844) and Android (360x800) viewports. All requirements verified: 1) App loads and redirects to /(tabs)/home ✅ 2) Bottom tab bar shows Home/Map/Events/Profile ✅ 3) Home loads routes from backend with RouteCards displaying titles, meta chips (time/distance/difficulty), and Participate/Share buttons ✅ 4) Events tab loads and displays event list ✅ 5) Map tab renders placeholder without crashes ✅ 6) Profile tab renders user content without crashes ✅ Pull-to-refresh functionality tested and working. Frontend integration with backend API working perfectly."
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
