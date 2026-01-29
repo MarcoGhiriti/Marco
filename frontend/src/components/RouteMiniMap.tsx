@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, View } from "react-native";
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
 import { Colors } from "../theme/colors";
 
