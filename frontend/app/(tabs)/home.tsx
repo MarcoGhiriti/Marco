@@ -49,7 +49,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.h1}>Moto GO</Text>
-            <Text style={styles.sub}>Trasee recomandate</Text>
+            <Text style={styles.sub}>Recommended routes</Text>
           </View>
           <View style={styles.headerRight}>
             <View style={styles.iconBtn}>
