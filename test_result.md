@@ -120,15 +120,18 @@
 ##         comment: "Comprehensive backend testing completed successfully. All 7 API endpoints tested and working: GET /api/health (returns ok:true, db:up), GET /api/ (root endpoint), POST /api/routes (creates routes with computed distance_km/duration_min/cost_estimate), validation (participants_min>max returns 400), GET /api/routes (returns route list), POST /api/events (creates events with EventOut schema), GET /api/events (returns event list). Distance calculation working (27.65km for test route), cost estimation working (fuel+tolls), validation working correctly. Backend API fully functional at https://riderzone-1.preview.emergentagent.com/api"
 ##   - task: "JWT Auth (email/password) + /api/me"
 ##     implemented: true
-##     working: "NA"
+##     working: true
 ##     file: "backend/server.py"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
 ##         comment: "Added JWT auth endpoints: POST /api/auth/register, POST /api/auth/login, GET /api/me (Bearer token). Users stored in Mongo with bcrypt password hashing. Added JWT_SECRET to backend/.env."
+##       - working: true
+##         agent: "testing"
+##         comment: "Comprehensive JWT authentication testing completed successfully. All 5 auth endpoints tested and working: 1) POST /api/auth/register with new random email+username returns 200 and token ✅ 2) POST /api/auth/register with same email returns 409 ✅ 3) POST /api/auth/login with correct password returns token ✅ 4) GET /api/me without token returns 401 ✅ 5) GET /api/me with Bearer token returns UserPublic fields (no password_hash exposed) ✅. Security verified: password_hash not exposed in /api/me response. Regression testing: all existing endpoints (/api/routes, /api/events) still working correctly. JWT authentication system fully functional."
 
 ## frontend:
 ##   - task: "Expo Router app shell with tab navigation + Home fetch routes"
