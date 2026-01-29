@@ -39,7 +39,7 @@ def random_string(length=8):
 
 class TestUser:
     def __init__(self, username_prefix="testuser"):
-        self.username = f"{username_prefix}_{random_string()}"
+        self.username = f"{username_prefix}{random_string()}"
         self.email = f"{self.username}@test.com"
         self.password = "testpass123"
         self.token = None
