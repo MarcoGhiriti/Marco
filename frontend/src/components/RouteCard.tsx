@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.text,
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: "Inter_800ExtraBold",
     letterSpacing: 0.2,
   },
   pill: {
