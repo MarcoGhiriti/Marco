@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-## user_problem_statement: "Build Moto GO (premium motorcycle app): routes, events, live map, community, gamification, anti-fraud km. Current focus: routes/events + app shell + Google Maps key wiring."
+## user_problem_statement: "Build Moto GO (premium motorcycle app): routes, events, live map, community, gamification, anti-fraud km. Current focus: add JWT auth (email/password) + Community (friends/groups/chat) foundations."
 ## backend:
 ##   - task: "Routes & Events API (CRUD: create/list) with automatic distance/duration/cost + optional Google Directions"
 ##     implemented: true
