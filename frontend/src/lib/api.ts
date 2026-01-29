@@ -14,8 +14,13 @@ function getBackendBaseUrl(): string {
 
 export const API_BASE_URL = getBackendBaseUrl();
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`);
+export async function apiGet<T>(
+  path: string,
+  headers?: Record<string, string>
+): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    headers,
+  });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`GET ${path} failed: ${res.status} ${text}`);
@@ -23,10 +28,17 @@ export async function apiGet<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+export async function apiPost<T>(
+  path: string,
+  body: unknown,
+  headers?: Record<string, string>
+): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(headers ?? {}),
+    },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
