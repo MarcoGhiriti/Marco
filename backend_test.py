@@ -259,16 +259,6 @@ def test_health_endpoint():
     except Exception as e:
         print(f"❌ Health endpoint error: {e}")
         return False
-            else:
-                print("❌ Health endpoint response format incorrect")
-                return False
-        else:
-            print(f"❌ Health endpoint failed with status {response.status_code}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Health endpoint error: {e}")
-        return False
 
 def test_root_endpoint():
     """Test GET /api/ (root) endpoint - smoke test"""
