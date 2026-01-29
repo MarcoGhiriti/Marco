@@ -45,6 +45,24 @@ export default function EventsScreen() {
     }
   }, [authHeader]);
 
+
+  const joinOrLeave = useCallback(
+    async (eventId: string, isJoined: boolean) => {
+      if (!authHeader) return;
+      try {
+        if (isJoined) {
+          await apiPost(`/api/events/${eventId}/leave`, {}, authHeader);
+        } else {
+          await apiPost(`/api/events/${eventId}/join`, {}, authHeader);
+        }
+        await load();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Action failed");
+      }
+    },
+    [authHeader, load]
+  );
+
   useEffect(() => {
     load();
   }, [load]);
