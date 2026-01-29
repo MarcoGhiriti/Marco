@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
+import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { useAuthStore } from "../../src/state/authStore";
 
 export default function LoginScreen() {
