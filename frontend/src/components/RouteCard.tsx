@@ -123,6 +123,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  mapWrap: {
+    marginTop: 12,
+  },
   desc: {
     marginTop: 8,
     color: Colors.muted,
