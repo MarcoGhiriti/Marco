@@ -9,7 +9,7 @@ export default function ProfileScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.h1}>Profile</Text>
-          <Text style={styles.sub}>Stats & badges (next)</Text>
+          <Text style={styles.sub}>Stats & badges</Text>
         </View>
 
         <View style={styles.card}>
