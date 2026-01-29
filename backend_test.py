@@ -333,111 +333,159 @@ async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: s
         'user_b': []
     }
     
+    # Track connection events
+    connection_events = {
+        'user_a': {'connected': False, 'error': None},
+        'user_b': {'connected': False, 'error': None}
+    }
+    
+    @sio_a.event
+    async def connect():
+        connection_events['user_a']['connected'] = True
+        print(f"🔗 User A Socket.IO connected")
+    
+    @sio_a.event
+    async def connect_error(data):
+        connection_events['user_a']['error'] = data
+        print(f"❌ User A Socket.IO connection error: {data}")
+    
     @sio_a.event
     async def dm_new(data):
         received_messages['user_a'].append(('dm:new', data))
-        print(f"🔔 User A received dm:new: {data['text'][:50]}...")
+        print(f"🔔 User A received dm:new: {data.get('text', 'N/A')[:50]}...")
     
     @sio_a.event
     async def group_new(data):
         received_messages['user_a'].append(('group:new', data))
-        print(f"🔔 User A received group:new: {data['text'][:50]}...")
+        print(f"🔔 User A received group:new: {data.get('text', 'N/A')[:50]}...")
+    
+    @sio_b.event
+    async def connect():
+        connection_events['user_b']['connected'] = True
+        print(f"🔗 User B Socket.IO connected")
+    
+    @sio_b.event
+    async def connect_error(data):
+        connection_events['user_b']['error'] = data
+        print(f"❌ User B Socket.IO connection error: {data}")
     
     @sio_b.event
     async def dm_new(data):
         received_messages['user_b'].append(('dm:new', data))
-        print(f"🔔 User B received dm:new: {data['text'][:50]}...")
+        print(f"🔔 User B received dm:new: {data.get('text', 'N/A')[:50]}...")
     
     @sio_b.event
     async def group_new(data):
         received_messages['user_b'].append(('group:new', data))
-        print(f"🔔 User B received group:new: {data['text'][:50]}...")
+        print(f"🔔 User B received group:new: {data.get('text', 'N/A')[:50]}...")
     
     try:
         # Connect both users with JWT auth
+        print(f"🔌 Connecting User A to {socketio_url} with token {user_a.token[:20]}...")
         await sio_a.connect(
             socketio_url, 
             socketio_path='api/socket.io',
             auth={'token': user_a.token}
         )
-        print(f"✅ User A connected to Socket.IO")
         
+        print(f"🔌 Connecting User B to {socketio_url} with token {user_b.token[:20]}...")
         await sio_b.connect(
             socketio_url, 
             socketio_path='api/socket.io',
             auth={'token': user_b.token}
         )
-        print(f"✅ User B connected to Socket.IO")
         
-        # Wait a moment for connections to stabilize
-        await asyncio.sleep(1)
+        # Wait for connections to stabilize
+        await asyncio.sleep(2)
+        
+        # Check connection status
+        if not connection_events['user_a']['connected']:
+            raise Exception(f"User A failed to connect: {connection_events['user_a']['error']}")
+        if not connection_events['user_b']['connected']:
+            raise Exception(f"User B failed to connect: {connection_events['user_b']['error']}")
+        
+        print(f"✅ Both users connected to Socket.IO")
         
         # Test DM: verify dm:send produces dm:new to both
         dm_test_message = f"Socket.IO DM test from {user_a.username} at {datetime.now().isoformat()}"
+        print(f"📤 Sending DM: {dm_test_message}")
+        
         await sio_a.emit('dm:send', {
             'to_user_id': user_b.user_id,
             'text': dm_test_message
         })
         
         # Wait for message propagation
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
+        
+        print(f"📊 Messages received by User A: {len(received_messages['user_a'])}")
+        print(f"📊 Messages received by User B: {len(received_messages['user_b'])}")
         
         # Check if both users received the DM
         user_a_got_dm = any(
-            event == 'dm:new' and dm_test_message in data['text']
+            event == 'dm:new' and dm_test_message in data.get('text', '')
             for event, data in received_messages['user_a']
         )
         user_b_got_dm = any(
-            event == 'dm:new' and dm_test_message in data['text']
+            event == 'dm:new' and dm_test_message in data.get('text', '')
             for event, data in received_messages['user_b']
         )
         
         if not user_a_got_dm:
+            print(f"❌ User A messages: {received_messages['user_a']}")
             raise Exception("User A did not receive dm:new event for sent message")
         if not user_b_got_dm:
+            print(f"❌ User B messages: {received_messages['user_b']}")
             raise Exception("User B did not receive dm:new event")
         
         print(f"✅ DM Socket.IO events working - both users received dm:new")
         
         # Test Group: verify group:join then group:send produces group:new to room
         # First, join the group room
+        print(f"🏠 Joining group rooms for group {group_id}")
         await sio_a.emit('group:join', {'group_id': group_id})
         await sio_b.emit('group:join', {'group_id': group_id})
         
         # Wait for room joins
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
         
         # Send group message
         group_test_message = f"Socket.IO group test from {user_a.username} at {datetime.now().isoformat()}"
+        print(f"📤 Sending group message: {group_test_message}")
+        
         await sio_a.emit('group:send', {
             'group_id': group_id,
             'text': group_test_message
         })
         
         # Wait for message propagation
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
         
         # Check if both users received the group message
         user_a_got_group = any(
-            event == 'group:new' and group_test_message in data['text']
+            event == 'group:new' and group_test_message in data.get('text', '')
             for event, data in received_messages['user_a']
         )
         user_b_got_group = any(
-            event == 'group:new' and group_test_message in data['text']
+            event == 'group:new' and group_test_message in data.get('text', '')
             for event, data in received_messages['user_b']
         )
         
         if not user_a_got_group:
+            print(f"❌ User A group messages: {[msg for msg in received_messages['user_a'] if msg[0] == 'group:new']}")
             raise Exception("User A did not receive group:new event for sent message")
         if not user_b_got_group:
+            print(f"❌ User B group messages: {[msg for msg in received_messages['user_b'] if msg[0] == 'group:new']}")
             raise Exception("User B did not receive group:new event")
         
         print(f"✅ Group Socket.IO events working - both users received group:new")
         
     finally:
         # Clean up connections
-        await sio_a.disconnect()
-        await sio_b.disconnect()
+        if sio_a.connected:
+            await sio_a.disconnect()
+        if sio_b.connected:
+            await sio_b.disconnect()
         print("🔌 Socket.IO connections closed")
 
 
