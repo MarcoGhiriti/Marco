@@ -16,6 +16,7 @@ import { useAuthStore } from "../../src/state/authStore";
 import type { EventOut } from "../../src/types/api";
 
 export default function EventsScreen() {
+  const { accessToken } = useAuthStore();
   const [events, setEvents] = useState<EventOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
