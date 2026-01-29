@@ -96,9 +96,9 @@ export default function LoginScreen() {
             <View style={styles.row}>
               <Text style={styles.muted}>No account?</Text>
               <Link href="/auth/register" asChild>
-                <Pressable>
+                <AnimatedPressable>
                   <Text style={styles.link}>Create one</Text>
-                </Pressable>
+                </AnimatedPressable>
               </Link>
             </View>
           </View>
