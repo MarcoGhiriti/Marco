@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   metaText: {
     color: Colors.muted,
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: "Inter_600SemiBold",
   },
   footerRow: {
     marginTop: 14,
