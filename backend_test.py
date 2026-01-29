@@ -425,6 +425,17 @@ async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: s
         await sio_a.emit('ping_test', {'test': 'data'})
         await asyncio.sleep(1)
         
+        # Test if the user IDs are valid ObjectIds
+        print(f"🔍 Checking if user IDs are valid ObjectIds...")
+        try:
+            from bson import ObjectId
+            ObjectId(user_a.user_id)
+            ObjectId(user_b.user_id)
+            print(f"✅ User IDs are valid ObjectIds")
+        except Exception as e:
+            print(f"❌ Invalid ObjectId: {e}")
+            raise Exception(f"Invalid user IDs: {e}")
+        
         await sio_a.emit('dm:send', {
             'to_user_id': user_b.user_id,
             'text': dm_test_message
