@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Moto GO App
-Tests all backend endpoints according to the review request
+Backend Testing Suite for Moto GO App
+Tests Socket.IO integration and existing HTTP endpoints
 """
 
+import asyncio
 import json
-import requests
 import random
 import string
 from datetime import datetime, timedelta
 from typing import Dict, Any, Tuple, Optional
 
-# Use the backend URL from frontend .env
-BASE_URL = "https://riderzone-1.preview.emergentagent.com/api"
+import httpx
+import socketio
+import requests
+
+# Configuration
+BACKEND_URL = "https://riderzone-1.preview.emergentagent.com"
+BASE_URL = f"{BACKEND_URL}/api"
 
 def generate_random_credentials() -> Tuple[str, str]:
     """Generate random email and username to avoid collisions"""
