@@ -98,6 +98,34 @@ export function RouteMiniMap({
   const start = coords[0];
   const end = coords[coords.length - 1];
 
+  const width = 420;
+  const height = 150;
+  const svg = useMemo(() => normalizeToSvg(coords, width, height), [coords]);
+
+  if (Platform.OS === "web") {
+    return (
+      <View style={styles.wrap}>
+        <Svg width={width} height={height}>
+          <SvgPolyline
+            points={svg.points}
+            fill="none"
+            stroke={Colors.accent}
+            strokeWidth={3}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          {svg.start ? (
+            <Circle cx={svg.start.x} cy={svg.start.y} r={5} fill={Colors.accent} />
+          ) : null}
+          {svg.end ? (
+            <Circle cx={svg.end.x} cy={svg.end.y} r={5} fill={Colors.muted} />
+          ) : null}
+        </Svg>
+        <View pointerEvents="none" style={styles.overlayBorder} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.wrap}>
       <MapView
