@@ -49,7 +49,7 @@ export default function LoginScreen() {
         <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
           <View style={styles.header}>
             <Text style={styles.h1}>Sign in</Text>
-            <Text style={styles.sub}>Use your Moto GO account</Text>
+            <Text style={styles.sub}>Welcome back</Text>
           </View>
 
           <View style={styles.form}>
@@ -112,8 +112,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
   container: { flex: 1, backgroundColor: Colors.bg, paddingHorizontal: 16 },
   header: { paddingTop: 18, paddingBottom: 14, gap: 6 },
-  h1: { color: Colors.text, fontSize: 26, fontWeight: "900" },
-  sub: { color: Colors.muted, fontSize: 13, fontWeight: "600" },
+  h1: { color: Colors.text, fontSize: 26, fontFamily: "Inter_900Black" },
+  sub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
   form: {
     marginTop: 8,
     backgroundColor: Colors.card,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
   },
-  label: { color: Colors.muted, fontSize: 12, fontWeight: "700" },
+  label: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
   input: {
     marginTop: 8,
     height: 48,
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     color: Colors.text,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "Inter_600SemiBold",
   },
   error: { marginTop: 10, color: Colors.danger, fontSize: 12, fontWeight: "700" },
   primaryBtn: {
@@ -147,8 +147,8 @@ const styles = StyleSheet.create({
   primaryBtnDisabled: {
     opacity: 0.6,
   },
-  primaryBtnText: { color: Colors.bg, fontSize: 14, fontWeight: "900" },
+  primaryBtnText: { color: Colors.bg, fontSize: 14, fontFamily: "Inter_900Black" },
   row: { marginTop: 14, flexDirection: "row", gap: 8, alignItems: "center" },
-  muted: { color: Colors.muted, fontSize: 12, fontWeight: "700" },
-  link: { color: Colors.accent, fontSize: 12, fontWeight: "900" },
+  muted: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
+  link: { color: Colors.accent, fontSize: 12, fontFamily: "Inter_900Black" },
 });
