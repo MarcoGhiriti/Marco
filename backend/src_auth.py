@@ -45,7 +45,7 @@ def create_access_token(user_id: str) -> str:
         "exp": int((now + timedelta(days=ACCESS_TOKEN_DAYS)).timestamp()),
         "type": "access",
     }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
+    return jwt.encode(payload, jwt_secret, algorithm=JWT_ALG)
 
 
 def decode_token(token: str) -> Optional[dict]:
