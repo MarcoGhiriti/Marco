@@ -49,9 +49,10 @@ def create_access_token(user_id: str) -> str:
 
 
 def decode_token(token: str) -> Optional[dict]:
-    if not JWT_SECRET:
+    jwt_secret = _get_jwt_secret()
+    if not jwt_secret:
         return None
     try:
-        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
+        return jwt.decode(token, jwt_secret, algorithms=[JWT_ALG])
     except Exception:
         return None
