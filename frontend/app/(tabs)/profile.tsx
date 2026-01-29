@@ -34,7 +34,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Trasee</Text>
+            <Text style={styles.statLabel}>Routes</Text>
           </View>
         </View>
       </View>
