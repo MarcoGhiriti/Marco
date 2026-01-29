@@ -10,6 +10,7 @@ from email_validator import EmailNotValidError, validate_email
 from src_auth import create_access_token, decode_token, hash_password, oid_str, verify_password
 
 import httpx
+import socketio
 from bson import ObjectId
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
