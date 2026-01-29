@@ -74,7 +74,7 @@ export default function EventsScreen() {
           ) : events.length === 0 ? (
             <View style={styles.center}>
               <Ionicons name="calendar-outline" size={22} color={Colors.muted} />
-              <Text style={styles.centerText}>No events yet. Create one via API.</Text>
+              <Text style={styles.centerText}>No events yet.</Text>
             </View>
           ) : (
             events.map((e) => (
