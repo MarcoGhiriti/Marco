@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
 import type { RouteOut } from "../types/api";
+import { RouteMiniMap } from "./RouteMiniMap";
 
 function difficultyLabel(d: RouteOut["difficulty"]) {
   switch (d) {
