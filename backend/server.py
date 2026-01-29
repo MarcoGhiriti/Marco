@@ -36,6 +36,27 @@ GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
+security = HTTPBearer(auto_error=False)
+
+
+async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
+    if creds is None or not creds.credentials:
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+
+    payload = decode_token(creds.credentials)
+    if not payload or payload.get("type") != "access" or not payload.get("sub"):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user_id = payload["sub"]
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    # Remove sensitive fields
+    user["id"] = oid_str(user.get("_id"))
+    user.pop("_id", None)
+    user.pop("password_hash", None)
+    return user
 
 
 # -----------------
