@@ -56,6 +56,24 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="community"
+        options={{
+          title: "Community",
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name="chatbubbles-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="store"
+        options={{
+          title: "Store",
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name="bag-handle-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
