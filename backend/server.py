@@ -47,6 +47,44 @@ sio = socketio.AsyncServer(
     ping_timeout=20,
 )
 
+# In-memory mapping of socket session -> user_id
+sid_to_user: dict[str, str] = {}
+
+
+@sio.event
+async def connect(sid, environ, auth):  # type: ignore[no-untyped-def]
+    token = None
+    if isinstance(auth, dict):
+        token = auth.get("token")
+
+    if not token or not isinstance(token, str):
+        return False
+
+    payload = decode_token(token)
+    if not payload or payload.get("type") != "access" or not payload.get("sub"):
+        return False
+
+    user_id = payload["sub"]
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        return False
+
+    sid_to_user[sid] = user_id
+    await sio.enter_room(sid, f"user:{user_id}")
+    return True
+
+
+@sio.event
+async def disconnect(sid):  # type: ignore[no-untyped-def]
+    user_id = sid_to_user.pop(sid, None)
+    if user_id:
+        await sio.leave_room(sid, f"user:{user_id}")
+
+
+@sio.on("ping_test")
+async def ping_test(sid, data):  # type: ignore[no-untyped-def]
+    await sio.emit("pong_test", {"ok": True, "echo": data}, to=sid)
+
 
 async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
     if creds is None or not creds.credentials:
