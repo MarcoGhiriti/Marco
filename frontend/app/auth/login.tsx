@@ -90,7 +90,7 @@ export default function LoginScreen() {
               ) : (
                 <Text style={styles.primaryBtnText}>Continue</Text>
               )}
-            </AnimatedPressable>
+            </Pressable>
 
             <View style={styles.row}>
               <Text style={styles.muted}>No account?</Text>
