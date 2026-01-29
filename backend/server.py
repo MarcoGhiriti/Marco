@@ -575,8 +575,6 @@ async def update_me(payload: MeUpdate, current_user: dict = Depends(get_current_
     user.pop("password_hash", None)
     return UserPublic(**user)
 
-    return AuthToken(access_token=token)
-
 
 @api_router.get("/me", response_model=UserPublic)
 async def me(current_user: dict = Depends(get_current_user)):
