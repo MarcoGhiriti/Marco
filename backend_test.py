@@ -752,7 +752,7 @@ async def run_socketio_tests():
     return results
 
 def main():
-    """Run all backend tests including JWT authentication"""
+    """Run all backend tests including JWT authentication and Socket.IO integration"""
     print("🚀 Starting Moto GO Backend API Tests")
     print(f"Testing against: {BASE_URL}")
     print("=" * 60)
@@ -806,6 +806,10 @@ def main():
     results["create_event"] = test_create_event()[0]
     results["list_events"] = test_list_events()
     
+    # Run Socket.IO tests
+    socketio_results = asyncio.run(run_socketio_tests())
+    results.update(socketio_results)
+    
     # Summary
     print("\n" + "=" * 60)
     print("📊 TEST SUMMARY")
@@ -830,6 +834,12 @@ def main():
         "list_events": "List Events"
     }
     
+    socketio_tests = {
+        "socketio_handshake": "Socket.IO Handshake (EIO=4)",
+        "realtime_health": "/api/realtime/health",
+        "socketio_jwt_connection": "Socket.IO JWT + ping_test"
+    }
+    
     print("🔐 JWT Authentication Tests:")
     auth_passed = 0
     for test_key, test_name in auth_tests.items():
@@ -848,12 +858,22 @@ def main():
         if result:
             regression_passed += 1
     
-    total_passed = auth_passed + regression_passed
-    total_tests = len(auth_tests) + len(regression_tests)
+    print(f"\n🔌 Socket.IO Integration Tests:")
+    socketio_passed = 0
+    for test_key, test_name in socketio_tests.items():
+        result = results.get(test_key, False)
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"  {test_name:<25} {status}")
+        if result:
+            socketio_passed += 1
+    
+    total_passed = auth_passed + regression_passed + socketio_passed
+    total_tests = len(auth_tests) + len(regression_tests) + len(socketio_tests)
     
     print(f"\nOverall: {total_passed}/{total_tests} tests passed")
     print(f"  - JWT Auth: {auth_passed}/{len(auth_tests)} passed")
     print(f"  - Regression: {regression_passed}/{len(regression_tests)} passed")
+    print(f"  - Socket.IO: {socketio_passed}/{len(socketio_tests)} passed")
     
     if total_passed == total_tests:
         print("🎉 All backend tests PASSED!")
