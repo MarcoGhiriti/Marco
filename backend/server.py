@@ -546,6 +546,34 @@ async def auth_login(payload: AuthLogin):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token(oid_str(user.get("_id")))
+
+
+@api_router.patch("/me", response_model=UserPublic)
+async def update_me(payload: MeUpdate, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    update: dict[str, Any] = {}
+
+    if payload.bio is not None:
+        update["bio"] = payload.bio
+
+    if payload.bike is not None:
+        update["bike"] = payload.bike.model_dump()
+
+    if payload.profile_photo_base64 is not None:
+        update["profile_photo_base64"] = payload.profile_photo_base64
+
+    if update:
+        await db.users.update_one({"_id": _as_object_id(uid)}, {"$set": update})
+
+    user = await db.users.find_one({"_id": _as_object_id(uid)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user["id"] = oid_str(user.get("_id"))
+    user.pop("_id", None)
+    user.pop("password_hash", None)
+    return UserPublic(**user)
+
     return AuthToken(access_token=token)
 
 
