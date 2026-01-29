@@ -69,33 +69,7 @@ export function RouteMiniMap({
       .map((p) => ({ latitude: p[0], longitude: p[1] }));
   }, [polyline]);
 
-  const region = useMemo(() => {
-    if (!coords.length) {
-      return {
-        latitude: 45.9432,
-        longitude: 24.9668,
-        latitudeDelta: 6,
-        longitudeDelta: 6,
-      };
-    }
-
-    const b = boundsFromCoords(coords);
-    const lat = (b.minLat + b.maxLat) / 2;
-    const lng = (b.minLng + b.maxLng) / 2;
-
-    const latDelta = Math.max(0.01, (b.maxLat - b.minLat) * 1.8);
-    const lngDelta = Math.max(0.01, (b.maxLng - b.minLng) * 1.8);
-
-    return {
-      latitude: lat,
-      longitude: lng,
-      latitudeDelta: latDelta,
-      longitudeDelta: lngDelta,
-    };
-  }, [coords]);
-
-  const start = coords[0];
-  const end = coords[coords.length - 1];
+  // Native MapView is used on iOS/Android. Web uses SVG fallback.
 
   const width = 420;
   const height = 150;
