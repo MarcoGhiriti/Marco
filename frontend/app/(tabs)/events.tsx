@@ -109,17 +109,38 @@ export default function EventsScreen() {
           ) : (
             events.map((e) => (
               <View key={e.id} style={styles.card}>
-                <Text style={styles.title} numberOfLines={1}>
-                  {e.title}
-                </Text>
-                <Text style={styles.desc} numberOfLines={2}>
-                  {e.description || "Event moto"}
-                </Text>
+                <View style={styles.cardTopRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.title} numberOfLines={1}>
+                      {e.title}
+                    </Text>
+                    <Text style={styles.desc} numberOfLines={2}>
+                      {e.description || "Moto event"}
+                    </Text>
+                  </View>
+
+                  <Pressable
+                    onPress={() => joinOrLeave(e.id, e.is_joined)}
+                    style={[styles.joinBtn, e.is_joined && styles.joinBtnJoined]}
+                  >
+                    <Text
+                      style={[styles.joinBtnText, e.is_joined && styles.joinBtnTextJoined]}
+                    >
+                      {e.is_joined ? "Joined" : "Join"}
+                    </Text>
+                  </Pressable>
+                </View>
+
                 <View style={styles.row}>
                   <Ionicons name="time-outline" size={16} color={Colors.muted} />
                   <Text style={styles.metaText}>
                     {new Date(e.start_time).toLocaleString()}
                   </Text>
+                </View>
+
+                <View style={styles.row}>
+                  <Ionicons name="people-outline" size={16} color={Colors.muted} />
+                  <Text style={styles.metaText}>{e.participants_count} going</Text>
                 </View>
               </View>
             ))
