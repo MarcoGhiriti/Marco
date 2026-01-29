@@ -413,8 +413,8 @@ class UserSearchOut(BaseModel):
 
 
 class FriendRequestOut(BaseModel):
-    incoming: list[UserSearchOut]
-    outgoing: list[UserSearchOut]
+    incoming: list["UserSearchOut"]
+    outgoing: list["UserSearchOut"]
 
 class RouteOut(BaseModel):
     id: str
