@@ -546,6 +546,7 @@ async def auth_login(payload: AuthLogin):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token(oid_str(user.get("_id")))
+    return AuthToken(access_token=token)
 
 
 @api_router.patch("/me", response_model=UserPublic)
