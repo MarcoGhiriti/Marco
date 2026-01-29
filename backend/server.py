@@ -295,7 +295,7 @@ async def health():
 @api_router.post("/auth/register", response_model=AuthToken)
 async def auth_register(payload: AuthRegister):
     try:
-        email = validate_email(payload.email).email
+        email = validate_email(payload.email, check_deliverability=False).email
     except EmailNotValidError:
         raise HTTPException(status_code=400, detail="Invalid email")
 
@@ -337,7 +337,7 @@ async def auth_register(payload: AuthRegister):
 @api_router.post("/auth/login", response_model=AuthToken)
 async def auth_login(payload: AuthLogin):
     try:
-        email = validate_email(payload.email).email
+        email = validate_email(payload.email, check_deliverability=False).email
     except EmailNotValidError:
         raise HTTPException(status_code=400, detail="Invalid email")
 
