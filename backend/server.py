@@ -403,6 +403,13 @@ class RouteCreate(BaseModel):
     use_google_directions: bool = False
 
 
+
+
+class UserSearchOut(BaseModel):
+    id: str
+    username: str
+    profile_photo_base64: Optional[str] = None
+
 class RouteOut(BaseModel):
     id: str
     title: str
