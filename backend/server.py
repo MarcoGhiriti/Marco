@@ -511,6 +511,14 @@ fastapi_app.add_middleware(
 )
 
 
-@app.on_event("shutdown")
+@fastapi_app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+
+@fastapi_app.get("/socket.io/health")
+async def socket_health():
+    return {"ok": True}
+
+
+app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app)
