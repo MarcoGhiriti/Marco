@@ -406,15 +406,15 @@ class RouteCreate(BaseModel):
 
 
 
-class FriendRequestOut(BaseModel):
-    incoming: list[UserSearchOut]
-    outgoing: list[UserSearchOut]
-
-
 class UserSearchOut(BaseModel):
     id: str
     username: str
     profile_photo_base64: Optional[str] = None
+
+
+class FriendRequestOut(BaseModel):
+    incoming: list[UserSearchOut]
+    outgoing: list[UserSearchOut]
 
 class RouteOut(BaseModel):
     id: str
