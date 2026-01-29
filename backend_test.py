@@ -14,7 +14,226 @@ from typing import Dict, Any, Tuple, Optional
 # Use the backend URL from frontend .env
 BASE_URL = "https://riderzone-1.preview.emergentagent.com/api"
 
-def test_health_endpoint():
+def generate_random_credentials() -> Tuple[str, str]:
+    """Generate random email and username to avoid collisions"""
+    random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    email = f"testuser_{random_suffix}@motogo.test"
+    username = f"rider_{random_suffix}"
+    return email, username
+
+def test_auth_register_new_user() -> Tuple[bool, Optional[str], Optional[str]]:
+    """Test POST /api/auth/register with new random email+username - should return 200 and token"""
+    print("\n🔍 Testing POST /api/auth/register (new user)...")
+    
+    email, username = generate_random_credentials()
+    register_payload = {
+        "email": email,
+        "username": username,
+        "password": "SecurePass123!"
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/auth/register",
+            json=register_payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        print(f"Status Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"Response keys: {list(data.keys())}")
+            
+            # Check for required fields in AuthToken response
+            if "access_token" not in data or "token_type" not in data:
+                print("❌ Missing required fields in auth response")
+                return False, None, None
+                
+            if data.get("token_type") != "bearer":
+                print("❌ Invalid token_type - expected 'bearer'")
+                return False, None, None
+                
+            token = data.get("access_token")
+            if not token or len(token) < 10:
+                print("❌ Invalid or missing access_token")
+                return False, None, None
+                
+            print(f"✅ User registration successful:")
+            print(f"   - Email: {email}")
+            print(f"   - Username: {username}")
+            print(f"   - Token received: {token[:20]}...")
+            
+            return True, token, email
+            
+        else:
+            print(f"❌ Registration failed with status {response.status_code}")
+            print(f"Response: {response.text}")
+            return False, None, None
+            
+    except Exception as e:
+        print(f"❌ Registration error: {e}")
+        return False, None, None
+
+def test_auth_register_duplicate_email(existing_email: str) -> bool:
+    """Test POST /api/auth/register with existing email - should return 409"""
+    print("\n🔍 Testing POST /api/auth/register (duplicate email)...")
+    
+    _, username = generate_random_credentials()  # New username but existing email
+    register_payload = {
+        "email": existing_email,
+        "username": username,
+        "password": "AnotherPass456!"
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/auth/register",
+            json=register_payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        print(f"Status Code: {response.status_code}")
+        
+        if response.status_code == 409:
+            print("✅ Duplicate email validation working - returned 409")
+            return True
+        else:
+            print(f"❌ Expected 409 for duplicate email, got {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Duplicate email test error: {e}")
+        return False
+
+def test_auth_login_valid_credentials(email: str, password: str = "SecurePass123!") -> Tuple[bool, Optional[str]]:
+    """Test POST /api/auth/login with correct credentials - should return token"""
+    print("\n🔍 Testing POST /api/auth/login (valid credentials)...")
+    
+    login_payload = {
+        "email": email,
+        "password": password
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/auth/login",
+            json=login_payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        print(f"Status Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"Response keys: {list(data.keys())}")
+            
+            # Check for required fields in AuthToken response
+            if "access_token" not in data or "token_type" not in data:
+                print("❌ Missing required fields in login response")
+                return False, None
+                
+            if data.get("token_type") != "bearer":
+                print("❌ Invalid token_type - expected 'bearer'")
+                return False, None
+                
+            token = data.get("access_token")
+            if not token or len(token) < 10:
+                print("❌ Invalid or missing access_token")
+                return False, None
+                
+            print(f"✅ Login successful:")
+            print(f"   - Email: {email}")
+            print(f"   - Token received: {token[:20]}...")
+            
+            return True, token
+            
+        else:
+            print(f"❌ Login failed with status {response.status_code}")
+            print(f"Response: {response.text}")
+            return False, None
+            
+    except Exception as e:
+        print(f"❌ Login error: {e}")
+        return False, None
+
+def test_me_endpoint_no_token() -> bool:
+    """Test GET /api/me without token - should return 401"""
+    print("\n🔍 Testing GET /api/me (no token)...")
+    
+    try:
+        response = requests.get(f"{BASE_URL}/me", timeout=10)
+        print(f"Status Code: {response.status_code}")
+        
+        if response.status_code == 401:
+            print("✅ Authentication required - returned 401 without token")
+            return True
+        else:
+            print(f"❌ Expected 401 without token, got {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ No token test error: {e}")
+        return False
+
+def test_me_endpoint_with_token(token: str, expected_email: str) -> bool:
+    """Test GET /api/me with Bearer token - should return UserPublic fields (no password_hash)"""
+    print("\n🔍 Testing GET /api/me (with Bearer token)...")
+    
+    try:
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.get(f"{BASE_URL}/me", headers=headers, timeout=10)
+        print(f"Status Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"Response keys: {list(data.keys())}")
+            
+            # Check for required UserPublic fields
+            required_fields = [
+                "id", "email", "username", "bio", "privacy", 
+                "level", "km_total", "km_month", "created_at"
+            ]
+            
+            missing_fields = [field for field in required_fields if field not in data]
+            if missing_fields:
+                print(f"❌ Missing UserPublic fields: {missing_fields}")
+                return False
+                
+            # Ensure password_hash is NOT present
+            if "password_hash" in data:
+                print("❌ SECURITY ISSUE: password_hash exposed in /api/me response")
+                return False
+                
+            # Verify email matches
+            if data.get("email") != expected_email:
+                print(f"❌ Email mismatch - expected {expected_email}, got {data.get('email')}")
+                return False
+                
+            print(f"✅ /api/me working correctly:")
+            print(f"   - ID: {data.get('id')}")
+            print(f"   - Email: {data.get('email')}")
+            print(f"   - Username: {data.get('username')}")
+            print(f"   - Level: {data.get('level')}")
+            print(f"   - No password_hash exposed ✓")
+            
+            return True
+            
+        else:
+            print(f"❌ /api/me failed with status {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ /api/me with token error: {e}")
+        return False
+
     """Test GET /api/health endpoint"""
     print("🔍 Testing GET /api/health...")
     try:
