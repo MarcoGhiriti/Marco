@@ -30,5 +30,7 @@ export type EventOut = {
   start_time: string;
   poster_base64?: string | null;
   associated_route_id?: string | null;
+  participants_count: number;
+  is_joined: boolean;
   created_at: string;
 };
