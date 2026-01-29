@@ -123,8 +123,8 @@ async def google_directions_distance_duration(
         raise HTTPException(status_code=400, detail={"google_status": data.get("status"), "error": data.get("error_message")})
 
     legs = data.get("routes", [{}])[0].get("legs", [])
-    total_m = sum([int(l.get("distance", {}).get("value", 0)) for l in legs])
-    total_s = sum([int(l.get("duration", {}).get("value", 0)) for l in legs])
+    total_m = sum([int(leg.get("distance", {}).get("value", 0)) for leg in legs])
+    total_s = sum([int(leg.get("duration", {}).get("value", 0)) for leg in legs])
 
     return round(total_m / 1000.0, 2), int(round(total_s / 60.0))
 
