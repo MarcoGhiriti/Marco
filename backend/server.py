@@ -8,6 +8,14 @@ from typing import Any, Literal, Optional
 from email_validator import EmailNotValidError, validate_email
 
 from src_auth import create_access_token, decode_token, hash_password, oid_str, verify_password
+from src_chat_models import (
+    FriendAccept,
+    FriendRequestCreate,
+    GroupCreate,
+    GroupOut,
+    MessageCreate,
+    MessageOut,
+)
 
 import httpx
 import socketio
