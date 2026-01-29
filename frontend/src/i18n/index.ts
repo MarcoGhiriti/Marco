@@ -1,4 +1,3 @@
-import * as Localization from "expo-localization";
 import { en } from "./en";
 
 export type Dictionary = typeof en;
