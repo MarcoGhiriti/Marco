@@ -981,11 +981,16 @@ async def create_route(payload: RouteCreate):
 
 
 @api_router.get("/routes", response_model=list[RouteOut])
-async def list_routes(limit: int = Query(default=50, ge=1, le=200)):
+async def list_routes(
+    limit: int = Query(default=50, ge=1, le=200),
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
     cursor = db.routes.find().sort("created_at", -1).limit(limit)
     routes = await cursor.to_list(length=limit)
     result: list[RouteOut] = []
     for r in routes:
+        participants = r.get("participants") or []
         result.append(
             RouteOut(
                 id=_oid_str(r.get("_id")),
@@ -1000,6 +1005,8 @@ async def list_routes(limit: int = Query(default=50, ge=1, le=200)):
                 difficulty=r.get("difficulty", "medium"),
                 participants_min=int(r.get("participants_min", 1)),
                 participants_max=int(r.get("participants_max", 10)),
+                participants_count=len(participants),
+                is_joined=uid in participants,
                 created_at=r.get("created_at") or datetime.utcnow(),
             )
         )
