@@ -382,6 +382,13 @@ class UserPublic(BaseModel):
     created_at: datetime
 
 
+
+class MeUpdate(BaseModel):
+    bio: Optional[str] = Field(default=None, max_length=280)
+    bike: Optional[BikeInfo] = None
+    profile_photo_base64: Optional[str] = None
+
+
 class RouteCreate(BaseModel):
     title: str = Field(min_length=2, max_length=80)
     description: str = Field(default="", max_length=800)
