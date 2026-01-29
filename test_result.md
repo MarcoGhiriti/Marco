@@ -106,15 +106,18 @@
 ## backend:
 ##   - task: "Routes & Events API (CRUD: create/list) with automatic distance/duration/cost + optional Google Directions"
 ##     implemented: true
-##     working: "NA"
+##     working: true
 ##     file: "backend/server.py"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
 ##         comment: "Implemented /api/routes (POST+GET) and /api/events (POST+GET), /api/health. Distance via haversine over polyline, duration heuristic by difficulty, cost estimate fuel+tolls. Added optional compute via Google Directions when use_google_directions=true. Added GOOGLE_MAPS_API_KEY to backend/.env."
+##       - working: true
+##         agent: "testing"
+##         comment: "Comprehensive backend testing completed successfully. All 7 API endpoints tested and working: GET /api/health (returns ok:true, db:up), GET /api/ (root endpoint), POST /api/routes (creates routes with computed distance_km/duration_min/cost_estimate), validation (participants_min>max returns 400), GET /api/routes (returns route list), POST /api/events (creates events with EventOut schema), GET /api/events (returns event list). Distance calculation working (27.65km for test route), cost estimation working (fuel+tolls), validation working correctly. Backend API fully functional at https://riderzone-1.preview.emergentagent.com/api"
 ## frontend:
 ##   - task: "Expo Router app shell with tab navigation + Home fetch routes"
 ##     implemented: true
