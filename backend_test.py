@@ -350,6 +350,10 @@ async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: s
         print(f"❌ User A Socket.IO connection error: {data}")
     
     @sio_a.event
+    async def pong_test(data):
+        print(f"🏓 User A received pong_test: {data}")
+    
+    @sio_a.event
     async def dm_new(data):
         received_messages['user_a'].append(('dm:new', data))
         print(f"🔔 User A received dm:new: {data.get('text', 'N/A')[:50]}...")
@@ -368,6 +372,10 @@ async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: s
     async def connect_error(data):
         connection_events['user_b']['error'] = data
         print(f"❌ User B Socket.IO connection error: {data}")
+    
+    @sio_b.event
+    async def pong_test(data):
+        print(f"🏓 User B received pong_test: {data}")
     
     @sio_b.event
     async def dm_new(data):
