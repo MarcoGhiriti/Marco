@@ -30,7 +30,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Luna</Text>
+            <Text style={styles.statLabel}>This month</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>0</Text>
