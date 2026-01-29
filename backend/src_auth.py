@@ -7,7 +7,9 @@ import jwt
 from bson import ObjectId
 from fastapi import HTTPException
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "")
+def _get_jwt_secret() -> str:
+    # Read dynamically so reloads pick up .env changes
+    return os.environ.get("JWT_SECRET", "")
 JWT_ALG = "HS256"
 ACCESS_TOKEN_DAYS = 14
 
