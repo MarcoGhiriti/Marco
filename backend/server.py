@@ -405,6 +405,12 @@ class RouteCreate(BaseModel):
 
 
 
+
+class FriendRequestOut(BaseModel):
+    incoming: list[UserSearchOut]
+    outgoing: list[UserSearchOut]
+
+
 class UserSearchOut(BaseModel):
     id: str
     username: str
