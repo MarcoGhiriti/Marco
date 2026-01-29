@@ -456,6 +456,9 @@ class EventOut(BaseModel):
     poster_base64: Optional[str] = None
     associated_route_id: Optional[str] = None
 
+    participants_count: int = 0
+    is_joined: bool = False
+
     created_at: datetime
 
 
