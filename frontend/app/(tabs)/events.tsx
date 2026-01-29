@@ -22,10 +22,19 @@ export default function EventsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const authHeader = useMemo(() => {
+    if (!accessToken) return undefined;
+    return { Authorization: `Bearer ${accessToken}` };
+  }, [accessToken]);
+
   const load = useCallback(async () => {
+    if (!authHeader) {
+      setLoading(false);
+      return;
+    }
     setError(null);
     try {
-      const data = await apiGet<EventOut[]>("/api/events");
+      const data = await apiGet<EventOut[]>("/api/events", authHeader);
       setEvents(data);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
@@ -34,7 +43,7 @@ export default function EventsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [authHeader]);
 
   useEffect(() => {
     load();
