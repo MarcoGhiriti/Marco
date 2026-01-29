@@ -14,6 +14,9 @@ import {
 import { Link, useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+
+// Web preview fallback: reanimated pressable can fail to resolve in some bundler contexts.
+const Press = Platform.OS === "web" ? Pressable : AnimatedPressable;
 import { useAuthStore } from "../../src/state/authStore";
 
 export default function LoginScreen() {
