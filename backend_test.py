@@ -234,6 +234,7 @@ def test_me_endpoint_with_token(token: str, expected_email: str) -> bool:
         print(f"❌ /api/me with token error: {e}")
         return False
 
+def test_health_endpoint():
     """Test GET /api/health endpoint"""
     print("🔍 Testing GET /api/health...")
     try:
@@ -248,6 +249,16 @@ def test_me_endpoint_with_token(token: str, expected_email: str) -> bool:
             if data.get("ok") is True and data.get("db") == "up":
                 print("✅ Health endpoint working correctly")
                 return True
+            else:
+                print("❌ Health endpoint response format incorrect")
+                return False
+        else:
+            print(f"❌ Health endpoint failed with status {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Health endpoint error: {e}")
+        return False
             else:
                 print("❌ Health endpoint response format incorrect")
                 return False
