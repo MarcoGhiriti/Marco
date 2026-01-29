@@ -5,6 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, Optional
 
+from email_validator import EmailNotValidError, validate_email
+
+from src_auth import create_access_token, decode_token, hash_password, oid_str, verify_password
+
 import httpx
 from bson import ObjectId
 from dotenv import load_dotenv
