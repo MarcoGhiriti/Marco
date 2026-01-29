@@ -957,6 +957,7 @@ async def create_route(payload: RouteCreate):
         "difficulty": payload.difficulty,
         "participants_min": payload.participants_min,
         "participants_max": payload.participants_max,
+        "participants": [],
         "created_at": now,
     }
 
