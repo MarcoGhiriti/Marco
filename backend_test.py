@@ -1,910 +1,480 @@
 #!/usr/bin/env python3
 """
-Backend Testing Suite for Moto GO App
-Tests Socket.IO integration and existing HTTP endpoints
+Backend test for Friends + Groups + Chat (REST history + Socket.IO realtime)
+Tests the complete flow as specified in the review request.
 """
 
 import asyncio
 import json
 import random
 import string
-from datetime import datetime, timedelta
-from typing import Dict, Any, Tuple, Optional
+import time
+from datetime import datetime
 
 import httpx
 import socketio
-import requests
 
-# Configuration
-BACKEND_URL = "https://riderzone-1.preview.emergentagent.com"
-BASE_URL = f"{BACKEND_URL}/api"
 
-def generate_random_credentials() -> Tuple[str, str]:
-    """Generate random email and username to avoid collisions"""
-    random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-    email = f"testuser{random_suffix}@example.com"
-    username = f"rider{random_suffix}"
-    return email, username
-
-def test_auth_register_new_user() -> Tuple[bool, Optional[str], Optional[str]]:
-    """Test POST /api/auth/register with new random email+username - should return 200 and token"""
-    print("\n🔍 Testing POST /api/auth/register (new user)...")
-    
-    email, username = generate_random_credentials()
-    register_payload = {
-        "email": email,
-        "username": username,
-        "password": "SecurePass123!"
-    }
-    
+# Get backend URL from frontend .env
+def get_backend_url():
     try:
-        response = requests.post(
-            f"{BASE_URL}/auth/register",
-            json=register_payload,
-            headers={"Content-Type": "application/json"},
-            timeout=10
-        )
-        print(f"Status Code: {response.status_code}")
-        
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Response keys: {list(data.keys())}")
-            
-            # Check for required fields in AuthToken response
-            if "access_token" not in data or "token_type" not in data:
-                print("❌ Missing required fields in auth response")
-                return False, None, None
-                
-            if data.get("token_type") != "bearer":
-                print("❌ Invalid token_type - expected 'bearer'")
-                return False, None, None
-                
-            token = data.get("access_token")
-            if not token or len(token) < 10:
-                print("❌ Invalid or missing access_token")
-                return False, None, None
-                
-            print(f"✅ User registration successful:")
-            print(f"   - Email: {email}")
-            print(f"   - Username: {username}")
-            print(f"   - Token received: {token[:20]}...")
-            
-            return True, token, email
-            
-        else:
-            print(f"❌ Registration failed with status {response.status_code}")
-            print(f"Response: {response.text}")
-            return False, None, None
-            
-    except Exception as e:
-        print(f"❌ Registration error: {e}")
-        return False, None, None
+        with open("/app/frontend/.env", "r") as f:
+            for line in f:
+                if line.startswith("EXPO_PUBLIC_BACKEND_URL="):
+                    return line.split("=", 1)[1].strip()
+    except Exception:
+        pass
+    return "https://riderzone-1.preview.emergentagent.com"
 
-def test_auth_register_duplicate_email(existing_email: str) -> bool:
-    """Test POST /api/auth/register with existing email - should return 409"""
-    print("\n🔍 Testing POST /api/auth/register (duplicate email)...")
-    
-    _, username = generate_random_credentials()  # New username but existing email
-    register_payload = {
-        "email": existing_email,
-        "username": username,
-        "password": "AnotherPass456!"
-    }
-    
-    try:
-        response = requests.post(
-            f"{BASE_URL}/auth/register",
-            json=register_payload,
-            headers={"Content-Type": "application/json"},
-            timeout=10
-        )
-        print(f"Status Code: {response.status_code}")
-        
-        if response.status_code == 409:
-            print("✅ Duplicate email validation working - returned 409")
-            return True
-        else:
-            print(f"❌ Expected 409 for duplicate email, got {response.status_code}")
-            print(f"Response: {response.text}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Duplicate email test error: {e}")
-        return False
 
-def test_auth_login_valid_credentials(email: str, password: str = "SecurePass123!") -> Tuple[bool, Optional[str]]:
-    """Test POST /api/auth/login with correct credentials - should return token"""
-    print("\n🔍 Testing POST /api/auth/login (valid credentials)...")
-    
-    login_payload = {
-        "email": email,
-        "password": password
-    }
-    
-    try:
-        response = requests.post(
-            f"{BASE_URL}/auth/login",
-            json=login_payload,
-            headers={"Content-Type": "application/json"},
-            timeout=10
-        )
-        print(f"Status Code: {response.status_code}")
-        
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Response keys: {list(data.keys())}")
-            
-            # Check for required fields in AuthToken response
-            if "access_token" not in data or "token_type" not in data:
-                print("❌ Missing required fields in login response")
-                return False, None
-                
-            if data.get("token_type") != "bearer":
-                print("❌ Invalid token_type - expected 'bearer'")
-                return False, None
-                
-            token = data.get("access_token")
-            if not token or len(token) < 10:
-                print("❌ Invalid or missing access_token")
-                return False, None
-                
-            print(f"✅ Login successful:")
-            print(f"   - Email: {email}")
-            print(f"   - Token received: {token[:20]}...")
-            
-            return True, token
-            
-        else:
-            print(f"❌ Login failed with status {response.status_code}")
-            print(f"Response: {response.text}")
-            return False, None
-            
-    except Exception as e:
-        print(f"❌ Login error: {e}")
-        return False, None
+BASE_URL = get_backend_url()
+API_URL = f"{BASE_URL}/api"
 
-def test_me_endpoint_no_token() -> bool:
-    """Test GET /api/me without token - should return 401"""
-    print("\n🔍 Testing GET /api/me (no token)...")
-    
-    try:
-        response = requests.get(f"{BASE_URL}/me", timeout=10)
-        print(f"Status Code: {response.status_code}")
-        
-        if response.status_code == 401:
-            print("✅ Authentication required - returned 401 without token")
-            return True
-        else:
-            print(f"❌ Expected 401 without token, got {response.status_code}")
-            print(f"Response: {response.text}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ No token test error: {e}")
-        return False
+print(f"Testing backend at: {API_URL}")
 
-def test_me_endpoint_with_token(token: str, expected_email: str) -> bool:
-    """Test GET /api/me with Bearer token - should return UserPublic fields (no password_hash)"""
-    print("\n🔍 Testing GET /api/me (with Bearer token)...")
-    
-    try:
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
+
+def random_string(length=8):
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
+
+
+class TestUser:
+    def __init__(self, username_prefix="testuser"):
+        self.username = f"{username_prefix}_{random_string()}"
+        self.email = f"{self.username}@test.com"
+        self.password = "testpass123"
+        self.token = None
+        self.user_id = None
+        self.user_data = None
+
+    async def register_and_login(self, client: httpx.AsyncClient):
+        """Register and login user, store token and user data"""
+        # Register
+        register_data = {
+            "email": self.email,
+            "username": self.username,
+            "password": self.password
         }
         
-        response = requests.get(f"{BASE_URL}/me", headers=headers, timeout=10)
-        print(f"Status Code: {response.status_code}")
+        resp = await client.post(f"{API_URL}/auth/register", json=register_data)
+        if resp.status_code != 200:
+            raise Exception(f"Registration failed: {resp.status_code} - {resp.text}")
         
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Response keys: {list(data.keys())}")
-            
-            # Check for required UserPublic fields
-            required_fields = [
-                "id", "email", "username", "bio", "privacy", 
-                "level", "km_total", "km_month", "created_at"
-            ]
-            
-            missing_fields = [field for field in required_fields if field not in data]
-            if missing_fields:
-                print(f"❌ Missing UserPublic fields: {missing_fields}")
-                return False
-                
-            # Ensure password_hash is NOT present
-            if "password_hash" in data:
-                print("❌ SECURITY ISSUE: password_hash exposed in /api/me response")
-                return False
-                
-            # Verify email matches
-            if data.get("email") != expected_email:
-                print(f"❌ Email mismatch - expected {expected_email}, got {data.get('email')}")
-                return False
-                
-            print(f"✅ /api/me working correctly:")
-            print(f"   - ID: {data.get('id')}")
-            print(f"   - Email: {data.get('email')}")
-            print(f"   - Username: {data.get('username')}")
-            print(f"   - Level: {data.get('level')}")
-            print(f"   - No password_hash exposed ✓")
-            
-            return True
-            
-        else:
-            print(f"❌ /api/me failed with status {response.status_code}")
-            print(f"Response: {response.text}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ /api/me with token error: {e}")
-        return False
-
-def test_health_endpoint():
-    """Test GET /api/health endpoint"""
-    print("🔍 Testing GET /api/health...")
-    try:
-        response = requests.get(f"{BASE_URL}/health", timeout=10)
-        print(f"Status Code: {response.status_code}")
+        token_data = resp.json()
+        self.token = token_data["access_token"]
         
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Response: {data}")
-            
-            # Check required fields
-            if data.get("ok") is True and data.get("db") == "up":
-                print("✅ Health endpoint working correctly")
-                return True
-            else:
-                print("❌ Health endpoint response format incorrect")
-                return False
-        else:
-            print(f"❌ Health endpoint failed with status {response.status_code}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Health endpoint error: {e}")
-        return False
-
-def test_root_endpoint():
-    """Test GET /api/ (root) endpoint - smoke test"""
-    print("\n🔍 Testing GET /api/ (root)...")
-    try:
-        response = requests.get(f"{BASE_URL}/", timeout=10)
-        print(f"Status Code: {response.status_code}")
+        # Get user data
+        headers = {"Authorization": f"Bearer {self.token}"}
+        me_resp = await client.get(f"{API_URL}/me", headers=headers)
+        if me_resp.status_code != 200:
+            raise Exception(f"Get /me failed: {me_resp.status_code} - {me_resp.text}")
         
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Response: {data}")
-            print("✅ Root endpoint working")
-            return True
-        else:
-            print(f"❌ Root endpoint failed with status {response.status_code}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Root endpoint error: {e}")
-        return False
+        self.user_data = me_resp.json()
+        self.user_id = self.user_data["id"]
+        
+        print(f"✅ User {self.username} registered and logged in (ID: {self.user_id})")
+        return self
 
-def test_create_route():
-    """Test POST /api/routes with valid payload"""
-    print("\n🔍 Testing POST /api/routes...")
+    def get_headers(self):
+        return {"Authorization": f"Bearer {self.token}"}
+
+
+async def test_friends_flow():
+    """Test the complete friends flow: search, request, accept, list"""
+    print("\n🔍 Testing Friends Flow...")
     
-    # Create a realistic route payload
-    route_payload = {
-        "title": "Transfăgărășan Adventure Route",
-        "description": "Epic mountain ride through Romania's most famous road",
-        "polyline": [
-            [45.6042, 24.9668],  # Curtea de Argeș
-            [45.5897, 24.9234],  # Intermediate point
-            [45.6169, 24.6186]   # Bâlea Lake
-        ],
-        "rules": "Experienced riders only. Check weather conditions.",
-        "difficulty": "hard",
-        "participants_min": 2,
-        "participants_max": 8,
-        "fuel_price_per_l": 7.2,
-        "bike_consumption_l_per_100km": 6.5,
-        "toll_estimate": 15.0,
-        "currency": "RON",
-        "stops_count": 3,
-        "use_google_directions": False
-    }
-    
-    try:
-        response = requests.post(
-            f"{BASE_URL}/routes", 
-            json=route_payload,
-            headers={"Content-Type": "application/json"},
-            timeout=15
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        # 1) Register uA and uB, login both, get /api/me
+        user_a = await TestUser("usera").register_and_login(client)
+        user_b = await TestUser("userb").register_and_login(client)
+        
+        # 2) User search: GET /api/users/search?username=<prefix> returns other user
+        search_resp = await client.get(
+            f"{API_URL}/users/search?username={user_b.username[:5]}", 
+            headers=user_a.get_headers()
         )
-        print(f"Status Code: {response.status_code}")
+        if search_resp.status_code != 200:
+            raise Exception(f"User search failed: {search_resp.status_code} - {search_resp.text}")
         
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Response keys: {list(data.keys())}")
-            
-            # Verify RouteOut schema fields
-            required_fields = [
-                "id", "title", "description", "polyline", 
-                "distance_km", "duration_min", "cost_estimate",
-                "difficulty", "participants_min", "participants_max", "created_at"
-            ]
-            
-            missing_fields = [field for field in required_fields if field not in data]
-            if missing_fields:
-                print(f"❌ Missing fields in response: {missing_fields}")
-                return False, None
-                
-            # Verify computed values exist
-            if data.get("distance_km", 0) <= 0:
-                print("❌ distance_km not computed correctly")
-                return False, None
-                
-            if data.get("duration_min", 0) <= 0:
-                print("❌ duration_min not computed correctly")
-                return False, None
-                
-            cost_estimate = data.get("cost_estimate", {})
-            if not isinstance(cost_estimate, dict) or "fuel" not in cost_estimate:
-                print("❌ cost_estimate not computed correctly")
-                return False, None
-                
-            print(f"✅ Route created successfully:")
-            print(f"   - ID: {data['id']}")
-            print(f"   - Distance: {data['distance_km']} km")
-            print(f"   - Duration: {data['duration_min']} min")
-            print(f"   - Cost: {cost_estimate}")
-            
-            return True, data["id"]
-            
-        else:
-            print(f"❌ Route creation failed with status {response.status_code}")
-            print(f"Response: {response.text}")
-            return False, None
-            
-    except Exception as e:
-        print(f"❌ Route creation error: {e}")
-        return False, None
-
-def test_route_validation():
-    """Test POST /api/routes validation - participants_min > participants_max should return 400"""
-    print("\n🔍 Testing POST /api/routes validation...")
-    
-    # Invalid payload with participants_min > participants_max
-    invalid_payload = {
-        "title": "Invalid Route",
-        "description": "This should fail validation",
-        "polyline": [
-            [45.6042, 24.9668],
-            [45.6169, 24.6186]
-        ],
-        "participants_min": 10,  # Greater than max
-        "participants_max": 5    # Less than min
-    }
-    
-    try:
-        response = requests.post(
-            f"{BASE_URL}/routes", 
-            json=invalid_payload,
-            headers={"Content-Type": "application/json"},
-            timeout=10
+        search_results = search_resp.json()
+        found_user_b = None
+        for user in search_results:
+            if user["username"] == user_b.username:
+                found_user_b = user
+                break
+        
+        if not found_user_b:
+            raise Exception(f"User B ({user_b.username}) not found in search results")
+        
+        print(f"✅ User search found {user_b.username}")
+        
+        # 3) Friend request: POST /api/friends/request {to_username} by uA
+        friend_request_data = {"to_username": user_b.username}
+        req_resp = await client.post(
+            f"{API_URL}/friends/request", 
+            json=friend_request_data,
+            headers=user_a.get_headers()
         )
-        print(f"Status Code: {response.status_code}")
+        if req_resp.status_code != 200:
+            raise Exception(f"Friend request failed: {req_resp.status_code} - {req_resp.text}")
         
-        if response.status_code == 400:
-            print("✅ Validation working correctly - returned 400 for invalid participants")
-            return True
-        else:
-            print(f"❌ Validation failed - expected 400, got {response.status_code}")
-            print(f"Response: {response.text}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Validation test error: {e}")
-        return False
-
-def test_list_routes():
-    """Test GET /api/routes"""
-    print("\n🔍 Testing GET /api/routes...")
-    
-    try:
-        response = requests.get(f"{BASE_URL}/routes", timeout=10)
-        print(f"Status Code: {response.status_code}")
+        print(f"✅ Friend request sent from {user_a.username} to {user_b.username}")
         
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Number of routes returned: {len(data)}")
-            
-            if isinstance(data, list):
-                if len(data) > 0:
-                    # Check first route structure
-                    route = data[0]
-                    required_fields = ["id", "title", "distance_km", "duration_min"]
-                    missing_fields = [field for field in required_fields if field not in route]
-                    
-                    if missing_fields:
-                        print(f"❌ Missing fields in route: {missing_fields}")
-                        return False
-                    
-                    print(f"✅ Routes list working - found {len(data)} routes")
-                    print(f"   - Sample route: {route.get('title', 'N/A')}")
-                    return True
-                else:
-                    print("✅ Routes list working - empty list returned")
-                    return True
-            else:
-                print("❌ Routes list should return an array")
-                return False
-        else:
-            print(f"❌ Routes list failed with status {response.status_code}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Routes list error: {e}")
-        return False
-
-def test_create_event():
-    """Test POST /api/events"""
-    print("\n🔍 Testing POST /api/events...")
-    
-    # Create a realistic event payload
-    future_time = datetime.utcnow() + timedelta(days=7)
-    event_payload = {
-        "title": "Transfăgărășan Group Ride",
-        "description": "Join us for an epic mountain adventure on Romania's most scenic road",
-        "start_point": [45.6042, 24.9668],  # Curtea de Argeș
-        "start_time": future_time.isoformat() + "Z"
-    }
-    
-    try:
-        response = requests.post(
-            f"{BASE_URL}/events", 
-            json=event_payload,
-            headers={"Content-Type": "application/json"},
-            timeout=10
+        # 4) Friend requests list: GET /api/friends/requests for uB shows incoming with uA
+        requests_resp = await client.get(
+            f"{API_URL}/friends/requests",
+            headers=user_b.get_headers()
         )
-        print(f"Status Code: {response.status_code}")
+        if requests_resp.status_code != 200:
+            raise Exception(f"Get friend requests failed: {requests_resp.status_code} - {requests_resp.text}")
         
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Response keys: {list(data.keys())}")
-            
-            # Verify EventOut schema fields
-            required_fields = [
-                "id", "title", "description", "start_point", 
-                "start_time", "created_at"
-            ]
-            
-            missing_fields = [field for field in required_fields if field not in data]
-            if missing_fields:
-                print(f"❌ Missing fields in event response: {missing_fields}")
-                return False, None
-                
-            print(f"✅ Event created successfully:")
-            print(f"   - ID: {data['id']}")
-            print(f"   - Title: {data['title']}")
-            print(f"   - Start time: {data['start_time']}")
-            
-            return True, data["id"]
-            
-        else:
-            print(f"❌ Event creation failed with status {response.status_code}")
-            print(f"Response: {response.text}")
-            return False, None
-            
-    except Exception as e:
-        print(f"❌ Event creation error: {e}")
-        return False, None
-
-def test_list_events():
-    """Test GET /api/events"""
-    print("\n🔍 Testing GET /api/events...")
-    
-    try:
-        response = requests.get(f"{BASE_URL}/events", timeout=10)
-        print(f"Status Code: {response.status_code}")
+        requests_data = requests_resp.json()
+        incoming_requests = requests_data.get("incoming", [])
         
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Number of events returned: {len(data)}")
-            
-            if isinstance(data, list):
-                if len(data) > 0:
-                    # Check first event structure
-                    event = data[0]
-                    required_fields = ["id", "title", "start_point", "start_time"]
-                    missing_fields = [field for field in required_fields if field not in required_fields]
-                    
-                    if missing_fields:
-                        print(f"❌ Missing fields in event: {missing_fields}")
-                        return False
-                    
-                    print(f"✅ Events list working - found {len(data)} events")
-                    print(f"   - Sample event: {event.get('title', 'N/A')}")
-                    return True
-                else:
-                    print("✅ Events list working - empty list returned")
-                    return True
-            else:
-                print("❌ Events list should return an array")
-                return False
-        else:
-            print(f"❌ Events list failed with status {response.status_code}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Events list error: {e}")
-        return False
-
-
-async def test_socketio_handshake():
-    """Test Socket.IO handshake endpoint with EIO=4"""
-    print("\n🔍 Testing Socket.IO handshake endpoint...")
-    
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Test Socket.IO handshake with EIO=4 - try external URL first, then localhost
-            external_success = False
-            local_success = False
-            
-            # Try external URL first
-            try:
-                response = await client.get(f"{BACKEND_URL}/socket.io/?EIO=4&transport=polling")
-                print(f"External URL Status Code: {response.status_code}")
-                
-                if response.status_code == 200:
-                    content = response.text
-                    if content.startswith("0{"):
-                        try:
-                            handshake_data = json.loads(content[1:])
-                            if "sid" in handshake_data:
-                                external_success = True
-                                print(f"✅ External Socket.IO handshake successful - Session ID: {handshake_data['sid'][:10]}...")
-                        except json.JSONDecodeError:
-                            pass
-                
-                if not external_success:
-                    print(f"❌ External Socket.IO handshake failed - routing issue (frontend served instead of backend)")
-            except Exception as e:
-                print(f"❌ External Socket.IO handshake error: {e}")
-            
-            # Test localhost (internal backend)
-            try:
-                response = await client.get("http://localhost:8001/socket.io/?EIO=4&transport=polling")
-                print(f"Local Status Code: {response.status_code}")
-                
-                if response.status_code == 200:
-                    content = response.text
-                    print(f"Local response (first 100 chars): {content[:100]}")
-                    
-                    if content.startswith("0{"):
-                        try:
-                            handshake_data = json.loads(content[1:])
-                            if "sid" in handshake_data:
-                                local_success = True
-                                print(f"✅ Local Socket.IO handshake successful - Session ID: {handshake_data['sid'][:10]}...")
-                        except json.JSONDecodeError:
-                            print("❌ Invalid handshake JSON")
-                    else:
-                        print(f"❌ Invalid handshake format")
-                else:
-                    print(f"❌ Local handshake failed with status {response.status_code}")
-            except Exception as e:
-                print(f"❌ Local Socket.IO handshake error: {e}")
-            
-            if local_success:
-                print("✅ Socket.IO server is working correctly (tested locally)")
-                print("⚠️  External routing issue: /socket.io/ requests not routed to backend")
-                return True  # Consider this a pass since the server works
-            else:
-                return False
-                
-    except Exception as e:
-        print(f"❌ Socket.IO handshake test error: {e}")
-        return False
-
-
-async def test_socketio_connection_with_jwt(auth_token: str):
-    """Test Socket.IO connection with JWT authentication and ping_test"""
-    print("\n🔍 Testing Socket.IO JWT connection and ping_test...")
-    
-    if not auth_token:
-        print("❌ No auth token available for Socket.IO test")
-        return False
-    
-    try:
-        # Create Socket.IO client - test with localhost since external routing has issues
-        sio = socketio.AsyncClient(logger=False, engineio_logger=False)
+        found_request = None
+        for req in incoming_requests:
+            if req["id"] == user_a.user_id:
+                found_request = req
+                break
         
-        # Track connection and ping test results
-        connection_success = False
-        ping_test_success = False
-        connection_error = None
+        if not found_request:
+            raise Exception(f"Friend request from {user_a.username} not found in incoming requests")
         
-        @sio.event
-        async def connect():
-            nonlocal connection_success
-            connection_success = True
-            print("✅ Socket.IO connected successfully with JWT")
-            
-        @sio.event
-        async def connect_error(data):
-            nonlocal connection_error
-            connection_error = data
-            print(f"❌ Socket.IO connection error: {data}")
-            
-        @sio.event
-        async def pong_test(data):
-            nonlocal ping_test_success
-            print(f"📨 Received pong_test: {data}")
-            if isinstance(data, dict) and data.get("ok") is True:
-                ping_test_success = True
-                print("✅ ping_test -> pong_test successful")
-            else:
-                print(f"❌ Invalid pong_test response: {data}")
+        print(f"✅ Friend request from {user_a.username} found in {user_b.username}'s incoming requests")
         
-        try:
-            # Connect with JWT token - use localhost since external routing has issues
-            print(f"🔌 Connecting to localhost:8001 with JWT token...")
-            await sio.connect(
-                "http://localhost:8001",
-                auth={"token": auth_token},
-                transports=['websocket', 'polling'],
-                wait_timeout=10
-            )
-            
-            # Wait for connection to establish
-            await asyncio.sleep(2)
-            
-            if connection_success:
-                print("✅ Socket.IO JWT authentication successful")
-                
-                # Test ping_test -> pong_test
-                print("📤 Sending ping_test...")
-                await sio.emit("ping_test", {"message": "test_ping", "timestamp": datetime.utcnow().isoformat()})
-                
-                # Wait for pong response
-                await asyncio.sleep(3)
-                
-                if ping_test_success:
-                    print("✅ Socket.IO ping_test -> pong_test working correctly")
-                    print("⚠️  Note: Tested locally due to external routing issue")
-                    return True
-                else:
-                    print("❌ Socket.IO ping_test failed - no pong_test response")
-                    return False
-            else:
-                print(f"❌ Socket.IO connection failed - Error: {connection_error}")
-                return False
-                
-        except Exception as e:
-            print(f"❌ Socket.IO connection exception: {str(e)}")
-            return False
-            
-        finally:
-            try:
-                if sio.connected:
-                    await sio.disconnect()
-                    print("🔌 Socket.IO disconnected")
-            except:
-                pass
-                
-    except Exception as e:
-        print(f"❌ Socket.IO test setup error: {e}")
-        return False
+        # 5) Accept: POST /api/friends/accept {from_user_id:uA_id} by uB
+        accept_data = {"from_user_id": user_a.user_id}
+        accept_resp = await client.post(
+            f"{API_URL}/friends/accept",
+            json=accept_data,
+            headers=user_b.get_headers()
+        )
+        if accept_resp.status_code != 200:
+            raise Exception(f"Friend accept failed: {accept_resp.status_code} - {accept_resp.text}")
+        
+        print(f"✅ Friend request accepted by {user_b.username}")
+        
+        # 6) Friends list: GET /api/friends for both shows each other
+        # Check user A's friends list
+        friends_a_resp = await client.get(f"{API_URL}/friends", headers=user_a.get_headers())
+        if friends_a_resp.status_code != 200:
+            raise Exception(f"Get friends for A failed: {friends_a_resp.status_code} - {friends_a_resp.text}")
+        
+        friends_a = friends_a_resp.json()
+        found_b_in_a = any(friend["id"] == user_b.user_id for friend in friends_a)
+        
+        # Check user B's friends list
+        friends_b_resp = await client.get(f"{API_URL}/friends", headers=user_b.get_headers())
+        if friends_b_resp.status_code != 200:
+            raise Exception(f"Get friends for B failed: {friends_b_resp.status_code} - {friends_b_resp.text}")
+        
+        friends_b = friends_b_resp.json()
+        found_a_in_b = any(friend["id"] == user_a.user_id for friend in friends_b)
+        
+        if not found_b_in_a:
+            raise Exception(f"User B not found in User A's friends list")
+        if not found_a_in_b:
+            raise Exception(f"User A not found in User B's friends list")
+        
+        print(f"✅ Both users appear in each other's friends lists")
+        
+        return user_a, user_b
 
 
-async def test_realtime_health():
-    """Test /api/realtime/health endpoint"""
-    print("\n🔍 Testing GET /api/realtime/health...")
+async def test_groups_flow(user_a: TestUser, user_b: TestUser):
+    """Test groups: create, join, list"""
+    print("\n👥 Testing Groups Flow...")
     
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(f"{BASE_URL}/realtime/health")
-            print(f"Status Code: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                print(f"Response: {data}")
-                
-                if data.get("ok") is True:
-                    print("✅ Realtime health endpoint working correctly")
-                    return True
-                else:
-                    print(f"❌ Invalid realtime health response: {data}")
-                    return False
-            else:
-                print(f"❌ Realtime health failed with status {response.status_code}")
-                print(f"Response: {response.text}")
-                return False
-                
-    except Exception as e:
-        print(f"❌ Realtime health error: {e}")
-        return False
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        # 7) Groups: uA creates group POST /api/groups
+        group_data = {
+            "name": f"Test Group {random_string()}",
+            "description": "A test group for motorcycle enthusiasts",
+            "is_private": False
+        }
+        
+        create_resp = await client.post(
+            f"{API_URL}/groups",
+            json=group_data,
+            headers=user_a.get_headers()
+        )
+        if create_resp.status_code != 200:
+            raise Exception(f"Group creation failed: {create_resp.status_code} - {create_resp.text}")
+        
+        group = create_resp.json()
+        group_id = group["id"]
+        
+        print(f"✅ Group '{group['name']}' created by {user_a.username} (ID: {group_id})")
+        
+        # uB joins POST /api/groups/{id}/join
+        join_resp = await client.post(
+            f"{API_URL}/groups/{group_id}/join",
+            headers=user_b.get_headers()
+        )
+        if join_resp.status_code != 200:
+            raise Exception(f"Group join failed: {join_resp.status_code} - {join_resp.text}")
+        
+        print(f"✅ {user_b.username} joined the group")
+        
+        # both list GET /api/groups
+        # Check user A's groups
+        groups_a_resp = await client.get(f"{API_URL}/groups", headers=user_a.get_headers())
+        if groups_a_resp.status_code != 200:
+            raise Exception(f"Get groups for A failed: {groups_a_resp.status_code} - {groups_a_resp.text}")
+        
+        groups_a = groups_a_resp.json()
+        found_group_a = any(g["id"] == group_id for g in groups_a)
+        
+        # Check user B's groups
+        groups_b_resp = await client.get(f"{API_URL}/groups", headers=user_b.get_headers())
+        if groups_b_resp.status_code != 200:
+            raise Exception(f"Get groups for B failed: {groups_b_resp.status_code} - {groups_b_resp.text}")
+        
+        groups_b = groups_b_resp.json()
+        found_group_b = any(g["id"] == group_id for g in groups_b)
+        
+        if not found_group_a:
+            raise Exception("Group not found in user A's groups list")
+        if not found_group_b:
+            raise Exception("Group not found in user B's groups list")
+        
+        print(f"✅ Group appears in both users' groups lists")
+        
+        return group_id
 
 
-async def run_socketio_tests():
-    """Run all Socket.IO related tests"""
-    print("\n" + "🔌 SOCKET.IO INTEGRATION TESTS" + "\n" + "=" * 50)
+async def test_rest_chat_history(user_a: TestUser, user_b: TestUser, group_id: str):
+    """Test REST chat history for DM and group messages"""
+    print("\n💬 Testing REST Chat History...")
     
-    results = {}
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        # 8) REST chat history: POST /api/dm/{uB_id}/messages by uA then GET /api/dm/{uB_id}/messages by uB sees it
+        dm_message_data = {"text": f"Hello {user_b.username}! This is a DM from {user_a.username}"}
+        
+        # Send DM from A to B
+        send_dm_resp = await client.post(
+            f"{API_URL}/dm/{user_b.user_id}/messages",
+            json=dm_message_data,
+            headers=user_a.get_headers()
+        )
+        if send_dm_resp.status_code != 200:
+            raise Exception(f"Send DM failed: {send_dm_resp.status_code} - {send_dm_resp.text}")
+        
+        sent_message = send_dm_resp.json()
+        print(f"✅ DM sent from {user_a.username} to {user_b.username}")
+        
+        # Get DM history from B's perspective
+        get_dm_resp = await client.get(
+            f"{API_URL}/dm/{user_a.user_id}/messages",
+            headers=user_b.get_headers()
+        )
+        if get_dm_resp.status_code != 200:
+            raise Exception(f"Get DM history failed: {get_dm_resp.status_code} - {get_dm_resp.text}")
+        
+        dm_history = get_dm_resp.json()
+        found_message = any(
+            msg["id"] == sent_message["id"] and msg["text"] == dm_message_data["text"]
+            for msg in dm_history
+        )
+        
+        if not found_message:
+            raise Exception("Sent DM not found in message history")
+        
+        print(f"✅ DM appears in message history for {user_b.username}")
+        
+        # 9) REST group messages: POST /api/groups/{gid}/messages by uA then GET /api/groups/{gid}/messages by uB sees it
+        group_message_data = {"text": f"Hello group! This is {user_a.username} speaking."}
+        
+        # Send group message from A
+        send_group_resp = await client.post(
+            f"{API_URL}/groups/{group_id}/messages",
+            json=group_message_data,
+            headers=user_a.get_headers()
+        )
+        if send_group_resp.status_code != 200:
+            raise Exception(f"Send group message failed: {send_group_resp.status_code} - {send_group_resp.text}")
+        
+        sent_group_message = send_group_resp.json()
+        print(f"✅ Group message sent by {user_a.username}")
+        
+        # Get group message history from B's perspective
+        get_group_resp = await client.get(
+            f"{API_URL}/groups/{group_id}/messages",
+            headers=user_b.get_headers()
+        )
+        if get_group_resp.status_code != 200:
+            raise Exception(f"Get group messages failed: {get_group_resp.status_code} - {get_group_resp.text}")
+        
+        group_history = get_group_resp.json()
+        found_group_message = any(
+            msg["id"] == sent_group_message["id"] and msg["text"] == group_message_data["text"]
+            for msg in group_history
+        )
+        
+        if not found_group_message:
+            raise Exception("Sent group message not found in message history")
+        
+        print(f"✅ Group message appears in message history for {user_b.username}")
+
+
+async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: str):
+    """Test Socket.IO realtime messaging"""
+    print("\n🔌 Testing Socket.IO Realtime...")
     
-    # Test 1: Socket.IO handshake endpoint
-    results["socketio_handshake"] = await test_socketio_handshake()
+    # 10) Socket.IO path: connect using socketio_path='api/socket.io'
+    socketio_url = BASE_URL
     
-    # Test 2: Realtime health endpoint
-    results["realtime_health"] = await test_realtime_health()
+    # Create socket clients for both users
+    sio_a = socketio.AsyncClient()
+    sio_b = socketio.AsyncClient()
     
-    # Test 3: Get auth token for Socket.IO connection test
-    print("\n🔐 Getting auth token for Socket.IO connection test...")
-    email, username = generate_random_credentials()
-    
-    # Register or login to get token
-    register_payload = {
-        "email": email,
-        "username": username,
-        "password": "SocketIOTest123!"
+    # Track received messages
+    received_messages = {
+        'user_a': [],
+        'user_b': []
     }
     
-    auth_token = None
+    @sio_a.event
+    async def dm_new(data):
+        received_messages['user_a'].append(('dm:new', data))
+        print(f"🔔 User A received dm:new: {data['text'][:50]}...")
+    
+    @sio_a.event
+    async def group_new(data):
+        received_messages['user_a'].append(('group:new', data))
+        print(f"🔔 User A received group:new: {data['text'][:50]}...")
+    
+    @sio_b.event
+    async def dm_new(data):
+        received_messages['user_b'].append(('dm:new', data))
+        print(f"🔔 User B received dm:new: {data['text'][:50]}...")
+    
+    @sio_b.event
+    async def group_new(data):
+        received_messages['user_b'].append(('group:new', data))
+        print(f"🔔 User B received group:new: {data['text'][:50]}...")
+    
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Try to register
-            response = await client.post(f"{BASE_URL}/auth/register", json=register_payload)
-            if response.status_code == 200:
-                data = response.json()
-                auth_token = data.get("access_token")
-                print(f"✅ Got auth token for Socket.IO test: {auth_token[:20]}...")
-            elif response.status_code == 409:
-                # User exists, try login
-                login_payload = {"email": email, "password": "SocketIOTest123!"}
-                response = await client.post(f"{BASE_URL}/auth/login", json=login_payload)
-                if response.status_code == 200:
-                    data = response.json()
-                    auth_token = data.get("access_token")
-                    print(f"✅ Got auth token via login: {auth_token[:20]}...")
-    except Exception as e:
-        print(f"❌ Failed to get auth token: {e}")
-    
-    # Test 4: Socket.IO connection with JWT and ping test
-    if auth_token:
-        results["socketio_jwt_connection"] = await test_socketio_connection_with_jwt(auth_token)
-    else:
-        results["socketio_jwt_connection"] = False
-        print("❌ Skipping Socket.IO JWT test - no auth token")
-    
-    return results
+        # Connect both users with JWT auth
+        await sio_a.connect(
+            socketio_url, 
+            socketio_path='api/socket.io',
+            auth={'token': user_a.token}
+        )
+        print(f"✅ User A connected to Socket.IO")
+        
+        await sio_b.connect(
+            socketio_url, 
+            socketio_path='api/socket.io',
+            auth={'token': user_b.token}
+        )
+        print(f"✅ User B connected to Socket.IO")
+        
+        # Wait a moment for connections to stabilize
+        await asyncio.sleep(1)
+        
+        # Test DM: verify dm:send produces dm:new to both
+        dm_test_message = f"Socket.IO DM test from {user_a.username} at {datetime.now().isoformat()}"
+        await sio_a.emit('dm:send', {
+            'to_user_id': user_b.user_id,
+            'text': dm_test_message
+        })
+        
+        # Wait for message propagation
+        await asyncio.sleep(2)
+        
+        # Check if both users received the DM
+        user_a_got_dm = any(
+            event == 'dm:new' and dm_test_message in data['text']
+            for event, data in received_messages['user_a']
+        )
+        user_b_got_dm = any(
+            event == 'dm:new' and dm_test_message in data['text']
+            for event, data in received_messages['user_b']
+        )
+        
+        if not user_a_got_dm:
+            raise Exception("User A did not receive dm:new event for sent message")
+        if not user_b_got_dm:
+            raise Exception("User B did not receive dm:new event")
+        
+        print(f"✅ DM Socket.IO events working - both users received dm:new")
+        
+        # Test Group: verify group:join then group:send produces group:new to room
+        # First, join the group room
+        await sio_a.emit('group:join', {'group_id': group_id})
+        await sio_b.emit('group:join', {'group_id': group_id})
+        
+        # Wait for room joins
+        await asyncio.sleep(1)
+        
+        # Send group message
+        group_test_message = f"Socket.IO group test from {user_a.username} at {datetime.now().isoformat()}"
+        await sio_a.emit('group:send', {
+            'group_id': group_id,
+            'text': group_test_message
+        })
+        
+        # Wait for message propagation
+        await asyncio.sleep(2)
+        
+        # Check if both users received the group message
+        user_a_got_group = any(
+            event == 'group:new' and group_test_message in data['text']
+            for event, data in received_messages['user_a']
+        )
+        user_b_got_group = any(
+            event == 'group:new' and group_test_message in data['text']
+            for event, data in received_messages['user_b']
+        )
+        
+        if not user_a_got_group:
+            raise Exception("User A did not receive group:new event for sent message")
+        if not user_b_got_group:
+            raise Exception("User B did not receive group:new event")
+        
+        print(f"✅ Group Socket.IO events working - both users received group:new")
+        
+    finally:
+        # Clean up connections
+        await sio_a.disconnect()
+        await sio_b.disconnect()
+        print("🔌 Socket.IO connections closed")
 
-def main():
-    """Run all backend tests including JWT authentication and Socket.IO integration"""
-    print("🚀 Starting Moto GO Backend API Tests")
-    print(f"Testing against: {BASE_URL}")
+
+async def main():
+    """Run all tests in sequence"""
+    print("🚀 Starting Friends + Groups + Chat Backend Tests")
     print("=" * 60)
     
-    results = {}
-    
-    # Test basic endpoints first
-    results["health"] = test_health_endpoint()
-    results["root"] = test_root_endpoint()
-    
-    # Test JWT Authentication endpoints
-    print("\n" + "🔐 JWT AUTHENTICATION TESTS" + "\n" + "=" * 40)
-    
-    # 1. Register new user
-    register_success, token, email = test_auth_register_new_user()
-    results["auth_register_new"] = register_success
-    
-    # 2. Try to register with same email (should fail with 409)
-    if email:
-        results["auth_register_duplicate"] = test_auth_register_duplicate_email(email)
-    else:
-        results["auth_register_duplicate"] = False
-        print("❌ Skipping duplicate email test - no email from registration")
-    
-    # 3. Login with correct credentials
-    if email:
-        login_success, login_token = test_auth_login_valid_credentials(email)
-        results["auth_login_valid"] = login_success
-        # Use login token for /me test if available, otherwise use register token
-        test_token = login_token if login_token else token
-    else:
-        results["auth_login_valid"] = False
-        test_token = None
-        print("❌ Skipping login test - no email from registration")
-    
-    # 4. Test /api/me without token (should return 401)
-    results["me_no_token"] = test_me_endpoint_no_token()
-    
-    # 5. Test /api/me with Bearer token (should return UserPublic)
-    if test_token and email:
-        results["me_with_token"] = test_me_endpoint_with_token(test_token, email)
-    else:
-        results["me_with_token"] = False
-        print("❌ Skipping /api/me with token test - no token available")
-    
-    # Test existing endpoints (regression testing)
-    print("\n" + "🔄 REGRESSION TESTS" + "\n" + "=" * 40)
-    results["create_route"] = test_create_route()[0]
-    results["route_validation"] = test_route_validation()
-    results["list_routes"] = test_list_routes()
-    results["create_event"] = test_create_event()[0]
-    results["list_events"] = test_list_events()
-    
-    # Run Socket.IO tests
-    socketio_results = asyncio.run(run_socketio_tests())
-    results.update(socketio_results)
-    
-    # Summary
-    print("\n" + "=" * 60)
-    print("📊 TEST SUMMARY")
-    print("=" * 60)
-    
-    # Group results by category
-    auth_tests = {
-        "auth_register_new": "Register New User",
-        "auth_register_duplicate": "Register Duplicate Email",
-        "auth_login_valid": "Login Valid Credentials", 
-        "me_no_token": "/api/me No Token",
-        "me_with_token": "/api/me With Token"
-    }
-    
-    regression_tests = {
-        "health": "Health Endpoint",
-        "root": "Root Endpoint",
-        "create_route": "Create Route",
-        "route_validation": "Route Validation",
-        "list_routes": "List Routes",
-        "create_event": "Create Event",
-        "list_events": "List Events"
-    }
-    
-    socketio_tests = {
-        "socketio_handshake": "Socket.IO Handshake (EIO=4)",
-        "realtime_health": "/api/realtime/health",
-        "socketio_jwt_connection": "Socket.IO JWT + ping_test"
-    }
-    
-    print("🔐 JWT Authentication Tests:")
-    auth_passed = 0
-    for test_key, test_name in auth_tests.items():
-        result = results.get(test_key, False)
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"  {test_name:<25} {status}")
-        if result:
-            auth_passed += 1
-    
-    print(f"\n🔄 Regression Tests:")
-    regression_passed = 0
-    for test_key, test_name in regression_tests.items():
-        result = results.get(test_key, False)
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"  {test_name:<25} {status}")
-        if result:
-            regression_passed += 1
-    
-    print(f"\n🔌 Socket.IO Integration Tests:")
-    socketio_passed = 0
-    for test_key, test_name in socketio_tests.items():
-        result = results.get(test_key, False)
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"  {test_name:<25} {status}")
-        if result:
-            socketio_passed += 1
-    
-    total_passed = auth_passed + regression_passed + socketio_passed
-    total_tests = len(auth_tests) + len(regression_tests) + len(socketio_tests)
-    
-    print(f"\nOverall: {total_passed}/{total_tests} tests passed")
-    print(f"  - JWT Auth: {auth_passed}/{len(auth_tests)} passed")
-    print(f"  - Regression: {regression_passed}/{len(regression_tests)} passed")
-    print(f"  - Socket.IO: {socketio_passed}/{len(socketio_tests)} passed")
-    
-    if total_passed == total_tests:
-        print("🎉 All backend tests PASSED!")
+    try:
+        # Test friends flow and get users
+        user_a, user_b = await test_friends_flow()
+        
+        # Test groups flow and get group ID
+        group_id = await test_groups_flow(user_a, user_b)
+        
+        # Test REST chat history
+        await test_rest_chat_history(user_a, user_b, group_id)
+        
+        # Test Socket.IO realtime
+        await test_socketio_realtime(user_a, user_b, group_id)
+        
+        print("\n" + "=" * 60)
+        print("🎉 ALL TESTS PASSED! Friends + Groups + Chat functionality is working correctly.")
+        print("✅ User search, friend requests, acceptance, and friends list")
+        print("✅ Group creation, joining, and listing")
+        print("✅ REST DM and group message history")
+        print("✅ Socket.IO realtime DM and group messaging")
+        
         return True
-    else:
-        print("⚠️  Some backend tests FAILED!")
+        
+    except Exception as e:
+        print(f"\n❌ TEST FAILED: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
+
 
 if __name__ == "__main__":
-    main()
+    success = asyncio.run(main())
+    exit(0 if success else 1)
