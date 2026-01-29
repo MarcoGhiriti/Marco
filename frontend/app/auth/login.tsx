@@ -13,10 +13,8 @@ import {
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
-import { AnimatedPressable } from "../../src/components/AnimatedPressable";
-
-// Web preview fallback: reanimated pressable can fail to resolve in some bundler contexts.
-const Press = Platform.OS === "web" ? Pressable : AnimatedPressable;
+// NOTE: Avoid importing reanimated-based components in web preview.
+// We'll use standard Pressable here; native builds can be upgraded later.
 import { useAuthStore } from "../../src/state/authStore";
 
 export default function LoginScreen() {
