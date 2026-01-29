@@ -531,16 +531,54 @@ def test_list_events():
         return False
 
 def main():
-    """Run all backend tests"""
+    """Run all backend tests including JWT authentication"""
     print("🚀 Starting Moto GO Backend API Tests")
     print(f"Testing against: {BASE_URL}")
     print("=" * 60)
     
     results = {}
     
-    # Test all endpoints
+    # Test basic endpoints first
     results["health"] = test_health_endpoint()
     results["root"] = test_root_endpoint()
+    
+    # Test JWT Authentication endpoints
+    print("\n" + "🔐 JWT AUTHENTICATION TESTS" + "\n" + "=" * 40)
+    
+    # 1. Register new user
+    register_success, token, email = test_auth_register_new_user()
+    results["auth_register_new"] = register_success
+    
+    # 2. Try to register with same email (should fail with 409)
+    if email:
+        results["auth_register_duplicate"] = test_auth_register_duplicate_email(email)
+    else:
+        results["auth_register_duplicate"] = False
+        print("❌ Skipping duplicate email test - no email from registration")
+    
+    # 3. Login with correct credentials
+    if email:
+        login_success, login_token = test_auth_login_valid_credentials(email)
+        results["auth_login_valid"] = login_success
+        # Use login token for /me test if available, otherwise use register token
+        test_token = login_token if login_token else token
+    else:
+        results["auth_login_valid"] = False
+        test_token = None
+        print("❌ Skipping login test - no email from registration")
+    
+    # 4. Test /api/me without token (should return 401)
+    results["me_no_token"] = test_me_endpoint_no_token()
+    
+    # 5. Test /api/me with Bearer token (should return UserPublic)
+    if test_token and email:
+        results["me_with_token"] = test_me_endpoint_with_token(test_token, email)
+    else:
+        results["me_with_token"] = False
+        print("❌ Skipping /api/me with token test - no token available")
+    
+    # Test existing endpoints (regression testing)
+    print("\n" + "🔄 REGRESSION TESTS" + "\n" + "=" * 40)
     results["create_route"] = test_create_route()[0]
     results["route_validation"] = test_route_validation()
     results["list_routes"] = test_list_routes()
@@ -552,16 +590,51 @@ def main():
     print("📊 TEST SUMMARY")
     print("=" * 60)
     
-    passed = sum(1 for result in results.values() if result)
-    total = len(results)
+    # Group results by category
+    auth_tests = {
+        "auth_register_new": "Register New User",
+        "auth_register_duplicate": "Register Duplicate Email",
+        "auth_login_valid": "Login Valid Credentials", 
+        "me_no_token": "/api/me No Token",
+        "me_with_token": "/api/me With Token"
+    }
     
-    for test_name, result in results.items():
+    regression_tests = {
+        "health": "Health Endpoint",
+        "root": "Root Endpoint",
+        "create_route": "Create Route",
+        "route_validation": "Route Validation",
+        "list_routes": "List Routes",
+        "create_event": "Create Event",
+        "list_events": "List Events"
+    }
+    
+    print("🔐 JWT Authentication Tests:")
+    auth_passed = 0
+    for test_key, test_name in auth_tests.items():
+        result = results.get(test_key, False)
         status = "✅ PASS" if result else "❌ FAIL"
-        print(f"{test_name.upper():<20} {status}")
+        print(f"  {test_name:<25} {status}")
+        if result:
+            auth_passed += 1
     
-    print(f"\nOverall: {passed}/{total} tests passed")
+    print(f"\n🔄 Regression Tests:")
+    regression_passed = 0
+    for test_key, test_name in regression_tests.items():
+        result = results.get(test_key, False)
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"  {test_name:<25} {status}")
+        if result:
+            regression_passed += 1
     
-    if passed == total:
+    total_passed = auth_passed + regression_passed
+    total_tests = len(auth_tests) + len(regression_tests)
+    
+    print(f"\nOverall: {total_passed}/{total_tests} tests passed")
+    print(f"  - JWT Auth: {auth_passed}/{len(auth_tests)} passed")
+    print(f"  - Regression: {regression_passed}/{len(regression_tests)} passed")
+    
+    if total_passed == total_tests:
         print("🎉 All backend tests PASSED!")
         return True
     else:
