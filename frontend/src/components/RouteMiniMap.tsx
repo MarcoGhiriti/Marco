@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
 import { Colors } from "../theme/colors";
 
 function boundsFromCoords(coords: { latitude: number; longitude: number }[]) {
@@ -19,6 +20,45 @@ function boundsFromCoords(coords: { latitude: number; longitude: number }[]) {
   return { minLat, maxLat, minLng, maxLng };
 }
 
+function normalizeToSvg(
+  coords: { latitude: number; longitude: number }[],
+  width: number,
+  height: number
+) {
+  if (!coords.length) return { points: "", start: null, end: null };
+
+  const b = boundsFromCoords(coords);
+  const pad = 6;
+  const w = Math.max(1, width - pad * 2);
+  const h = Math.max(1, height - pad * 2);
+
+  const lngSpan = Math.max(0.00001, b.maxLng - b.minLng);
+  const latSpan = Math.max(0.00001, b.maxLat - b.minLat);
+
+  const pts = coords
+    .map((c) => {
+      const x = pad + ((c.longitude - b.minLng) / lngSpan) * w;
+      // invert y (lat bigger = up)
+      const y = pad + (1 - (c.latitude - b.minLat) / latSpan) * h;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  const start = coords[0];
+  const end = coords[coords.length - 1];
+
+  const startX = pad + ((start.longitude - b.minLng) / lngSpan) * w;
+  const startY = pad + (1 - (start.latitude - b.minLat) / latSpan) * h;
+  const endX = pad + ((end.longitude - b.minLng) / lngSpan) * w;
+  const endY = pad + (1 - (end.latitude - b.minLat) / latSpan) * h;
+
+  return {
+    points: pts,
+    start: { x: startX, y: startY },
+    end: { x: endX, y: endY },
+  };
+}
+
 export function RouteMiniMap({
   polyline,
 }: {
@@ -29,6 +69,35 @@ export function RouteMiniMap({
       .filter((p) => Array.isArray(p) && p.length === 2)
       .map((p) => ({ latitude: p[0], longitude: p[1] }));
   }, [polyline]);
+
+  // Web fallback: render a lightweight SVG preview to avoid MapView web limitations.
+  if (Platform.OS === "web") {
+    const width = 420;
+    const height = 150;
+    const svg = normalizeToSvg(coords, width, height);
+
+    return (
+      <View style={styles.wrap}>
+        <Svg width={width} height={height}>
+          <SvgPolyline
+            points={svg.points}
+            fill="none"
+            stroke={Colors.accent}
+            strokeWidth={3}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          {svg.start ? (
+            <Circle cx={svg.start.x} cy={svg.start.y} r={5} fill={Colors.accent} />
+          ) : null}
+          {svg.end ? (
+            <Circle cx={svg.end.x} cy={svg.end.y} r={5} fill={Colors.muted} />
+          ) : null}
+        </Svg>
+        <View pointerEvents="none" style={styles.overlayBorder} />
+      </View>
+    );
+  }
 
   const region = useMemo(() => {
     if (!coords.length) {
