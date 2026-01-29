@@ -34,7 +34,8 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_access_token(user_id: str) -> str:
-    if not JWT_SECRET:
+    jwt_secret = _get_jwt_secret()
+    if not jwt_secret:
         raise HTTPException(status_code=500, detail="JWT_SECRET not configured")
 
     now = datetime.utcnow()
