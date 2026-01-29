@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
+import { softShadow } from "../theme/shadow";
 import { Colors } from "../theme/colors";
 
 function boundsFromCoords(coords: { latitude: number; longitude: number }[]) {
