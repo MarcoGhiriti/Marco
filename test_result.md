@@ -148,6 +148,17 @@
 ##         agent: "testing"
 ##         comment: "Socket.IO integration testing completed successfully! All requirements verified: 1) HTTP endpoints still work: GET /api/health ✅, GET /api/routes ✅ 2) Auth still works: POST /api/auth/login ✅, GET /api/me ✅ 3) Socket.IO handshake exists at /socket.io/ with EIO=4 ✅ (tested locally due to external routing issue) 4) Socket.IO JWT authentication working ✅ - connects with auth token successfully 5) ping_test -> pong_test working ✅ - receives correct pong_test response with echo data 6) /api/realtime/health returns ok:true ✅. Socket.IO server fully functional on backend. Minor: External URL routing issue - /socket.io/ requests routed to frontend instead of backend, but server works correctly when accessed directly."
 
+##   - task: "Friends + Groups + Chat (REST history + Socket.IO realtime)"
+##     implemented: true
+##     working: "NA"
+##     file: "backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Implemented friends: search users, send request, accept, list friends + requests. Groups: create/list/join. Chat: REST history endpoints for DM and group + realtime Socket.IO events dm:send/dm:new and group:join/group:send/group:new, storing messages in Mongo."
 ## frontend:
 ##   - task: "Expo Router app shell with tab navigation + Home fetch routes"
 ##     implemented: true
