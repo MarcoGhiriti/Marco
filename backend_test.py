@@ -509,6 +509,25 @@ async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: s
         # Wait for message propagation
         await asyncio.sleep(3)
         
+        # Check if the group message was stored in the database
+        print("🔍 Checking if group message was stored in database...")
+        async with httpx.AsyncClient(timeout=30.0) as rest_client:
+            group_history_resp = await rest_client.get(
+                f"{API_URL}/groups/{group_id}/messages",
+                headers=user_b.get_headers()
+            )
+            if group_history_resp.status_code == 200:
+                group_history = group_history_resp.json()
+                socket_group_message_found = any(
+                    group_test_message in msg.get('text', '') for msg in group_history
+                )
+                if socket_group_message_found:
+                    print("✅ Socket.IO group message was stored in database")
+                else:
+                    print("❌ Socket.IO group message was NOT stored in database")
+            else:
+                print(f"❌ Failed to check group message history: {group_history_resp.status_code}")
+        
         # Check if both users received the group message
         user_a_got_group = any(
             event == 'group:new' and group_test_message in data.get('text', '')
