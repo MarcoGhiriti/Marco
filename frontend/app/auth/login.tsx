@@ -13,8 +13,6 @@ import {
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
-// NOTE: Avoid importing reanimated-based components in web preview.
-// We'll use standard Pressable here; native builds can be upgraded later.
 import { useAuthStore } from "../../src/state/authStore";
 
 export default function LoginScreen() {
