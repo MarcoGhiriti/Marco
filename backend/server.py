@@ -445,6 +445,13 @@ class RouteOut(BaseModel):
 
     created_at: datetime
 
+    participants_min: int
+    participants_max: int
+
+    participants_count: int = 0
+    is_joined: bool = False
+
+
 
 class EventCreate(BaseModel):
     title: str = Field(min_length=2, max_length=80)
