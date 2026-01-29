@@ -125,32 +125,27 @@ export function RouteMiniMap({
     );
   }
 
+  // For native platforms, we'll use a placeholder for now to avoid import issues
   return (
     <View style={styles.wrap}>
-      <MapView
-        style={StyleSheet.absoluteFill}
-        initialRegion={region}
-        provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-        pitchEnabled={false}
-        rotateEnabled={false}
-        scrollEnabled={false}
-        zoomEnabled={false}
-        toolbarEnabled={false}
-        showsCompass={false}
-        showsScale={false}
-      >
-        {coords.length > 0 ? (
-          <>
-            {start ? <Marker coordinate={start} pinColor={Colors.accent} /> : null}
-            {end ? <Marker coordinate={end} pinColor={Colors.muted} /> : null}
-            <Polyline
-              coordinates={coords}
-              strokeWidth={3}
-              strokeColor={Colors.accent}
-            />
-          </>
-        ) : null}
-      </MapView>
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.card2, alignItems: 'center', justifyContent: 'center' }]}>
+        <Svg width={width} height={height}>
+          <SvgPolyline
+            points={svg.points}
+            fill="none"
+            stroke={Colors.accent}
+            strokeWidth={3}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          {svg.start ? (
+            <Circle cx={svg.start.x} cy={svg.start.y} r={5} fill={Colors.accent} />
+          ) : null}
+          {svg.end ? (
+            <Circle cx={svg.end.x} cy={svg.end.y} r={5} fill={Colors.muted} />
+          ) : null}
+        </Svg>
+      </View>
       <View pointerEvents="none" style={styles.overlayBorder} />
     </View>
   );
