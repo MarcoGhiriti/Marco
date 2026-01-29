@@ -6,8 +6,10 @@ Tests all backend endpoints according to the review request
 
 import json
 import requests
+import random
+import string
 from datetime import datetime, timedelta
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Optional
 
 # Use the backend URL from frontend .env
 BASE_URL = "https://riderzone-1.preview.emergentagent.com/api"
