@@ -118,6 +118,18 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "Comprehensive backend testing completed successfully. All 7 API endpoints tested and working: GET /api/health (returns ok:true, db:up), GET /api/ (root endpoint), POST /api/routes (creates routes with computed distance_km/duration_min/cost_estimate), validation (participants_min>max returns 400), GET /api/routes (returns route list), POST /api/events (creates events with EventOut schema), GET /api/events (returns event list). Distance calculation working (27.65km for test route), cost estimation working (fuel+tolls), validation working correctly. Backend API fully functional at https://riderzone-1.preview.emergentagent.com/api"
+##   - task: "JWT Auth (email/password) + /api/me"
+##     implemented: true
+##     working: "NA"
+##     file: "backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Added JWT auth endpoints: POST /api/auth/register, POST /api/auth/login, GET /api/me (Bearer token). Users stored in Mongo with bcrypt password hashing. Added JWT_SECRET to backend/.env."
+
 ## frontend:
 ##   - task: "Expo Router app shell with tab navigation + Home fetch routes"
 ##     implemented: true
