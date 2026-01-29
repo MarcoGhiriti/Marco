@@ -70,35 +70,6 @@ export function RouteMiniMap({
       .map((p) => ({ latitude: p[0], longitude: p[1] }));
   }, [polyline]);
 
-  // Web fallback: render a lightweight SVG preview to avoid MapView web limitations.
-  if (Platform.OS === "web") {
-    const width = 420;
-    const height = 150;
-    const svg = normalizeToSvg(coords, width, height);
-
-    return (
-      <View style={styles.wrap}>
-        <Svg width={width} height={height}>
-          <SvgPolyline
-            points={svg.points}
-            fill="none"
-            stroke={Colors.accent}
-            strokeWidth={3}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-          {svg.start ? (
-            <Circle cx={svg.start.x} cy={svg.start.y} r={5} fill={Colors.accent} />
-          ) : null}
-          {svg.end ? (
-            <Circle cx={svg.end.x} cy={svg.end.y} r={5} fill={Colors.muted} />
-          ) : null}
-        </Svg>
-        <View pointerEvents="none" style={styles.overlayBorder} />
-      </View>
-    );
-  }
-
   const region = useMemo(() => {
     if (!coords.length) {
       return {
