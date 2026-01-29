@@ -447,6 +447,26 @@ async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: s
         print(f"📊 Messages received by User A: {len(received_messages['user_a'])}")
         print(f"📊 Messages received by User B: {len(received_messages['user_b'])}")
         
+        # Check if the message was stored in the database via REST API
+        print("🔍 Checking if message was stored in database...")
+        async with httpx.AsyncClient(timeout=30.0) as rest_client:
+            dm_history_resp = await rest_client.get(
+                f"{API_URL}/dm/{user_b.user_id}/messages",
+                headers=user_a.get_headers()
+            )
+            if dm_history_resp.status_code == 200:
+                dm_history = dm_history_resp.json()
+                socket_message_found = any(
+                    dm_test_message in msg.get('text', '') for msg in dm_history
+                )
+                if socket_message_found:
+                    print("✅ Socket.IO message was stored in database")
+                else:
+                    print("❌ Socket.IO message was NOT stored in database")
+                    print(f"Recent messages: {[msg.get('text', '')[:50] for msg in dm_history[-3:]]}")
+            else:
+                print(f"❌ Failed to check message history: {dm_history_resp.status_code}")
+        
         # Check if both users received the DM
         user_a_got_dm = any(
             event == 'dm:new' and dm_test_message in data.get('text', '')
