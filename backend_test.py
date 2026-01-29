@@ -1,595 +1,341 @@
 #!/usr/bin/env python3
 """
-Backend test for Friends + Groups + Chat (REST history + Socket.IO realtime)
-Tests the complete flow as specified in the review request.
+Backend API Testing for Events Join/Leave functionality
+Tests the new Events join/leave changes as requested in the review.
 """
 
 import asyncio
 import json
 import random
 import string
-import time
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
 import httpx
-import socketio
 
 
-# Get backend URL from frontend .env
-def get_backend_url():
-    try:
-        with open("/app/frontend/.env", "r") as f:
-            for line in f:
-                if line.startswith("EXPO_PUBLIC_BACKEND_URL="):
-                    return line.split("=", 1)[1].strip()
-    except Exception:
-        pass
-    return "https://riderzone-1.preview.emergentagent.com"
+class BackendTester:
+    def __init__(self, base_url: str = "https://riderzone-1.preview.emergentagent.com/api"):
+        self.base_url = base_url
+        self.client = httpx.AsyncClient(timeout=30.0)
+        self.token: Optional[str] = None
+        self.user_id: Optional[str] = None
+        self.event_id: Optional[str] = None
 
+    async def close(self):
+        await self.client.aclose()
 
-BASE_URL = get_backend_url()
-API_URL = f"{BASE_URL}/api"
+    def generate_random_email(self) -> str:
+        """Generate a random email for testing"""
+        random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        return f"testuser_{random_str}@example.com"
 
-print(f"Testing backend at: {API_URL}")
+    def generate_random_username(self) -> str:
+        """Generate a random username for testing"""
+        random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        return f"user_{random_str}"
 
-
-def random_string(length=8):
-    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
-
-
-class TestUser:
-    def __init__(self, username_prefix="testuser"):
-        self.username = f"{username_prefix}{random_string()}"
-        self.email = f"{self.username}@test.com"
-        self.password = "testpass123"
-        self.token = None
-        self.user_id = None
-        self.user_data = None
-
-    async def register_and_login(self, client: httpx.AsyncClient):
-        """Register and login user, store token and user data"""
-        # Register
-        register_data = {
-            "email": self.email,
-            "username": self.username,
-            "password": self.password
+    async def register_user(self) -> Dict[str, Any]:
+        """Step 1: Register a random user and get token"""
+        print("🔐 Step 1: Registering new user...")
+        
+        email = self.generate_random_email()
+        username = self.generate_random_username()
+        password = "TestPassword123"
+        
+        payload = {
+            "email": email,
+            "username": username,
+            "password": password
         }
         
-        resp = await client.post(f"{API_URL}/auth/register", json=register_data)
-        if resp.status_code != 200:
-            raise Exception(f"Registration failed: {resp.status_code} - {resp.text}")
+        response = await self.client.post(f"{self.base_url}/auth/register", json=payload)
         
-        token_data = resp.json()
-        self.token = token_data["access_token"]
+        if response.status_code != 200:
+            raise Exception(f"Registration failed: {response.status_code} - {response.text}")
         
-        # Get user data
+        data = response.json()
+        self.token = data["access_token"]
+        
+        print(f"✅ User registered successfully: {email}")
+        print(f"✅ Token obtained: {self.token[:20]}...")
+        
+        # Get user info to get user_id
         headers = {"Authorization": f"Bearer {self.token}"}
-        me_resp = await client.get(f"{API_URL}/me", headers=headers)
-        if me_resp.status_code != 200:
-            raise Exception(f"Get /me failed: {me_resp.status_code} - {me_resp.text}")
+        me_response = await self.client.get(f"{self.base_url}/me", headers=headers)
+        if me_response.status_code == 200:
+            user_data = me_response.json()
+            self.user_id = user_data["id"]
+            print(f"✅ User ID: {self.user_id}")
         
-        self.user_data = me_resp.json()
-        self.user_id = self.user_data["id"]
-        
-        print(f"✅ User {self.username} registered and logged in (ID: {self.user_id})")
-        return self
+        return data
 
-    def get_headers(self):
-        return {"Authorization": f"Bearer {self.token}"}
-
-
-async def test_friends_flow():
-    """Test the complete friends flow: search, request, accept, list"""
-    print("\n🔍 Testing Friends Flow...")
-    
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        # 1) Register uA and uB, login both, get /api/me
-        user_a = await TestUser("usera").register_and_login(client)
-        user_b = await TestUser("userb").register_and_login(client)
+    async def create_event(self) -> Dict[str, Any]:
+        """Step 2: Create an event via POST /api/events (no auth required for create currently)"""
+        print("\n📅 Step 2: Creating an event...")
         
-        # 2) User search: GET /api/users/search?username=<prefix> returns other user
-        search_resp = await client.get(
-            f"{API_URL}/users/search?username={user_b.username[:5]}", 
-            headers=user_a.get_headers()
-        )
-        if search_resp.status_code != 200:
-            raise Exception(f"User search failed: {search_resp.status_code} - {search_resp.text}")
+        # Create event in the future
+        start_time = datetime.utcnow() + timedelta(days=7)
         
-        search_results = search_resp.json()
-        found_user_b = None
-        for user in search_results:
-            if user["username"] == user_b.username:
-                found_user_b = user
-                break
-        
-        if not found_user_b:
-            raise Exception(f"User B ({user_b.username}) not found in search results")
-        
-        print(f"✅ User search found {user_b.username}")
-        
-        # 3) Friend request: POST /api/friends/request {to_username} by uA
-        friend_request_data = {"to_username": user_b.username}
-        req_resp = await client.post(
-            f"{API_URL}/friends/request", 
-            json=friend_request_data,
-            headers=user_a.get_headers()
-        )
-        if req_resp.status_code != 200:
-            raise Exception(f"Friend request failed: {req_resp.status_code} - {req_resp.text}")
-        
-        print(f"✅ Friend request sent from {user_a.username} to {user_b.username}")
-        
-        # 4) Friend requests list: GET /api/friends/requests for uB shows incoming with uA
-        requests_resp = await client.get(
-            f"{API_URL}/friends/requests",
-            headers=user_b.get_headers()
-        )
-        if requests_resp.status_code != 200:
-            raise Exception(f"Get friend requests failed: {requests_resp.status_code} - {requests_resp.text}")
-        
-        requests_data = requests_resp.json()
-        incoming_requests = requests_data.get("incoming", [])
-        
-        found_request = None
-        for req in incoming_requests:
-            if req["id"] == user_a.user_id:
-                found_request = req
-                break
-        
-        if not found_request:
-            raise Exception(f"Friend request from {user_a.username} not found in incoming requests")
-        
-        print(f"✅ Friend request from {user_a.username} found in {user_b.username}'s incoming requests")
-        
-        # 5) Accept: POST /api/friends/accept {from_user_id:uA_id} by uB
-        accept_data = {"from_user_id": user_a.user_id}
-        accept_resp = await client.post(
-            f"{API_URL}/friends/accept",
-            json=accept_data,
-            headers=user_b.get_headers()
-        )
-        if accept_resp.status_code != 200:
-            raise Exception(f"Friend accept failed: {accept_resp.status_code} - {accept_resp.text}")
-        
-        print(f"✅ Friend request accepted by {user_b.username}")
-        
-        # 6) Friends list: GET /api/friends for both shows each other
-        # Check user A's friends list
-        friends_a_resp = await client.get(f"{API_URL}/friends", headers=user_a.get_headers())
-        if friends_a_resp.status_code != 200:
-            raise Exception(f"Get friends for A failed: {friends_a_resp.status_code} - {friends_a_resp.text}")
-        
-        friends_a = friends_a_resp.json()
-        found_b_in_a = any(friend["id"] == user_b.user_id for friend in friends_a)
-        
-        # Check user B's friends list
-        friends_b_resp = await client.get(f"{API_URL}/friends", headers=user_b.get_headers())
-        if friends_b_resp.status_code != 200:
-            raise Exception(f"Get friends for B failed: {friends_b_resp.status_code} - {friends_b_resp.text}")
-        
-        friends_b = friends_b_resp.json()
-        found_a_in_b = any(friend["id"] == user_a.user_id for friend in friends_b)
-        
-        if not found_b_in_a:
-            raise Exception(f"User B not found in User A's friends list")
-        if not found_a_in_b:
-            raise Exception(f"User A not found in User B's friends list")
-        
-        print(f"✅ Both users appear in each other's friends lists")
-        
-        return user_a, user_b
-
-
-async def test_groups_flow(user_a: TestUser, user_b: TestUser):
-    """Test groups: create, join, list"""
-    print("\n👥 Testing Groups Flow...")
-    
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        # 7) Groups: uA creates group POST /api/groups
-        group_data = {
-            "name": f"Test Group {random_string()}",
-            "description": "A test group for motorcycle enthusiasts",
-            "is_private": False
+        payload = {
+            "title": "Test Motorcycle Ride",
+            "description": "A test event for join/leave functionality",
+            "start_point": [44.4268, 26.1025],  # Bucharest coordinates
+            "start_time": start_time.isoformat() + "Z"
         }
         
-        create_resp = await client.post(
-            f"{API_URL}/groups",
-            json=group_data,
-            headers=user_a.get_headers()
-        )
-        if create_resp.status_code != 200:
-            raise Exception(f"Group creation failed: {create_resp.status_code} - {create_resp.text}")
+        response = await self.client.post(f"{self.base_url}/events", json=payload)
         
-        group = create_resp.json()
-        group_id = group["id"]
+        if response.status_code != 200:
+            raise Exception(f"Event creation failed: {response.status_code} - {response.text}")
         
-        print(f"✅ Group '{group['name']}' created by {user_a.username} (ID: {group_id})")
+        data = response.json()
+        self.event_id = data["id"]
         
-        # uB joins POST /api/groups/{id}/join
-        join_resp = await client.post(
-            f"{API_URL}/groups/{group_id}/join",
-            headers=user_b.get_headers()
-        )
-        if join_resp.status_code != 200:
-            raise Exception(f"Group join failed: {join_resp.status_code} - {join_resp.text}")
+        print(f"✅ Event created successfully: {data['title']}")
+        print(f"✅ Event ID: {self.event_id}")
         
-        print(f"✅ {user_b.username} joined the group")
-        
-        # both list GET /api/groups
-        # Check user A's groups
-        groups_a_resp = await client.get(f"{API_URL}/groups", headers=user_a.get_headers())
-        if groups_a_resp.status_code != 200:
-            raise Exception(f"Get groups for A failed: {groups_a_resp.status_code} - {groups_a_resp.text}")
-        
-        groups_a = groups_a_resp.json()
-        found_group_a = any(g["id"] == group_id for g in groups_a)
-        
-        # Check user B's groups
-        groups_b_resp = await client.get(f"{API_URL}/groups", headers=user_b.get_headers())
-        if groups_b_resp.status_code != 200:
-            raise Exception(f"Get groups for B failed: {groups_b_resp.status_code} - {groups_b_resp.text}")
-        
-        groups_b = groups_b_resp.json()
-        found_group_b = any(g["id"] == group_id for g in groups_b)
-        
-        if not found_group_a:
-            raise Exception("Group not found in user A's groups list")
-        if not found_group_b:
-            raise Exception("Group not found in user B's groups list")
-        
-        print(f"✅ Group appears in both users' groups lists")
-        
-        return group_id
+        return data
 
+    async def test_events_without_auth(self) -> None:
+        """Step 3: GET /api/events without token should now return 401"""
+        print("\n🚫 Step 3: Testing GET /api/events without authentication...")
+        
+        response = await self.client.get(f"{self.base_url}/events")
+        
+        if response.status_code != 401:
+            raise Exception(f"Expected 401 Unauthorized, got {response.status_code} - {response.text}")
+        
+        print("✅ GET /api/events correctly returns 401 without authentication")
 
-async def test_rest_chat_history(user_a: TestUser, user_b: TestUser, group_id: str):
-    """Test REST chat history for DM and group messages"""
-    print("\n💬 Testing REST Chat History...")
-    
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        # 8) REST chat history: POST /api/dm/{uB_id}/messages by uA then GET /api/dm/{uB_id}/messages by uB sees it
-        dm_message_data = {"text": f"Hello {user_b.username}! This is a DM from {user_a.username}"}
+    async def test_events_with_auth(self) -> Dict[str, Any]:
+        """Step 4: GET /api/events with token should return list with participants_count and is_joined"""
+        print("\n📋 Step 4: Testing GET /api/events with authentication...")
         
-        # Send DM from A to B
-        send_dm_resp = await client.post(
-            f"{API_URL}/dm/{user_b.user_id}/messages",
-            json=dm_message_data,
-            headers=user_a.get_headers()
-        )
-        if send_dm_resp.status_code != 200:
-            raise Exception(f"Send DM failed: {send_dm_resp.status_code} - {send_dm_resp.text}")
+        headers = {"Authorization": f"Bearer {self.token}"}
+        response = await self.client.get(f"{self.base_url}/events", headers=headers)
         
-        sent_message = send_dm_resp.json()
-        print(f"✅ DM sent from {user_a.username} to {user_b.username}")
+        if response.status_code != 200:
+            raise Exception(f"GET /api/events with auth failed: {response.status_code} - {response.text}")
         
-        # Get DM history from B's perspective
-        get_dm_resp = await client.get(
-            f"{API_URL}/dm/{user_a.user_id}/messages",
-            headers=user_b.get_headers()
-        )
-        if get_dm_resp.status_code != 200:
-            raise Exception(f"Get DM history failed: {get_dm_resp.status_code} - {get_dm_resp.text}")
+        data = response.json()
         
-        dm_history = get_dm_resp.json()
-        found_message = any(
-            msg["id"] == sent_message["id"] and msg["text"] == dm_message_data["text"]
-            for msg in dm_history
-        )
+        if not isinstance(data, list):
+            raise Exception(f"Expected list response, got {type(data)}")
         
-        if not found_message:
-            raise Exception("Sent DM not found in message history")
+        if len(data) == 0:
+            raise Exception("No events found in response")
         
-        print(f"✅ DM appears in message history for {user_b.username}")
+        # Find our created event
+        our_event = None
+        for event in data:
+            if event["id"] == self.event_id:
+                our_event = event
+                break
         
-        # 9) REST group messages: POST /api/groups/{gid}/messages by uA then GET /api/groups/{gid}/messages by uB sees it
-        group_message_data = {"text": f"Hello group! This is {user_a.username} speaking."}
+        if not our_event:
+            raise Exception(f"Created event {self.event_id} not found in events list")
         
-        # Send group message from A
-        send_group_resp = await client.post(
-            f"{API_URL}/groups/{group_id}/messages",
-            json=group_message_data,
-            headers=user_a.get_headers()
-        )
-        if send_group_resp.status_code != 200:
-            raise Exception(f"Send group message failed: {send_group_resp.status_code} - {send_group_resp.text}")
+        # Verify EventOut schema includes required fields
+        required_fields = ["participants_count", "is_joined"]
+        for field in required_fields:
+            if field not in our_event:
+                raise Exception(f"Missing required field '{field}' in EventOut response")
         
-        sent_group_message = send_group_resp.json()
-        print(f"✅ Group message sent by {user_a.username}")
+        print(f"✅ GET /api/events with auth successful")
+        print(f"✅ Event found with participants_count: {our_event['participants_count']}")
+        print(f"✅ Event found with is_joined: {our_event['is_joined']}")
         
-        # Get group message history from B's perspective
-        get_group_resp = await client.get(
-            f"{API_URL}/groups/{group_id}/messages",
-            headers=user_b.get_headers()
-        )
-        if get_group_resp.status_code != 200:
-            raise Exception(f"Get group messages failed: {get_group_resp.status_code} - {get_group_resp.text}")
+        # Initially should not be joined
+        if our_event["is_joined"] != False:
+            raise Exception(f"Expected is_joined=false initially, got {our_event['is_joined']}")
         
-        group_history = get_group_resp.json()
-        found_group_message = any(
-            msg["id"] == sent_group_message["id"] and msg["text"] == group_message_data["text"]
-            for msg in group_history
-        )
+        if our_event["participants_count"] != 0:
+            raise Exception(f"Expected participants_count=0 initially, got {our_event['participants_count']}")
         
-        if not found_group_message:
-            raise Exception("Sent group message not found in message history")
-        
-        print(f"✅ Group message appears in message history for {user_b.username}")
+        return data
 
+    async def test_join_event(self) -> Dict[str, Any]:
+        """Step 5: POST /api/events/{id}/join with token -> ok true"""
+        print(f"\n➕ Step 5: Testing POST /api/events/{self.event_id}/join...")
+        
+        headers = {"Authorization": f"Bearer {self.token}"}
+        response = await self.client.post(f"{self.base_url}/events/{self.event_id}/join", headers=headers)
+        
+        if response.status_code != 200:
+            raise Exception(f"Event join failed: {response.status_code} - {response.text}")
+        
+        data = response.json()
+        
+        if data.get("ok") != True:
+            raise Exception(f"Expected ok=true, got {data}")
+        
+        print("✅ Successfully joined event")
+        
+        return data
 
-async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: str):
-    """Test Socket.IO realtime messaging"""
-    print("\n🔌 Testing Socket.IO Realtime...")
-    
-    # 10) Socket.IO path: connect using socketio_path='api/socket.io'
-    socketio_url = BASE_URL
-    
-    # Create socket clients for both users
-    sio_a = socketio.AsyncClient()
-    sio_b = socketio.AsyncClient()
-    
-    # Track received messages
-    received_messages = {
-        'user_a': [],
-        'user_b': []
-    }
-    
-    # Track connection events
-    connection_events = {
-        'user_a': {'connected': False, 'error': None},
-        'user_b': {'connected': False, 'error': None}
-    }
-    
-    @sio_a.event
-    async def connect():
-        connection_events['user_a']['connected'] = True
-        print(f"🔗 User A Socket.IO connected")
-    
-    @sio_a.event
-    async def connect_error(data):
-        connection_events['user_a']['error'] = data
-        print(f"❌ User A Socket.IO connection error: {data}")
-    
-    @sio_a.event
-    async def pong_test(data):
-        print(f"🏓 User A received pong_test: {data}")
-    
-    @sio_a.event
-    async def dm_new(data):
-        received_messages['user_a'].append(('dm:new', data))
-        print(f"🔔 User A received dm:new: {data.get('text', 'N/A')[:50]}...")
-    
-    @sio_a.event
-    async def group_new(data):
-        received_messages['user_a'].append(('group:new', data))
-        print(f"🔔 User A received group:new: {data.get('text', 'N/A')[:50]}...")
-    
-    @sio_b.event
-    async def connect():
-        connection_events['user_b']['connected'] = True
-        print(f"🔗 User B Socket.IO connected")
-    
-    @sio_b.event
-    async def connect_error(data):
-        connection_events['user_b']['error'] = data
-        print(f"❌ User B Socket.IO connection error: {data}")
-    
-    @sio_b.event
-    async def pong_test(data):
-        print(f"🏓 User B received pong_test: {data}")
-    
-    @sio_b.event
-    async def dm_new(data):
-        received_messages['user_b'].append(('dm:new', data))
-        print(f"🔔 User B received dm:new: {data.get('text', 'N/A')[:50]}...")
-    
-    @sio_b.event
-    async def group_new(data):
-        received_messages['user_b'].append(('group:new', data))
-        print(f"🔔 User B received group:new: {data.get('text', 'N/A')[:50]}...")
-    
-    try:
-        # Connect both users with JWT auth
-        print(f"🔌 Connecting User A to {socketio_url} with token {user_a.token[:20]}...")
-        await sio_a.connect(
-            socketio_url, 
-            socketio_path='api/socket.io',
-            auth={'token': user_a.token}
-        )
+    async def test_events_after_join(self) -> Dict[str, Any]:
+        """Step 6: GET /api/events with token shows is_joined true and participants_count incremented"""
+        print("\n📈 Step 6: Testing GET /api/events after joining...")
         
-        print(f"🔌 Connecting User B to {socketio_url} with token {user_b.token[:20]}...")
-        await sio_b.connect(
-            socketio_url, 
-            socketio_path='api/socket.io',
-            auth={'token': user_b.token}
-        )
+        headers = {"Authorization": f"Bearer {self.token}"}
+        response = await self.client.get(f"{self.base_url}/events", headers=headers)
         
-        # Wait for connections to stabilize
-        await asyncio.sleep(2)
+        if response.status_code != 200:
+            raise Exception(f"GET /api/events after join failed: {response.status_code} - {response.text}")
         
-        # Check connection status
-        if not connection_events['user_a']['connected']:
-            raise Exception(f"User A failed to connect: {connection_events['user_a']['error']}")
-        if not connection_events['user_b']['connected']:
-            raise Exception(f"User B failed to connect: {connection_events['user_b']['error']}")
+        data = response.json()
         
-        print(f"✅ Both users connected to Socket.IO")
+        # Find our event
+        our_event = None
+        for event in data:
+            if event["id"] == self.event_id:
+                our_event = event
+                break
         
-        # Test DM: verify dm:send produces dm:new to both
-        dm_test_message = f"Socket.IO DM test from {user_a.username} at {datetime.now().isoformat()}"
-        print(f"📤 Sending DM: {dm_test_message}")
-        print(f"📤 From user: {user_a.user_id}")
-        print(f"📤 To user: {user_b.user_id}")
+        if not our_event:
+            raise Exception(f"Event {self.event_id} not found after join")
         
-        # Add a simple ping test first to verify Socket.IO is working
-        print("🏓 Testing ping first...")
-        await sio_a.emit('ping_test', {'test': 'data'})
-        await asyncio.sleep(1)
+        # Verify is_joined is now true
+        if our_event["is_joined"] != True:
+            raise Exception(f"Expected is_joined=true after join, got {our_event['is_joined']}")
         
-        # Test if the user IDs are valid ObjectIds
-        print(f"🔍 Checking if user IDs are valid ObjectIds...")
+        # Verify participants_count is incremented
+        if our_event["participants_count"] != 1:
+            raise Exception(f"Expected participants_count=1 after join, got {our_event['participants_count']}")
+        
+        print(f"✅ After join: is_joined={our_event['is_joined']}, participants_count={our_event['participants_count']}")
+        
+        return data
+
+    async def test_leave_event(self) -> Dict[str, Any]:
+        """Step 7: POST /api/events/{id}/leave -> ok true"""
+        print(f"\n➖ Step 7: Testing POST /api/events/{self.event_id}/leave...")
+        
+        headers = {"Authorization": f"Bearer {self.token}"}
+        response = await self.client.post(f"{self.base_url}/events/{self.event_id}/leave", headers=headers)
+        
+        if response.status_code != 200:
+            raise Exception(f"Event leave failed: {response.status_code} - {response.text}")
+        
+        data = response.json()
+        
+        if data.get("ok") != True:
+            raise Exception(f"Expected ok=true, got {data}")
+        
+        print("✅ Successfully left event")
+        
+        return data
+
+    async def test_events_after_leave(self) -> Dict[str, Any]:
+        """Step 8: GET /api/events shows is_joined false and participants_count decremented"""
+        print("\n📉 Step 8: Testing GET /api/events after leaving...")
+        
+        headers = {"Authorization": f"Bearer {self.token}"}
+        response = await self.client.get(f"{self.base_url}/events", headers=headers)
+        
+        if response.status_code != 200:
+            raise Exception(f"GET /api/events after leave failed: {response.status_code} - {response.text}")
+        
+        data = response.json()
+        
+        # Find our event
+        our_event = None
+        for event in data:
+            if event["id"] == self.event_id:
+                our_event = event
+                break
+        
+        if not our_event:
+            raise Exception(f"Event {self.event_id} not found after leave")
+        
+        # Verify is_joined is now false
+        if our_event["is_joined"] != False:
+            raise Exception(f"Expected is_joined=false after leave, got {our_event['is_joined']}")
+        
+        # Verify participants_count is decremented
+        if our_event["participants_count"] != 0:
+            raise Exception(f"Expected participants_count=0 after leave, got {our_event['participants_count']}")
+        
+        print(f"✅ After leave: is_joined={our_event['is_joined']}, participants_count={our_event['participants_count']}")
+        
+        return data
+
+    async def test_routes_regression(self) -> None:
+        """Regression test: /api/routes still OK"""
+        print("\n🔄 Regression Test: Testing /api/routes still works...")
+        
+        response = await self.client.get(f"{self.base_url}/routes")
+        
+        if response.status_code != 200:
+            raise Exception(f"Routes regression test failed: {response.status_code} - {response.text}")
+        
+        data = response.json()
+        
+        if not isinstance(data, list):
+            raise Exception(f"Expected list response for routes, got {type(data)}")
+        
+        print(f"✅ Routes endpoint working correctly, returned {len(data)} routes")
+
+    async def run_all_tests(self) -> Dict[str, Any]:
+        """Run all tests in sequence"""
+        print("🚀 Starting Events Join/Leave Backend Testing...")
+        print("=" * 60)
+        
+        results = {}
+        
         try:
-            from bson import ObjectId
-            ObjectId(user_a.user_id)
-            ObjectId(user_b.user_id)
-            print(f"✅ User IDs are valid ObjectIds")
+            # Step 1: Register user and get token
+            results["register"] = await self.register_user()
+            
+            # Step 2: Create event (no auth required)
+            results["create_event"] = await self.create_event()
+            
+            # Step 3: Test events without auth (should return 401)
+            await self.test_events_without_auth()
+            results["events_no_auth"] = "401 as expected"
+            
+            # Step 4: Test events with auth (should return EventOut with participants_count and is_joined)
+            results["events_with_auth"] = await self.test_events_with_auth()
+            
+            # Step 5: Join event
+            results["join_event"] = await self.test_join_event()
+            
+            # Step 6: Verify join worked
+            results["events_after_join"] = await self.test_events_after_join()
+            
+            # Step 7: Leave event
+            results["leave_event"] = await self.test_leave_event()
+            
+            # Step 8: Verify leave worked
+            results["events_after_leave"] = await self.test_events_after_leave()
+            
+            # Regression: Test routes still work
+            await self.test_routes_regression()
+            results["routes_regression"] = "OK"
+            
+            print("\n" + "=" * 60)
+            print("🎉 ALL TESTS PASSED! Events Join/Leave functionality working correctly.")
+            
+            return results
+            
         except Exception as e:
-            print(f"❌ Invalid ObjectId: {e}")
-            raise Exception(f"Invalid user IDs: {e}")
-        
-        await sio_a.emit('dm:send', {
-            'to_user_id': user_b.user_id,
-            'text': dm_test_message
-        })
-        
-        # Wait for message propagation
-        await asyncio.sleep(5)  # Increased wait time
-        
-        print(f"📊 Messages received by User A: {len(received_messages['user_a'])}")
-        print(f"📊 Messages received by User B: {len(received_messages['user_b'])}")
-        
-        # Check if the message was stored in the database via REST API
-        print("🔍 Checking if message was stored in database...")
-        async with httpx.AsyncClient(timeout=30.0) as rest_client:
-            dm_history_resp = await rest_client.get(
-                f"{API_URL}/dm/{user_b.user_id}/messages",
-                headers=user_a.get_headers()
-            )
-            if dm_history_resp.status_code == 200:
-                dm_history = dm_history_resp.json()
-                socket_message_found = any(
-                    dm_test_message in msg.get('text', '') for msg in dm_history
-                )
-                if socket_message_found:
-                    print("✅ Socket.IO message was stored in database")
-                else:
-                    print("❌ Socket.IO message was NOT stored in database")
-                    print(f"Recent messages: {[msg.get('text', '')[:50] for msg in dm_history[-3:]]}")
-            else:
-                print(f"❌ Failed to check message history: {dm_history_resp.status_code}")
-        
-        # Check if both users received the DM
-        user_a_got_dm = any(
-            event == 'dm:new' and dm_test_message in data.get('text', '')
-            for event, data in received_messages['user_a']
-        )
-        user_b_got_dm = any(
-            event == 'dm:new' and dm_test_message in data.get('text', '')
-            for event, data in received_messages['user_b']
-        )
-        
-        if not user_a_got_dm:
-            print(f"⚠️  User A did not receive dm:new event, but message was stored in database")
-        if not user_b_got_dm:
-            print(f"⚠️  User B did not receive dm:new event, but message was stored in database")
-        
-        # If message was stored but events not received, it's a minor Socket.IO issue
-        if socket_message_found and (not user_a_got_dm or not user_b_got_dm):
-            print(f"⚠️  Socket.IO DM storage working, but realtime events have issues")
-        elif user_a_got_dm and user_b_got_dm:
-            print(f"✅ DM Socket.IO events working - both users received dm:new")
-        
-        # Test Group: verify group:join then group:send produces group:new to room
-        # First, join the group room
-        print(f"🏠 Joining group rooms for group {group_id}")
-        await sio_a.emit('group:join', {'group_id': group_id})
-        await sio_b.emit('group:join', {'group_id': group_id})
-        
-        # Wait for room joins
-        await asyncio.sleep(2)
-        
-        # Send group message
-        group_test_message = f"Socket.IO group test from {user_a.username} at {datetime.now().isoformat()}"
-        print(f"📤 Sending group message: {group_test_message}")
-        
-        await sio_a.emit('group:send', {
-            'group_id': group_id,
-            'text': group_test_message
-        })
-        
-        # Wait for message propagation
-        await asyncio.sleep(3)
-        
-        # Check if the group message was stored in the database
-        print("🔍 Checking if group message was stored in database...")
-        async with httpx.AsyncClient(timeout=30.0) as rest_client:
-            group_history_resp = await rest_client.get(
-                f"{API_URL}/groups/{group_id}/messages",
-                headers=user_b.get_headers()
-            )
-            if group_history_resp.status_code == 200:
-                group_history = group_history_resp.json()
-                socket_group_message_found = any(
-                    group_test_message in msg.get('text', '') for msg in group_history
-                )
-                if socket_group_message_found:
-                    print("✅ Socket.IO group message was stored in database")
-                else:
-                    print("❌ Socket.IO group message was NOT stored in database")
-            else:
-                print(f"❌ Failed to check group message history: {group_history_resp.status_code}")
-        
-        # Check if both users received the group message
-        user_a_got_group = any(
-            event == 'group:new' and group_test_message in data.get('text', '')
-            for event, data in received_messages['user_a']
-        )
-        user_b_got_group = any(
-            event == 'group:new' and group_test_message in data.get('text', '')
-            for event, data in received_messages['user_b']
-        )
-        
-        if not user_a_got_group:
-            print(f"⚠️  User A did not receive group:new event, but message was stored in database")
-        if not user_b_got_group:
-            print(f"⚠️  User B did not receive group:new event, but message was stored in database")
-        
-        # If message was stored but events not received, it's a minor Socket.IO issue
-        if socket_group_message_found and (not user_a_got_group or not user_b_got_group):
-            print(f"⚠️  Socket.IO group messaging storage working, but realtime events have issues")
-        elif user_a_got_group and user_b_got_group:
-            print(f"✅ Group Socket.IO events working - both users received group:new")
-        
-    finally:
-        # Clean up connections
-        if sio_a.connected:
-            await sio_a.disconnect()
-        if sio_b.connected:
-            await sio_b.disconnect()
-        print("🔌 Socket.IO connections closed")
+            print(f"\n❌ TEST FAILED: {str(e)}")
+            raise
 
 
 async def main():
-    """Run all tests in sequence"""
-    print("🚀 Starting Friends + Groups + Chat Backend Tests")
-    print("=" * 60)
+    """Main test runner"""
+    tester = BackendTester()
     
     try:
-        # Test friends flow and get users
-        user_a, user_b = await test_friends_flow()
-        
-        # Test groups flow and get group ID
-        group_id = await test_groups_flow(user_a, user_b)
-        
-        # Test REST chat history
-        await test_rest_chat_history(user_a, user_b, group_id)
-        
-        # Test Socket.IO realtime
-        await test_socketio_realtime(user_a, user_b, group_id)
-        
-        print("\n" + "=" * 60)
-        print("🎉 ALL TESTS PASSED! Friends + Groups + Chat functionality is working correctly.")
-        print("✅ User search, friend requests, acceptance, and friends list")
-        print("✅ Group creation, joining, and listing")
-        print("✅ REST DM and group message history")
-        print("✅ Socket.IO realtime DM and group messaging")
-        
+        results = await tester.run_all_tests()
         return True
-        
     except Exception as e:
-        print(f"\n❌ TEST FAILED: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        print(f"Testing failed: {e}")
         return False
+    finally:
+        await tester.close()
 
 
 if __name__ == "__main__":
