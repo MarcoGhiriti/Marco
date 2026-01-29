@@ -500,9 +500,9 @@ async def list_events(limit: int = Query(default=50, ge=1, le=200)):
 
 
 # Include router
-app.include_router(api_router)
+fastapi_app.include_router(api_router)
 
-app.add_middleware(
+fastapi_app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=["*"],
