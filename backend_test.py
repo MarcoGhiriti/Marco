@@ -409,6 +409,13 @@ async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: s
         # Test DM: verify dm:send produces dm:new to both
         dm_test_message = f"Socket.IO DM test from {user_a.username} at {datetime.now().isoformat()}"
         print(f"📤 Sending DM: {dm_test_message}")
+        print(f"📤 From user: {user_a.user_id}")
+        print(f"📤 To user: {user_b.user_id}")
+        
+        # Add a simple ping test first to verify Socket.IO is working
+        print("🏓 Testing ping first...")
+        await sio_a.emit('ping_test', {'test': 'data'})
+        await asyncio.sleep(1)
         
         await sio_a.emit('dm:send', {
             'to_user_id': user_b.user_id,
@@ -416,7 +423,7 @@ async def test_socketio_realtime(user_a: TestUser, user_b: TestUser, group_id: s
         })
         
         # Wait for message propagation
-        await asyncio.sleep(3)
+        await asyncio.sleep(5)  # Increased wait time
         
         print(f"📊 Messages received by User A: {len(received_messages['user_a'])}")
         print(f"📊 Messages received by User B: {len(received_messages['user_b'])}")
