@@ -163,6 +163,34 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     paddingHorizontal: 16,
   },
+  cardTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  joinBtn: {
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  joinBtnJoined: {
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  joinBtnText: {
+    color: Colors.bg,
+    fontSize: 12,
+    fontFamily: "Inter_900Black",
+  },
+  joinBtnTextJoined: {
+    color: Colors.text,
+  },
+
   header: {
     paddingTop: 12,
     paddingBottom: 8,
