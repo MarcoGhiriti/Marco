@@ -76,7 +76,7 @@ export function RouteCard({
       <View style={styles.footerRow}>
         <View style={styles.ctaPrimary}>
           <Ionicons name="checkmark-circle-outline" size={18} color={Colors.bg} />
-          <Text style={styles.ctaPrimaryText}>Participă</Text>
+          <Text style={styles.ctaPrimaryText}>Join</Text>
         </View>
 
         <View style={styles.ctaGhost}>
