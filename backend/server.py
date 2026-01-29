@@ -544,6 +544,323 @@ async def me(current_user: dict = Depends(get_current_user)):
     return UserPublic(**current_user)
 
 
+def _as_object_id(id_str: str) -> ObjectId:
+    try:
+        return ObjectId(id_str)
+    except Exception:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail="Invalid id")
+
+
+@api_router.get("/users/search", response_model=list[UserSearchOut])
+async def users_search(
+    username: str = Query(min_length=1, max_length=20),
+    current_user: dict = Depends(get_current_user),
+):
+    # prefix search, case-insensitive
+    q = {"username": {"$regex": f"^{username}", "$options": "i"}}
+    cursor = db.users.find(q, {"username": 1, "profile_photo_base64": 1}).limit(20)
+    docs = await cursor.to_list(length=20)
+
+    results: list[UserSearchOut] = []
+    for u in docs:
+        uid = oid_str(u.get("_id"))
+        if uid == current_user["id"]:
+            continue
+        results.append(
+            UserSearchOut(
+                id=uid,
+                username=u.get("username", ""),
+                profile_photo_base64=u.get("profile_photo_base64"),
+            )
+        )
+    return results
+
+
+@api_router.get("/friends", response_model=list[UserSearchOut])
+async def friends_list(current_user: dict = Depends(get_current_user)):
+    ids = current_user.get("friends") or []
+    if not ids:
+        return []
+
+    oids = [_as_object_id(i) for i in ids]
+    cursor = db.users.find({"_id": {"$in": oids}}, {"username": 1, "profile_photo_base64": 1})
+    docs = await cursor.to_list(length=200)
+
+    # preserve insertion order
+    by_id = {oid_str(d.get("_id")): d for d in docs}
+    out: list[UserSearchOut] = []
+    for fid in ids:
+        d = by_id.get(fid)
+        if d:
+            out.append(UserSearchOut(id=fid, username=d.get("username", ""), profile_photo_base64=d.get("profile_photo_base64")))
+    return out
+
+
+@api_router.get("/friends/requests", response_model=FriendRequestOut)
+async def friends_requests(current_user: dict = Depends(get_current_user)):
+    incoming_ids = current_user.get("friend_requests_in") or []
+    outgoing_ids = current_user.get("friend_requests_out") or []
+
+    async def _resolve(ids: list[str]) -> list[UserSearchOut]:
+        if not ids:
+            return []
+        oids = [_as_object_id(i) for i in ids]
+        cursor = db.users.find({"_id": {"$in": oids}}, {"username": 1, "profile_photo_base64": 1})
+        docs = await cursor.to_list(length=200)
+        by_id = {oid_str(d.get("_id")): d for d in docs}
+        out: list[UserSearchOut] = []
+        for uid in ids:
+            d = by_id.get(uid)
+            if d:
+                out.append(UserSearchOut(id=uid, username=d.get("username", ""), profile_photo_base64=d.get("profile_photo_base64")))
+        return out
+
+    incoming = await _resolve(incoming_ids)
+    outgoing = await _resolve(outgoing_ids)
+    return FriendRequestOut(incoming=incoming, outgoing=outgoing)
+
+
+@api_router.post("/friends/request")
+async def friends_request(payload: FriendRequestCreate, current_user: dict = Depends(get_current_user)):
+    to_username = payload.to_username.strip()
+    target = await db.users.find_one({"username": {"$regex": f"^{to_username}$", "$options": "i"}})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    from_id = current_user["id"]
+    to_id = oid_str(target.get("_id"))
+
+    if to_id == from_id:
+        raise HTTPException(status_code=400, detail="Cannot add yourself")
+
+    # already friends?
+    if from_id in (target.get("friends") or []):
+        return {"ok": True}
+
+    await db.users.update_one({"_id": _as_object_id(to_id)}, {"$addToSet": {"friend_requests_in": from_id}})
+    await db.users.update_one({"_id": _as_object_id(from_id)}, {"$addToSet": {"friend_requests_out": to_id}})
+    return {"ok": True}
+
+
+@api_router.post("/friends/accept")
+async def friends_accept(payload: FriendAccept, current_user: dict = Depends(get_current_user)):
+    from_id = payload.from_user_id
+    to_id = current_user["id"]
+
+    # must exist in incoming
+    if from_id not in (current_user.get("friend_requests_in") or []):
+        raise HTTPException(status_code=400, detail="No such request")
+
+    # add friendship both sides
+    await db.users.update_one(
+        {"_id": _as_object_id(to_id)},
+        {
+            "$addToSet": {"friends": from_id},
+            "$pull": {"friend_requests_in": from_id},
+        },
+    )
+    await db.users.update_one(
+        {"_id": _as_object_id(from_id)},
+        {
+            "$addToSet": {"friends": to_id},
+            "$pull": {"friend_requests_out": to_id},
+        },
+    )
+    return {"ok": True}
+
+
+@api_router.post("/groups", response_model=GroupOut)
+async def groups_create(payload: GroupCreate, current_user: dict = Depends(get_current_user)):
+    now = datetime.utcnow()
+    owner_id = current_user["id"]
+    doc = {
+        "name": payload.name.strip(),
+        "description": payload.description.strip(),
+        "is_private": payload.is_private,
+        "owner_id": owner_id,
+        "admins": [owner_id],
+        "members": [owner_id],
+        "created_at": now,
+    }
+    res = await db.groups.insert_one(doc)
+    return GroupOut(
+        id=oid_str(res.inserted_id),
+        name=doc["name"],
+        description=doc["description"],
+        is_private=doc["is_private"],
+        owner_id=doc["owner_id"],
+        admins=doc["admins"],
+        members_count=len(doc["members"]),
+        created_at=doc["created_at"],
+    )
+
+
+@api_router.get("/groups", response_model=list[GroupOut])
+async def groups_list(current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    cursor = db.groups.find({"members": uid}).sort("created_at", -1)
+    docs = await cursor.to_list(length=200)
+    out: list[GroupOut] = []
+    for g in docs:
+        out.append(
+            GroupOut(
+                id=oid_str(g.get("_id")),
+                name=g.get("name", ""),
+                description=g.get("description", ""),
+                is_private=bool(g.get("is_private", False)),
+                owner_id=g.get("owner_id", ""),
+                admins=g.get("admins") or [],
+                members_count=len(g.get("members") or []),
+                created_at=g.get("created_at") or datetime.utcnow(),
+            )
+        )
+    return out
+
+
+@api_router.post("/groups/{group_id}/join")
+async def groups_join(group_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    g = await db.groups.find_one({"_id": _as_object_id(group_id)})
+    if not g:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    await db.groups.update_one({"_id": _as_object_id(group_id)}, {"$addToSet": {"members": uid}})
+    return {"ok": True}
+
+
+@api_router.get("/dm/{other_user_id}/messages", response_model=list[MessageOut])
+async def dm_messages(other_user_id: str, limit: int = Query(default=50, ge=1, le=200), current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    thread_id = dm_thread_id(uid, other_user_id)
+    cursor = db.messages.find({"thread_id": thread_id}).sort("created_at", -1).limit(limit)
+    docs = await cursor.to_list(length=limit)
+    out: list[MessageOut] = []
+    for m in reversed(docs):
+        out.append(
+            MessageOut(
+                id=oid_str(m.get("_id")),
+                thread_id=m.get("thread_id"),
+                kind=m.get("kind"),
+                from_user_id=m.get("from_user_id"),
+                to_user_id=m.get("to_user_id"),
+                group_id=m.get("group_id"),
+                text=m.get("text", ""),
+                created_at=m.get("created_at") or datetime.utcnow(),
+            )
+        )
+    return out
+
+
+@api_router.post("/dm/{other_user_id}/messages", response_model=MessageOut)
+async def dm_send_rest(other_user_id: str, payload: MessageCreate, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    # Reuse socket logic via direct insert and emit
+    thread_id = dm_thread_id(uid, other_user_id)
+    now = datetime.utcnow()
+    doc = {
+        "kind": "dm",
+        "thread_id": thread_id,
+        "from_user_id": uid,
+        "to_user_id": other_user_id,
+        "group_id": None,
+        "text": payload.text.strip(),
+        "created_at": now,
+    }
+    res = await db.messages.insert_one(doc)
+    out = MessageOut(
+        id=oid_str(res.inserted_id),
+        thread_id=thread_id,
+        kind="dm",
+        from_user_id=uid,
+        to_user_id=other_user_id,
+        group_id=None,
+        text=doc["text"],
+        created_at=now,
+    )
+    await sio.emit(
+        "dm:new",
+        {
+            **out.model_dump(),
+            "created_at": now.isoformat(),
+        },
+        room=f"user:{uid}",
+    )
+    await sio.emit(
+        "dm:new",
+        {
+            **out.model_dump(),
+            "created_at": now.isoformat(),
+        },
+        room=f"user:{other_user_id}",
+    )
+    return out
+
+
+@api_router.get("/groups/{group_id}/messages", response_model=list[MessageOut])
+async def group_messages(group_id: str, limit: int = Query(default=50, ge=1, le=200), current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    if not await is_group_member(group_id, uid):
+        raise HTTPException(status_code=403, detail="Not a group member")
+
+    thread_id = f"group:{group_id}"
+    cursor = db.messages.find({"thread_id": thread_id}).sort("created_at", -1).limit(limit)
+    docs = await cursor.to_list(length=limit)
+    out: list[MessageOut] = []
+    for m in reversed(docs):
+        out.append(
+            MessageOut(
+                id=oid_str(m.get("_id")),
+                thread_id=m.get("thread_id"),
+                kind=m.get("kind"),
+                from_user_id=m.get("from_user_id"),
+                to_user_id=m.get("to_user_id"),
+                group_id=m.get("group_id"),
+                text=m.get("text", ""),
+                created_at=m.get("created_at") or datetime.utcnow(),
+            )
+        )
+    return out
+
+
+@api_router.post("/groups/{group_id}/messages", response_model=MessageOut)
+async def group_send_rest(group_id: str, payload: MessageCreate, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    if not await is_group_member(group_id, uid):
+        raise HTTPException(status_code=403, detail="Not a group member")
+
+    thread_id = f"group:{group_id}"
+    now = datetime.utcnow()
+    doc = {
+        "kind": "group",
+        "thread_id": thread_id,
+        "from_user_id": uid,
+        "to_user_id": None,
+        "group_id": group_id,
+        "text": payload.text.strip(),
+        "created_at": now,
+    }
+    res = await db.messages.insert_one(doc)
+    out = MessageOut(
+        id=oid_str(res.inserted_id),
+        thread_id=thread_id,
+        kind="group",
+        from_user_id=uid,
+        to_user_id=None,
+        group_id=group_id,
+        text=doc["text"],
+        created_at=now,
+    )
+    await sio.emit(
+        "group:new",
+        {
+            **out.model_dump(),
+            "created_at": now.isoformat(),
+        },
+        room=f"group:{group_id}",
+    )
+    return out
+
+
 @api_router.post("/routes", response_model=RouteOut)
 async def create_route(payload: RouteCreate):
     if payload.participants_min > payload.participants_max:
