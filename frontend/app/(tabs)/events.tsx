@@ -47,7 +47,7 @@ export default function EventsScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.h1}>Events</Text>
-          <Text style={styles.sub}>Moto events (MVP)</Text>
+          <Text style={styles.sub}>Moto events</Text>
         </View>
 
         <ScrollView
