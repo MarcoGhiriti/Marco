@@ -94,6 +94,125 @@ async def ping_test(sid, data):  # type: ignore[no-untyped-def]
     await sio.emit("pong_test", {"ok": True, "echo": data}, to=sid)
 
 
+def dm_thread_id(a: str, b: str) -> str:
+    x, y = sorted([a, b])
+    return f"dm:{x}:{y}"
+
+
+async def is_group_member(group_id: str, user_id: str) -> bool:
+    g = await db.groups.find_one({"_id": ObjectId(group_id)})
+    if not g:
+        return False
+    members = g.get("members") or []
+    return user_id in members
+
+
+@sio.on("dm:send")
+async def dm_send(sid, data):  # type: ignore[no-untyped-def]
+    from_user_id = sid_to_user.get(sid)
+    if not from_user_id:
+        return
+
+    if not isinstance(data, dict):
+        return
+
+    to_user_id = data.get("to_user_id")
+    text = data.get("text")
+    if not isinstance(to_user_id, str) or not isinstance(text, str) or not text.strip():
+        return
+
+    # basic friend-only constraint can be added later; currently allow if user exists
+    to_user = await db.users.find_one({"_id": ObjectId(to_user_id)})
+    if not to_user:
+        return
+
+    thread_id = dm_thread_id(from_user_id, to_user_id)
+    now = datetime.utcnow()
+    doc = {
+        "kind": "dm",
+        "thread_id": thread_id,
+        "from_user_id": from_user_id,
+        "to_user_id": to_user_id,
+        "group_id": None,
+        "text": text.strip(),
+        "created_at": now,
+    }
+    res = await db.messages.insert_one(doc)
+
+    payload = {
+        "id": oid_str(res.inserted_id),
+        "thread_id": thread_id,
+        "kind": "dm",
+        "from_user_id": from_user_id,
+        "to_user_id": to_user_id,
+        "group_id": None,
+        "text": doc["text"],
+        "created_at": now.isoformat(),
+    }
+
+    await sio.emit("dm:new", payload, room=f"user:{from_user_id}")
+    await sio.emit("dm:new", payload, room=f"user:{to_user_id}")
+
+
+@sio.on("group:join")
+async def group_join(sid, data):  # type: ignore[no-untyped-def]
+    user_id = sid_to_user.get(sid)
+    if not user_id or not isinstance(data, dict):
+        return
+
+    group_id = data.get("group_id")
+    if not isinstance(group_id, str):
+        return
+
+    if not await is_group_member(group_id, user_id):
+        return
+
+    await sio.enter_room(sid, f"group:{group_id}")
+    await sio.emit("group:joined", {"group_id": group_id}, to=sid)
+
+
+@sio.on("group:send")
+async def group_send(sid, data):  # type: ignore[no-untyped-def]
+    from_user_id = sid_to_user.get(sid)
+    if not from_user_id or not isinstance(data, dict):
+        return
+
+    group_id = data.get("group_id")
+    text = data.get("text")
+    if not isinstance(group_id, str) or not isinstance(text, str) or not text.strip():
+        return
+
+    if not await is_group_member(group_id, from_user_id):
+        return
+
+    now = datetime.utcnow()
+    thread_id = f"group:{group_id}"
+    doc = {
+        "kind": "group",
+        "thread_id": thread_id,
+        "from_user_id": from_user_id,
+        "to_user_id": None,
+        "group_id": group_id,
+        "text": text.strip(),
+        "created_at": now,
+    }
+
+    res = await db.messages.insert_one(doc)
+
+    payload = {
+        "id": oid_str(res.inserted_id),
+        "thread_id": thread_id,
+        "kind": "group",
+        "from_user_id": from_user_id,
+        "to_user_id": None,
+        "group_id": group_id,
+        "text": doc["text"],
+        "created_at": now.isoformat(),
+    }
+
+    await sio.emit("group:new", payload, room=f"group:{group_id}")
+
+
 async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
     if creds is None or not creds.credentials:
         raise HTTPException(status_code=401, detail="Missing bearer token")
