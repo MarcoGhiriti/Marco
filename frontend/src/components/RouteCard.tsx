@@ -56,8 +56,12 @@ export function RouteCard({
         </View>
       </View>
 
+      <View style={styles.mapWrap}>
+        <RouteMiniMap polyline={item.polyline} />
+      </View>
+
       <Text style={styles.desc} numberOfLines={2}>
-        {item.description || "Traseu moto"}
+        {item.description || "Motorcycle route"}
       </Text>
 
       <View style={styles.metaRow}>
