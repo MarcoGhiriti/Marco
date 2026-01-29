@@ -168,6 +168,46 @@ class CostEstimate(BaseModel):
     currency: str
 
 
+class AuthRegister(BaseModel):
+    email: str
+    username: str = Field(min_length=3, max_length=20)
+    password: str = Field(min_length=8, max_length=128)
+
+
+class AuthLogin(BaseModel):
+    email: str
+    password: str
+
+
+class AuthToken(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class BikeInfo(BaseModel):
+    model: Optional[str] = None
+    cc: Optional[int] = Field(default=None, ge=50, le=3000)
+
+
+class PrivacySettings(BaseModel):
+    location_visible: bool = False
+    routes_visible: Literal["public", "friends", "private"] = "public"
+
+
+class UserPublic(BaseModel):
+    id: str
+    email: str
+    username: str
+    profile_photo_base64: Optional[str] = None
+    bio: str = ""
+    bike: Optional[BikeInfo] = None
+    privacy: PrivacySettings
+    level: int = 1
+    km_total: float = 0
+    km_month: float = 0
+    created_at: datetime
+
+
 class RouteCreate(BaseModel):
     title: str = Field(min_length=2, max_length=80)
     description: str = Field(default="", max_length=800)
