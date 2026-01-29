@@ -434,6 +434,10 @@ class RouteOut(BaseModel):
     stops_count: int
     cost_estimate: CostEstimate
 
+    participants_count: int = 0
+    is_joined: bool = False
+
+
     rules: str
     difficulty: Difficulty
     participants_min: int
