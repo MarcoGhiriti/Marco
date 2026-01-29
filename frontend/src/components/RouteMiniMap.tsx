@@ -132,6 +132,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: "hidden",
     backgroundColor: Colors.card2,
+    ...softShadow(10, "#000", 0.55),
   },
   overlayBorder: {
     ...StyleSheet.absoluteFillObject,
