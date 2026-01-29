@@ -133,6 +133,18 @@
 ##         agent: "testing"
 ##         comment: "Comprehensive JWT authentication testing completed successfully. All 5 auth endpoints tested and working: 1) POST /api/auth/register with new random email+username returns 200 and token ✅ 2) POST /api/auth/register with same email returns 409 ✅ 3) POST /api/auth/login with correct password returns token ✅ 4) GET /api/me without token returns 401 ✅ 5) GET /api/me with Bearer token returns UserPublic fields (no password_hash exposed) ✅. Security verified: password_hash not exposed in /api/me response. Regression testing: all existing endpoints (/api/routes, /api/events) still working correctly. JWT authentication system fully functional."
 
+##   - task: "Realtime (Socket.IO) server handshake w/ JWT + ping_test"
+##     implemented: true
+##     working: "NA"
+##     file: "backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Wrapped FastAPI with socketio.ASGIApp. Added Socket.IO connect auth using JWT token (auth.token). Implemented ping_test -> pong_test for connectivity verification."
+
 ## frontend:
 ##   - task: "Expo Router app shell with tab navigation + Home fetch routes"
 ##     implemented: true
