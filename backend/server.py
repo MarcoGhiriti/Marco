@@ -36,9 +36,16 @@ db = client[db_name]
 
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
 
-app = FastAPI()
+fastapi_app = FastAPI()
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer(auto_error=False)
+
+sio = socketio.AsyncServer(
+    async_mode="asgi",
+    cors_allowed_origins="*",
+    ping_interval=20,
+    ping_timeout=20,
+)
 
 
 async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
