@@ -1,11 +1,51 @@
-diff --git a/backend/.env b/backend/.env
-index 0f4322c..ef24a73 100644
---- a/backend/.env
-+++ b/backend/.env
-@@ -1,2 +1,3 @@
- MONGO_URL="mongodb://localhost:27017"
--DB_NAME="test_database"
+diff --git a/model.patch b/model.patch
+index 2690b13..e69de29 100644
+--- a/model.patch
++++ b/model.patch
+@@ -1,11 +0,0 @@
+-diff --git a/backend/.env b/backend/.env
+-index 0f4322c..ef24a73 100644
+---- a/backend/.env
+-+++ b/backend/.env
+-@@ -1,2 +1,3 @@
+- MONGO_URL="mongodb://localhost:27017"
+--DB_NAME="test_database"
+-\ No newline at end of file
+-+DB_NAME="test_database"
+-+GOOGLE_MAPS_API_KEY="AIzaSyAEnNpkdZMBEsaZwd7TwrxdMU67xhZ-oIw"
+-\ No newline at end of file
+diff --git a/test_result.md b/test_result.md
+index f84dea4..378da13 100644
+--- a/test_result.md
++++ b/test_result.md
+@@ -106,15 +106,18 @@
+ ## backend:
+ ##   - task: "Routes & Events API (CRUD: create/list) with automatic distance/duration/cost + optional Google Directions"
+ ##     implemented: true
+-##     working: "NA"
++##     working: true
+ ##     file: "backend/server.py"
+ ##     stuck_count: 0
+ ##     priority: "high"
+-##     needs_retesting: true
++##     needs_retesting: false
+ ##     status_history:
+ ##       - working: "NA"
+ ##         agent: "main"
+ ##         comment: "Implemented /api/routes (POST+GET) and /api/events (POST+GET), /api/health. Distance via haversine over polyline, duration heuristic by difficulty, cost estimate fuel+tolls. Added optional compute via Google Directions when use_google_directions=true. Added GOOGLE_MAPS_API_KEY to backend/.env."
++##       - working: true
++##         agent: "testing"
++##         comment: "Comprehensive backend testing completed successfully. All 7 API endpoints tested and working: GET /api/health (returns ok:true, db:up), GET /api/ (root endpoint), POST /api/routes (creates routes with computed distance_km/duration_min/cost_estimate), validation (participants_min>max returns 400), GET /api/routes (returns route list), POST /api/events (creates events with EventOut schema), GET /api/events (returns event list). Distance calculation working (27.65km for test route), cost estimation working (fuel+tolls), validation working correctly. Backend API fully functional at https://riderzone-1.preview.emergentagent.com/api"
+ ## frontend:
+ ##   - task: "Expo Router app shell with tab navigation + Home fetch routes"
+ ##     implemented: true
+@@ -140,4 +143,6 @@
+ ##   test_priority: "high_first"
+ ## agent_communication:
+ ##   - agent: "main"
+-##     message: "Please test backend endpoints: GET /api/health, POST+GET /api/routes, POST+GET /api/events. Verify validation (participants_min<=max). Ensure JSON outputs match schemas."
 \ No newline at end of file
-+DB_NAME="test_database"
-+GOOGLE_MAPS_API_KEY="AIzaSyAEnNpkdZMBEsaZwd7TwrxdMU67xhZ-oIw"
++##     message: "Please test backend endpoints: GET /api/health, POST+GET /api/routes, POST+GET /api/events. Verify validation (participants_min<=max). Ensure JSON outputs match schemas."
++##   - agent: "testing"
++##     message: "Backend testing completed successfully! All 7 API endpoints are working perfectly: health check, root endpoint, routes CRUD with validation, events CRUD. Distance calculation (27.65km), duration estimation (37min), cost calculation (fuel+tolls), and validation (400 error for invalid participants) all functioning correctly. Backend API is fully operational at https://riderzone-1.preview.emergentagent.com/api. Ready for frontend integration or production use."
 \ No newline at end of file
