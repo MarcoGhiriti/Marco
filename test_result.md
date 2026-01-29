@@ -150,15 +150,18 @@
 
 ##   - task: "Events Join/Leave + UI Join button"
 ##     implemented: true
-##     working: "NA"
+##     working: true
 ##     file: "backend/server.py, frontend/app/(tabs)/events.tsx"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
 ##         comment: "Added event participants support: EventOut now includes participants_count and is_joined. New endpoints POST /api/events/{id}/join and /leave. Events list now requires auth and returns per-user is_joined. Frontend Events screen now uses auth header and has Join/Joined button + going count."
+##       - working: true
+##         agent: "testing"
+##         comment: "Events Join/Leave backend testing completed successfully! All 8 test scenarios from review request passed: 1) User registration and JWT token acquisition ✅ 2) Event creation via POST /api/events (no auth required) ✅ 3) GET /api/events without token returns 401 as expected ✅ 4) GET /api/events with token returns EventOut with participants_count and is_joined fields ✅ 5) POST /api/events/{id}/join with token returns ok:true ✅ 6) GET /api/events after join shows is_joined=true and participants_count=1 ✅ 7) POST /api/events/{id}/leave with token returns ok:true ✅ 8) GET /api/events after leave shows is_joined=false and participants_count=0 ✅. Regression test: /api/routes endpoint still working correctly (returned 8 routes). Backend Events Join/Leave functionality fully operational."
 ##   - task: "Friends + Groups + Chat (REST history + Socket.IO realtime)"
 ##     implemented: true
 ##     working: true
