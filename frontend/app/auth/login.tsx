@@ -77,7 +77,7 @@ export default function LoginScreen() {
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <AnimatedPressable
+            <Pressable
               onPress={onSubmit}
               disabled={disabled}
               style={[
