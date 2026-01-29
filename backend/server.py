@@ -978,11 +978,16 @@ async def create_event(payload: EventCreate):
 
 
 @api_router.get("/events", response_model=list[EventOut])
-async def list_events(limit: int = Query(default=50, ge=1, le=200)):
+async def list_events(
+    limit: int = Query(default=50, ge=1, le=200),
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
     cursor = db.events.find().sort("created_at", -1).limit(limit)
     events = await cursor.to_list(length=limit)
     result: list[EventOut] = []
     for e in events:
+        participants = e.get("participants") or []
         result.append(
             EventOut(
                 id=_oid_str(e.get("_id")),
@@ -992,6 +997,8 @@ async def list_events(limit: int = Query(default=50, ge=1, le=200)):
                 start_time=e.get("start_time") or datetime.utcnow(),
                 poster_base64=e.get("poster_base64"),
                 associated_route_id=e.get("associated_route_id"),
+                participants_count=len(participants),
+                is_joined=uid in participants,
                 created_at=e.get("created_at") or datetime.utcnow(),
             )
         )
