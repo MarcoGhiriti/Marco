@@ -10,7 +10,7 @@ const dictionaries = {
 export function t<K extends keyof Dictionary>(key: K): Dictionary[K];
 export function t(key: string): any {
   // Force English (as requested). We keep Localization import for future expansion.
-  const _locale = Localization.getLocales?.()?.[0]?.languageCode;
+  // const locale = Localization.getLocales?.()?.[0]?.languageCode;
   const dict = dictionaries.en;
   return (dict as any)[key];
 }
