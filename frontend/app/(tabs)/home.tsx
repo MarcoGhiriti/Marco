@@ -89,7 +89,7 @@ export default function HomeScreen() {
           ) : routes.length === 0 ? (
             <View style={styles.center}>
               <Ionicons name="trail-sign-outline" size={22} color={Colors.muted} />
-              <Text style={styles.centerText}>No routes yet. Create one via API.</Text>
+              <Text style={styles.centerText}>No routes yet.</Text>
             </View>
           ) : (
             routes.map((r) => <RouteCard key={r.id} item={r} />)
