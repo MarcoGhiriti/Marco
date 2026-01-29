@@ -33,7 +33,7 @@ class BackendTester:
     def generate_random_username(self) -> str:
         """Generate a random username for testing"""
         random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-        return f"user_{random_str}"
+        return f"user{random_str}"
 
     async def register_user(self) -> Dict[str, Any]:
         """Step 1: Register a random user and get token"""
