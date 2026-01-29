@@ -121,6 +121,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     borderRadius: 18,
     padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
   },
   label: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
   input: {
