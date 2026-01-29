@@ -304,8 +304,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, gap: 4 },
-  h1: { color: Colors.text, fontSize: 22, fontWeight: "900" },
-  sub: { color: Colors.muted, fontSize: 13, fontWeight: "600" },
+  h1: { color: Colors.text, fontSize: 22, fontFamily: "Inter_900Black" },
+  sub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
   inner: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
   searchRow: { flexDirection: "row", gap: 10, alignItems: "center" },
   searchBox: {
