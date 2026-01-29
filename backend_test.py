@@ -536,6 +536,221 @@ def test_list_events():
         print(f"❌ Events list error: {e}")
         return False
 
+
+async def test_socketio_handshake():
+    """Test Socket.IO handshake endpoint with EIO=4"""
+    print("\n🔍 Testing Socket.IO handshake endpoint...")
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Test Socket.IO handshake with EIO=4
+            response = await client.get(f"{BACKEND_URL}/socket.io/?EIO=4&transport=polling")
+            print(f"Status Code: {response.status_code}")
+            
+            if response.status_code == 200:
+                content = response.text
+                print(f"Response content (first 100 chars): {content[:100]}")
+                
+                # Socket.IO handshake typically starts with "0{" containing session info
+                if content.startswith("0{"):
+                    try:
+                        # Parse the handshake data
+                        handshake_data = json.loads(content[1:])  # Remove the "0" prefix
+                        print(f"Handshake data keys: {list(handshake_data.keys())}")
+                        
+                        # Check for required handshake fields
+                        if "sid" in handshake_data:
+                            print(f"✅ Socket.IO handshake successful - Session ID: {handshake_data['sid'][:10]}...")
+                            return True
+                        else:
+                            print("❌ Invalid handshake - missing session ID")
+                            return False
+                    except json.JSONDecodeError:
+                        print("❌ Invalid handshake - not valid JSON")
+                        return False
+                else:
+                    print(f"❌ Invalid handshake format - expected to start with '0{{', got: {content[:20]}")
+                    return False
+            else:
+                print(f"❌ Handshake failed with status {response.status_code}")
+                print(f"Response: {response.text}")
+                return False
+                
+    except Exception as e:
+        print(f"❌ Socket.IO handshake error: {e}")
+        return False
+
+
+async def test_socketio_connection_with_jwt(auth_token: str):
+    """Test Socket.IO connection with JWT authentication and ping_test"""
+    print("\n🔍 Testing Socket.IO JWT connection and ping_test...")
+    
+    if not auth_token:
+        print("❌ No auth token available for Socket.IO test")
+        return False
+    
+    try:
+        # Create Socket.IO client
+        sio = socketio.AsyncClient(logger=False, engineio_logger=False)
+        
+        # Track connection and ping test results
+        connection_success = False
+        ping_test_success = False
+        connection_error = None
+        
+        @sio.event
+        async def connect():
+            nonlocal connection_success
+            connection_success = True
+            print("✅ Socket.IO connected successfully with JWT")
+            
+        @sio.event
+        async def connect_error(data):
+            nonlocal connection_error
+            connection_error = data
+            print(f"❌ Socket.IO connection error: {data}")
+            
+        @sio.event
+        async def pong_test(data):
+            nonlocal ping_test_success
+            print(f"📨 Received pong_test: {data}")
+            if isinstance(data, dict) and data.get("ok") is True:
+                ping_test_success = True
+                print("✅ ping_test -> pong_test successful")
+            else:
+                print(f"❌ Invalid pong_test response: {data}")
+        
+        try:
+            # Connect with JWT token in auth parameter
+            print(f"🔌 Connecting to {BACKEND_URL} with JWT token...")
+            await sio.connect(
+                BACKEND_URL,
+                auth={"token": auth_token},
+                transports=['websocket', 'polling'],
+                wait_timeout=10
+            )
+            
+            # Wait for connection to establish
+            await asyncio.sleep(2)
+            
+            if connection_success:
+                print("✅ Socket.IO JWT authentication successful")
+                
+                # Test ping_test -> pong_test
+                print("📤 Sending ping_test...")
+                await sio.emit("ping_test", {"message": "test_ping", "timestamp": datetime.utcnow().isoformat()})
+                
+                # Wait for pong response
+                await asyncio.sleep(3)
+                
+                if ping_test_success:
+                    print("✅ Socket.IO ping_test -> pong_test working correctly")
+                    return True
+                else:
+                    print("❌ Socket.IO ping_test failed - no pong_test response")
+                    return False
+            else:
+                print(f"❌ Socket.IO connection failed - Error: {connection_error}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Socket.IO connection exception: {str(e)}")
+            return False
+            
+        finally:
+            try:
+                if sio.connected:
+                    await sio.disconnect()
+                    print("🔌 Socket.IO disconnected")
+            except:
+                pass
+                
+    except Exception as e:
+        print(f"❌ Socket.IO test setup error: {e}")
+        return False
+
+
+async def test_realtime_health():
+    """Test /api/realtime/health endpoint"""
+    print("\n🔍 Testing GET /api/realtime/health...")
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(f"{BASE_URL}/realtime/health")
+            print(f"Status Code: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"Response: {data}")
+                
+                if data.get("ok") is True:
+                    print("✅ Realtime health endpoint working correctly")
+                    return True
+                else:
+                    print(f"❌ Invalid realtime health response: {data}")
+                    return False
+            else:
+                print(f"❌ Realtime health failed with status {response.status_code}")
+                print(f"Response: {response.text}")
+                return False
+                
+    except Exception as e:
+        print(f"❌ Realtime health error: {e}")
+        return False
+
+
+async def run_socketio_tests():
+    """Run all Socket.IO related tests"""
+    print("\n" + "🔌 SOCKET.IO INTEGRATION TESTS" + "\n" + "=" * 50)
+    
+    results = {}
+    
+    # Test 1: Socket.IO handshake endpoint
+    results["socketio_handshake"] = await test_socketio_handshake()
+    
+    # Test 2: Realtime health endpoint
+    results["realtime_health"] = await test_realtime_health()
+    
+    # Test 3: Get auth token for Socket.IO connection test
+    print("\n🔐 Getting auth token for Socket.IO connection test...")
+    email, username = generate_random_credentials()
+    
+    # Register or login to get token
+    register_payload = {
+        "email": email,
+        "username": username,
+        "password": "SocketIOTest123!"
+    }
+    
+    auth_token = None
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Try to register
+            response = await client.post(f"{BASE_URL}/auth/register", json=register_payload)
+            if response.status_code == 200:
+                data = response.json()
+                auth_token = data.get("access_token")
+                print(f"✅ Got auth token for Socket.IO test: {auth_token[:20]}...")
+            elif response.status_code == 409:
+                # User exists, try login
+                login_payload = {"email": email, "password": "SocketIOTest123!"}
+                response = await client.post(f"{BASE_URL}/auth/login", json=login_payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    auth_token = data.get("access_token")
+                    print(f"✅ Got auth token via login: {auth_token[:20]}...")
+    except Exception as e:
+        print(f"❌ Failed to get auth token: {e}")
+    
+    # Test 4: Socket.IO connection with JWT and ping test
+    if auth_token:
+        results["socketio_jwt_connection"] = await test_socketio_connection_with_jwt(auth_token)
+    else:
+        results["socketio_jwt_connection"] = False
+        print("❌ Skipping Socket.IO JWT test - no auth token")
+    
+    return results
+
 def main():
     """Run all backend tests including JWT authentication"""
     print("🚀 Starting Moto GO Backend API Tests")
