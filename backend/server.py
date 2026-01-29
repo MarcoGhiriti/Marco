@@ -20,6 +20,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
+# Re-read env after loading .env
 
 logger = logging.getLogger("moto-go")
 logging.basicConfig(
