@@ -959,6 +959,7 @@ async def create_event(payload: EventCreate):
         "start_time": payload.start_time,
         "poster_base64": payload.poster_base64,
         "associated_route_id": payload.associated_route_id,
+        "participants": [],
         "created_at": now,
     }
 
