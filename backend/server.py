@@ -516,8 +516,8 @@ async def shutdown_db_client():
     client.close()
 
 
-@fastapi_app.get("/socket.io/health")
-async def socket_health():
+@fastapi_app.get("/api/realtime/health")
+async def realtime_health():
     return {"ok": True}
 
 
