@@ -738,6 +738,25 @@ async def dm_messages(other_user_id: str, limit: int = Query(default=50, ge=1, l
     cursor = db.messages.find({"thread_id": thread_id}).sort("created_at", -1).limit(limit)
     docs = await cursor.to_list(length=limit)
     out: list[MessageOut] = []
+
+
+@api_router.post("/events/{event_id}/join")
+async def event_join(event_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    res = await db.events.update_one({"_id": _as_object_id(event_id)}, {"$addToSet": {"participants": uid}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return {"ok": True}
+
+
+@api_router.post("/events/{event_id}/leave")
+async def event_leave(event_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    res = await db.events.update_one({"_id": _as_object_id(event_id)}, {"$pull": {"participants": uid}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return {"ok": True}
+
     for m in reversed(docs):
         out.append(
             MessageOut(
