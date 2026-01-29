@@ -17,7 +17,7 @@ BASE_URL = "https://riderzone-1.preview.emergentagent.com/api"
 def generate_random_credentials() -> Tuple[str, str]:
     """Generate random email and username to avoid collisions"""
     random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-    email = f"testuser_{random_suffix}@motogo.test"
+    email = f"testuser_{random_suffix}@example.com"
     username = f"rider_{random_suffix}"
     return email, username
 
