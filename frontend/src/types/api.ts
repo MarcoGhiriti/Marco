@@ -19,6 +19,8 @@ export type RouteOut = {
   difficulty: Difficulty;
   participants_min: number;
   participants_max: number;
+  participants_count: number;
+  is_joined: boolean;
   created_at: string;
 };
 

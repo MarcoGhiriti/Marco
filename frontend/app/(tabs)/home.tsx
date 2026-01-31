@@ -10,11 +10,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../src/theme/colors";
-import { apiGet } from "../../src/lib/api";
+import { apiGet, apiPost } from "../../src/lib/api";
+import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut } from "../../src/types/api";
 import { RouteCard } from "../../src/components/RouteCard";
 
 export default function HomeScreen() {
+  const { accessToken } = useAuthStore();
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
