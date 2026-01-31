@@ -330,6 +330,49 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
         </Pressable>
 
+        {/* LICENSE VERIFICATION */}
+        <Pressable onPress={() => setShowLicenseModal(true)} style={styles.licenseCard}>
+          <View style={styles.licenseIconBox}>
+            <Ionicons 
+              name={licenseStatus?.license_verified ? "checkmark-shield" : "card"} 
+              size={24} 
+              color={licenseStatus?.license_verified ? Colors.success : Colors.accent} 
+            />
+          </View>
+          <View style={styles.licenseInfo}>
+            <Text style={styles.licenseTitle}>
+              {licenseStatus?.license_verified 
+                ? `License Verified (${licenseStatus.license_type})` 
+                : licenseStatus?.license_type 
+                  ? "Verification Pending"
+                  : "Verify Your License"}
+            </Text>
+            <Text style={styles.licenseSub}>
+              {licenseStatus?.license_verified 
+                ? "Your km tracking is enabled"
+                : licenseStatus?.license_type 
+                  ? "Under review - usually takes 24h"
+                  : "Required for ranking & km tracking"}
+            </Text>
+          </View>
+          <View style={[
+            styles.licenseStatus,
+            licenseStatus?.license_verified && styles.licenseStatusVerified,
+            licenseStatus?.license_type && !licenseStatus?.license_verified && styles.licenseStatusPending,
+          ]}>
+            <Text style={[
+              styles.licenseStatusText,
+              licenseStatus?.license_verified && styles.licenseStatusTextVerified,
+            ]}>
+              {licenseStatus?.license_verified 
+                ? "✓" 
+                : licenseStatus?.license_type 
+                  ? "⏳"
+                  : "→"}
+            </Text>
+          </View>
+        </Pressable>
+
         {/* MY ROUTES */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
