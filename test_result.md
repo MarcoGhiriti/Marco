@@ -238,15 +238,18 @@
 ##         comment: "✅ COMPREHENSIVE PROFILE UI TESTING COMPLETE! All 10 test scenarios from review request passed successfully on mobile viewport (390x844): 1) Login with existing user (user1@example.com) works ✅ 2) Profile tab navigation successful ✅ 3) Profile header shows username (user1), motorcycle info (Motorcycle not set), country (Country not set), edit icon present ✅ 4) Stats cards display correctly: Total Distance (0), Monthly Distance (0), Completed Routes (0), Events Joined (1) ✅ 5) Premium section shows 'COMING SOON' badge and Subscribe button ✅ 6) Edit Profile navigation to /profile/edit works ✅ 7) Edit form has all fields (Bio, Model, CC, Country) and save functionality ✅ 8) Legal screens navigation works: Terms & Conditions, Privacy Policy, About MotoGO, Credits & Investors all open with content ✅ 9) All legal screens show proper text content without external links ✅ 10) Logout functionality returns to /auth/login ✅. Minor: Edit icon selector issue and subscribe button disable state detection, but core functionality perfect. Profile UI fully functional on mobile."
 ##   - task: "Stories Feature (24h expiring stories with photo/video)"
 ##     implemented: true
-##     working: "NA"
+##     working: true
 ##     file: "backend/server.py, frontend/app/(tabs)/home.tsx, frontend/src/components/StoriesBar.tsx, frontend/src/components/StoryViewer.tsx, frontend/app/story/create.tsx"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
 ##         comment: "Implemented Stories feature: Backend endpoints POST /api/stories (create), GET /api/stories (list grouped by owner), DELETE /api/stories/{id}. TTL index on MongoDB for automatic 24h expiration. Frontend components: StoriesBar (circles at top of Home), StoryViewer (fullscreen modal with progress bars), CreateStory screen with camera/gallery picker. Supports both images and videos (up to 30s). Backend tested manually with curl - all endpoints working."
+##       - working: true
+##         agent: "testing"
+##         comment: "✅ STORIES FEATURE BACKEND TESTING COMPLETE! All 6 test scenarios from review request passed with 100% success rate: 1) Authentication with user1@example.com/Password123 ✅ 2) POST /api/stories creates story with all required fields (id, owner_id, owner_username, media_base64, media_type, caption, created_at, expires_at) ✅ 3) GET /api/stories returns proper StoryOwner array structure with user_id, username, profile_photo, stories[] ✅ 4) Second story creation verified - owner now has multiple stories ✅ 5) DELETE /api/stories/{id} returns {ok: true} and removes story from list ✅ 6) DELETE with invalid ID correctly returns 404 ✅ 7) Regression check: all existing endpoints (/routes, /events, /me) still working ✅ 8) TTL index verified on MongoDB stories collection for 24h auto-expiration ✅. Stories backend API fully functional and production-ready."
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
