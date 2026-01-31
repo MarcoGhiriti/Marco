@@ -7,13 +7,14 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
-import type { RouteOut, StoryOwner } from "../../src/types/api";
+import type { RouteOut, StoryOwner, RideSessionOut } from "../../src/types/api";
 import { RouteCard } from "../../src/components/RouteCard";
 import { StoriesBar } from "../../src/components/StoriesBar";
 import { StoryViewer } from "../../src/components/StoryViewer";
@@ -24,6 +25,7 @@ export default function HomeScreen() {
   
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [stories, setStories] = useState<StoryOwner[]>([]);
+  const [activeRide, setActiveRide] = useState<RideSessionOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +59,16 @@ export default function HomeScreen() {
     }
   }, [authHeader]);
 
+  const loadActiveRide = useCallback(async () => {
+    if (!authHeader) return;
+    try {
+      const data = await apiGet<RideSessionOut | null>("/api/rides/active", authHeader);
+      setActiveRide(data);
+    } catch (e) {
+      console.error("Failed to load active ride:", e);
+    }
+  }, [authHeader]);
+
   const load = useCallback(async () => {
     if (!authHeader) {
       setLoading(false);
@@ -64,7 +76,7 @@ export default function HomeScreen() {
     }
     setError(null);
     try {
-      await Promise.all([loadRoutes(), loadStories()]);
+      await Promise.all([loadRoutes(), loadStories(), loadActiveRide()]);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       setError(msg);
@@ -72,7 +84,7 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [authHeader, loadRoutes, loadStories]);
+  }, [authHeader, loadRoutes, loadStories, loadActiveRide]);
 
   useEffect(() => {
     load();
@@ -96,15 +108,54 @@ export default function HomeScreen() {
     if (!authHeader) return;
     try {
       await apiDelete(`/api/stories/${storyId}`, authHeader);
-      // Refresh stories
       await loadStories();
-      // If no more stories from current owner, close viewer
       const currentOwner = stories[storyOwnerIndex];
       if (currentOwner && currentOwner.stories.length <= 1) {
         setStoryViewerVisible(false);
       }
     } catch (e) {
       console.error("Failed to delete story:", e);
+    }
+  };
+
+  const handleStartRide = async (routeId: string) => {
+    if (!authHeader) return;
+    try {
+      const session = await apiPost<RideSessionOut>(
+        "/api/rides/start",
+        { route_id: routeId },
+        authHeader
+      );
+      setActiveRide(session);
+      Alert.alert("Ride Started! 🏍️", "Your ride has begun. Ride safe!");
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to start ride");
+    }
+  };
+
+  const handleEndRide = async () => {
+    if (!authHeader || !activeRide) return;
+    try {
+      const result = await apiPost<RideSessionOut>(
+        "/api/rides/end",
+        { session_id: activeRide.id, end_location: [44.4268, 26.1025] },
+        authHeader
+      );
+      setActiveRide(null);
+      if (result.is_validated) {
+        Alert.alert(
+          "Ride Complete! 🎉",
+          `Great ride! ${result.km_tracked.toFixed(1)} km has been added to your stats.`
+        );
+      } else {
+        Alert.alert(
+          "Ride Ended",
+          "Ride completed but km were not validated (ride was too short)."
+        );
+      }
+      await loadRoutes();
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to end ride");
     }
   };
 
@@ -121,14 +172,25 @@ export default function HomeScreen() {
               <Ionicons name="search-outline" size={20} color={Colors.text} />
             </View>
             <View style={styles.iconBtn}>
-              <Ionicons
-                name="notifications-outline"
-                size={20}
-                color={Colors.text}
-              />
+              <Ionicons name="notifications-outline" size={20} color={Colors.text} />
             </View>
           </View>
         </View>
+
+        {/* Active Ride Banner */}
+        {activeRide && (
+          <View style={styles.activeRideBanner}>
+            <View style={styles.activeRideIcon}>
+              <Ionicons name="bicycle" size={20} color={Colors.bg} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.activeRideTitle}>Ride in Progress</Text>
+              <Text style={styles.activeRideSub}>
+                Started {new Date(activeRide.start_time).toLocaleTimeString()}
+              </Text>
+            </View>
+          </View>
+        )}
 
         <ScrollView
           contentContainerStyle={styles.content}
@@ -170,6 +232,8 @@ export default function HomeScreen() {
                 <RouteCard
                   key={r.id}
                   item={r}
+                  currentUserId={me?.id}
+                  activeRideRouteId={activeRide?.route_id}
                   onToggleJoin={async () => {
                     if (!authHeader) return;
                     try {
@@ -183,6 +247,8 @@ export default function HomeScreen() {
                       setError(e instanceof Error ? e.message : "Action failed");
                     }
                   }}
+                  onStartRide={() => handleStartRide(r.id)}
+                  onEndRide={handleEndRide}
                 />
               ))}
             </View>
@@ -206,14 +272,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.bg,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg,
-  },
+  safe: { flex: 1, backgroundColor: Colors.bg },
+  container: { flex: 1, backgroundColor: Colors.bg },
   header: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -222,24 +282,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-between",
   },
-  headerLeft: {
-    gap: 4,
-  },
-  headerRight: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  h1: {
-    color: Colors.text,
-    fontSize: 22,
-    fontWeight: "900",
-    letterSpacing: 0.2,
-  },
-  sub: {
-    color: Colors.muted,
-    fontSize: 13,
-    fontWeight: "600",
-  },
+  headerLeft: { gap: 4 },
+  headerRight: { flexDirection: "row", gap: 10 },
+  h1: { color: Colors.text, fontSize: 22, fontWeight: "900", letterSpacing: 0.2 },
+  sub: { color: Colors.muted, fontSize: 13, fontWeight: "600" },
   iconBtn: {
     height: 44,
     width: 44,
@@ -250,34 +296,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  content: {
-    paddingBottom: 20,
-  },
-  routesList: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 12,
-  },
-  center: {
-    paddingTop: 80,
+  activeRideBanner: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 16,
+    gap: 12,
+    backgroundColor: Colors.success,
+    borderRadius: 14,
+    padding: 12,
   },
-  centerText: {
-    color: Colors.muted,
-    fontSize: 13,
-    fontWeight: "600",
-    textAlign: "center",
+  activeRideIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(0,0,0,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  errorTitle: {
-    color: Colors.text,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  errorText: {
-    color: Colors.muted,
-    fontSize: 12,
-    textAlign: "center",
-  },
+  activeRideTitle: { color: "#FFF", fontSize: 14, fontWeight: "700" },
+  activeRideSub: { color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "600" },
+  content: { paddingBottom: 20 },
+  routesList: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
+  center: { paddingTop: 80, alignItems: "center", gap: 10, paddingHorizontal: 16 },
+  centerText: { color: Colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" },
+  errorTitle: { color: Colors.text, fontSize: 14, fontWeight: "800" },
+  errorText: { color: Colors.muted, fontSize: 12, textAlign: "center" },
 });
