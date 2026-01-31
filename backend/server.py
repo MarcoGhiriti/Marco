@@ -1162,10 +1162,13 @@ async def get_group_members(group_id: str, current_user: dict = Depends(get_curr
                 "level": user.get("level", 0),
             })
     
+    # Use owner_id as it's the field name in DB
+    owner_id = g.get("owner_id") or g.get("created_by", "")
+    
     return {
         "group_id": group_id,
         "group_name": g.get("name", ""),
-        "created_by": g.get("created_by", ""),
+        "created_by": owner_id,
         "members": members,
     }
 
@@ -1178,8 +1181,9 @@ async def add_group_member(group_id: str, payload: dict, current_user: dict = De
     if not g:
         raise HTTPException(status_code=404, detail="Group not found")
     
-    # Check if user is creator
-    if g.get("created_by") != uid:
+    # Check if user is creator (owner_id)
+    owner_id = g.get("owner_id") or g.get("created_by", "")
+    if owner_id != uid:
         raise HTTPException(status_code=403, detail="Only the group creator can add members")
     
     user_id = payload.get("user_id")
