@@ -87,7 +87,7 @@ export function RouteCard({
           {item.stops_count > 0 && (
             <View style={styles.statItem}>
               <Ionicons name="flag-outline" size={14} color={Colors.accent} />
-              <Text style={styles.statText}>{item.stops_count} opriri</Text>
+              <Text style={styles.statText}>{item.stops_count} stops</Text>
             </View>
           )}
         </View>
