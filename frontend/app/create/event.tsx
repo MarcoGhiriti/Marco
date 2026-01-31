@@ -12,12 +12,23 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
 import { apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
+
+// Conditionally import MapView only on native
+let MapView: any = null;
+let Marker: any = null;
+let PROVIDER_GOOGLE: any = null;
+
+if (Platform.OS !== "web") {
+  const Maps = require("react-native-maps");
+  MapView = Maps.default;
+  Marker = Maps.Marker;
+  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
+}
 
 type Point = { lat: number; lng: number };
 
@@ -25,7 +36,7 @@ export default function CreateEventScreen() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
 
-  const [step, setStep] = useState<1 | 2>(1); // 1: map, 2: details
+  const [step, setStep] = useState<1 | 2>(1);
   const [meetingPoint, setMeetingPoint] = useState<Point | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -33,6 +44,10 @@ export default function CreateEventScreen() {
   const [timeStr, setTimeStr] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // For web, use text input for coordinates
+  const [latInput, setLatInput] = useState("44.4268");
+  const [lngInput, setLngInput] = useState("26.1025");
 
   const [region, setRegion] = useState({
     latitude: 44.4268,
@@ -56,21 +71,30 @@ export default function CreateEventScreen() {
         latitudeDelta: 0.1,
         longitudeDelta: 0.1,
       });
+      setLatInput(loc.coords.latitude.toString());
+      setLngInput(loc.coords.longitude.toString());
     }
   }, []);
 
   React.useEffect(() => {
     loadLocation();
-    // Set default date/time to tomorrow at 10:00
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    setDateStr(tomorrow.toISOString().split("T")[0]); // YYYY-MM-DD
+    setDateStr(tomorrow.toISOString().split("T")[0]);
     setTimeStr("10:00");
   }, [loadLocation]);
 
   const handleMapPress = (e: any) => {
     const { latitude, longitude } = e.nativeEvent.coordinate;
     setMeetingPoint({ lat: latitude, lng: longitude });
+  };
+  
+  const handleWebSetPoint = () => {
+    const lat = parseFloat(latInput);
+    const lng = parseFloat(lngInput);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      setMeetingPoint({ lat, lng });
+    }
   };
 
   const handleCreate = async () => {
@@ -104,13 +128,56 @@ export default function CreateEventScreen() {
     }
   };
 
+  const renderWebMapFallback = () => (
+    <View style={styles.webFallback}>
+      <Ionicons name="location" size={48} color={Colors.accent} />
+      <Text style={styles.webFallbackTitle}>Set Meeting Point</Text>
+      <Text style={styles.webFallbackSub}>
+        Maps work on mobile. Enter coordinates manually:
+      </Text>
+      <View style={styles.coordRow}>
+        <View style={styles.coordField}>
+          <Text style={styles.coordLabel}>Latitude</Text>
+          <TextInput
+            value={latInput}
+            onChangeText={setLatInput}
+            keyboardType="numeric"
+            style={styles.coordInput}
+            placeholderTextColor={Colors.muted}
+          />
+        </View>
+        <View style={styles.coordField}>
+          <Text style={styles.coordLabel}>Longitude</Text>
+          <TextInput
+            value={lngInput}
+            onChangeText={setLngInput}
+            keyboardType="numeric"
+            style={styles.coordInput}
+            placeholderTextColor={Colors.muted}
+          />
+        </View>
+      </View>
+      <Pressable onPress={handleWebSetPoint} style={styles.setPointBtn}>
+        <Ionicons name="checkmark" size={18} color={Colors.bg} />
+        <Text style={styles.setPointBtnText}>Set Point</Text>
+      </Pressable>
+      {meetingPoint && (
+        <View style={styles.pointSetBadge}>
+          <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+          <Text style={styles.pointSetText}>
+            Point set: {meetingPoint.lat.toFixed(4)}, {meetingPoint.lng.toFixed(4)}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.headerBtn}>
             <Ionicons name="close" size={22} color={Colors.text} />
@@ -150,85 +217,55 @@ export default function CreateEventScreen() {
         </View>
 
         {step === 1 ? (
-          /* Step 1: Map */
           <View style={styles.mapContainer}>
-            <MapView
-              style={styles.map}
-              provider={PROVIDER_GOOGLE}
-              initialRegion={region}
-              onRegionChangeComplete={setRegion}
-              onPress={handleMapPress}
-              showsUserLocation
-              customMapStyle={darkMapStyle}
-            >
-              {meetingPoint && (
-                <Marker
-                  coordinate={{
-                    latitude: meetingPoint.lat,
-                    longitude: meetingPoint.lng,
-                  }}
+            {Platform.OS === "web" ? (
+              renderWebMapFallback()
+            ) : MapView ? (
+              <>
+                <MapView
+                  style={styles.map}
+                  provider={PROVIDER_GOOGLE}
+                  initialRegion={region}
+                  onRegionChangeComplete={setRegion}
+                  onPress={handleMapPress}
+                  showsUserLocation
+                  customMapStyle={darkMapStyle}
                 >
-                  <View style={styles.meetingMarker}>
-                    <Ionicons name="flag" size={20} color="#FFF" />
+                  {meetingPoint && (
+                    <Marker
+                      coordinate={{
+                        latitude: meetingPoint.lat,
+                        longitude: meetingPoint.lng,
+                      }}
+                    >
+                      <View style={styles.meetingMarker}>
+                        <Ionicons name="flag" size={20} color="#FFF" />
+                      </View>
+                    </Marker>
+                  )}
+                </MapView>
+                <View style={styles.instructions}>
+                  <Ionicons name="location" size={18} color={Colors.accent} />
+                  <Text style={styles.instructionsText}>
+                    Tap on the map to set the meeting point.
+                  </Text>
+                </View>
+                {meetingPoint && (
+                  <View style={styles.selectedBadge}>
+                    <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+                    <Text style={styles.selectedBadgeText}>Meeting point set</Text>
                   </View>
-                </Marker>
-              )}
-            </MapView>
-
-            {/* Instructions */}
-            <View style={styles.instructions}>
-              <Ionicons name="location" size={18} color={Colors.accent} />
-              <Text style={styles.instructionsText}>
-                Tap on the map to set the meeting point for your event.
-              </Text>
-            </View>
-
-            {meetingPoint && (
-              <View style={styles.selectedBadge}>
-                <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-                <Text style={styles.selectedBadgeText}>Meeting point set</Text>
-              </View>
+                )}
+              </>
+            ) : (
+              renderWebMapFallback()
             )}
           </View>
         ) : (
-          /* Step 2: Details Form */
           <ScrollView
             contentContainerStyle={styles.formContainer}
             keyboardShouldPersistTaps="handled"
           >
-            <Pressable onPress={() => setStep(1)} style={styles.miniMapContainer}>
-              <MapView
-                style={styles.miniMap}
-                provider={PROVIDER_GOOGLE}
-                region={{
-                  latitude: meetingPoint?.lat || region.latitude,
-                  longitude: meetingPoint?.lng || region.longitude,
-                  latitudeDelta: 0.02,
-                  longitudeDelta: 0.02,
-                }}
-                scrollEnabled={false}
-                zoomEnabled={false}
-                customMapStyle={darkMapStyle}
-              >
-                {meetingPoint && (
-                  <Marker
-                    coordinate={{
-                      latitude: meetingPoint.lat,
-                      longitude: meetingPoint.lng,
-                    }}
-                  >
-                    <View style={styles.meetingMarkerSmall}>
-                      <Ionicons name="flag" size={14} color="#FFF" />
-                    </View>
-                  </Marker>
-                )}
-              </MapView>
-              <View style={styles.miniMapOverlay}>
-                <Ionicons name="create-outline" size={16} color={Colors.text} />
-                <Text style={styles.miniMapText}>Tap to change location</Text>
-              </View>
-            </Pressable>
-
             <View style={styles.formCard}>
               <Text style={styles.formLabel}>Event Title *</Text>
               <TextInput
@@ -246,7 +283,7 @@ export default function CreateEventScreen() {
               <TextInput
                 value={description}
                 onChangeText={setDescription}
-                placeholder="What's the plan? Any requirements?"
+                placeholder="What's the plan?"
                 placeholderTextColor={Colors.muted}
                 style={[styles.formInput, styles.formTextarea]}
                 multiline
@@ -265,7 +302,6 @@ export default function CreateEventScreen() {
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor={Colors.muted}
                     style={styles.dateTimeInput}
-                    keyboardType="numbers-and-punctuation"
                   />
                 </View>
                 <View style={styles.dateTimeField}>
@@ -276,14 +312,12 @@ export default function CreateEventScreen() {
                     placeholder="HH:MM"
                     placeholderTextColor={Colors.muted}
                     style={styles.dateTimeInput}
-                    keyboardType="numbers-and-punctuation"
                   />
                 </View>
               </View>
             </View>
 
             {error && <Text style={styles.errorText}>{error}</Text>}
-
             <View style={{ height: 40 }} />
           </ScrollView>
         )}
@@ -295,9 +329,7 @@ export default function CreateEventScreen() {
 const darkMapStyle = [
   { elementType: "geometry", stylers: [{ color: "#1d1d1d" }] },
   { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
   { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c2c2c" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3c3c3c" }] },
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
 ];
 
@@ -323,24 +355,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: {
-    color: Colors.text,
-    fontSize: 16,
-    fontFamily: "Inter_900Black",
-  },
-  nextBtn: {
-    width: 80,
-    backgroundColor: Colors.accent,
-    borderColor: Colors.accent,
-  },
-  nextBtnDisabled: {
-    opacity: 0.5,
-  },
-  nextBtnText: {
-    color: Colors.bg,
-    fontSize: 14,
-    fontFamily: "Inter_700Bold",
-  },
+  headerTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
+  nextBtn: { width: 80, backgroundColor: Colors.accent, borderColor: Colors.accent },
+  nextBtnDisabled: { opacity: 0.5 },
+  nextBtnText: { color: Colors.bg, fontSize: 14, fontFamily: "Inter_700Bold" },
   mapContainer: { flex: 1 },
   map: { flex: 1 },
   meetingMarker: {
@@ -351,16 +369,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
-    borderColor: "#FFF",
-  },
-  meetingMarkerSmall: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
     borderColor: "#FFF",
   },
   instructions: {
@@ -377,12 +385,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 12,
   },
-  instructionsText: {
-    flex: 1,
-    color: Colors.text,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
+  instructionsText: { flex: 1, color: Colors.text, fontSize: 12, fontFamily: "Inter_600SemiBold" },
   selectedBadge: {
     position: "absolute",
     left: 12,
@@ -397,40 +400,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  selectedBadgeText: {
-    color: Colors.success,
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
+  selectedBadgeText: { color: Colors.success, fontSize: 12, fontFamily: "Inter_700Bold" },
+  webFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    gap: 16,
   },
-  formContainer: {
-    padding: 16,
-    gap: 12,
-  },
-  miniMapContainer: {
-    height: 150,
-    borderRadius: 18,
-    overflow: "hidden",
+  webFallbackTitle: { color: Colors.text, fontSize: 18, fontFamily: "Inter_900Black" },
+  webFallbackSub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
+  coordRow: { flexDirection: "row", gap: 12, width: "100%" },
+  coordField: { flex: 1 },
+  coordLabel: { color: Colors.muted, fontSize: 11, fontFamily: "Inter_700Bold", marginBottom: 6 },
+  coordInput: {
+    backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  miniMap: { flex: 1 },
-  miniMapOverlay: {
-    position: "absolute",
-    bottom: 8,
-    left: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: Colors.card,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-  },
-  miniMapText: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     color: Colors.text,
-    fontSize: 11,
+    fontSize: 14,
     fontFamily: "Inter_600SemiBold",
   },
+  setPointBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  setPointBtnText: { color: Colors.bg, fontSize: 14, fontFamily: "Inter_700Bold" },
+  pointSetBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.card,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  pointSetText: { color: Colors.success, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  formContainer: { padding: 16, gap: 12 },
   formCard: {
     backgroundColor: Colors.card,
     borderWidth: 1,
@@ -438,12 +452,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
   },
-  formLabel: {
-    color: Colors.muted,
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 8,
-  },
+  formLabel: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold", marginBottom: 8 },
   formInput: {
     backgroundColor: Colors.card2,
     borderWidth: 1,
@@ -455,14 +464,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
   },
-  formTextarea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  dateTimeRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
+  formTextarea: { height: 100, textAlignVertical: "top" },
+  dateTimeRow: { flexDirection: "row", gap: 10 },
   dateTimeField: {
     flex: 1,
     flexDirection: "row",
@@ -474,17 +477,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
   },
-  dateTimeInput: {
-    flex: 1,
-    height: 44,
-    color: Colors.text,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-  },
-  errorText: {
-    color: Colors.danger,
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "center",
-  },
+  dateTimeInput: { flex: 1, height: 44, color: Colors.text, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  errorText: { color: Colors.danger, fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
 });
