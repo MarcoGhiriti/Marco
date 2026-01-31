@@ -282,6 +282,8 @@ const styles = StyleSheet.create({
   },
   viewDetailsRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   viewDetailsText: { color: Colors.accent, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  locationRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1, marginRight: 10 },
+  locationText: { color: Colors.accent, fontSize: 12, fontFamily: "Inter_600SemiBold", flex: 1 },
   joinBtn: {
     paddingHorizontal: 16,
     paddingVertical: 8,
