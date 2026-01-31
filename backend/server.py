@@ -909,23 +909,24 @@ async def me(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/me/license")
 async def upload_license(payload: LicenseUpload, current_user: dict = Depends(get_current_user)):
-    """Upload motorcycle license for verification."""
+    """Upload motorcycle license for verification - AUTO VERIFIED."""
     uid = current_user["id"]
     
-    # Store the license info (pending verification)
+    # Auto-verify the license (in production, you might want manual review)
     await db.users.update_one(
         {"_id": _as_object_id(uid)},
         {
             "$set": {
                 "license_type": payload.license_type,
                 "license_photo_base64": payload.license_photo_base64,
-                "license_verified": False,  # Pending verification
+                "license_verified": True,  # Auto-verified!
                 "license_submitted_at": datetime.utcnow(),
+                "license_verified_at": datetime.utcnow(),
             }
         }
     )
     
-    return {"ok": True, "message": "License submitted for verification"}
+    return {"ok": True, "message": "License verified successfully!", "verified": True}
 
 
 @api_router.get("/me/license-status")
