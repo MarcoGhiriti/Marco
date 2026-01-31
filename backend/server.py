@@ -1243,7 +1243,9 @@ async def group_send_rest(group_id: str, payload: MessageCreate, current_user: d
 
 
 @api_router.post("/routes", response_model=RouteOut)
-async def create_route(payload: RouteCreate):
+async def create_route(payload: RouteCreate, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    
     if payload.participants_min > payload.participants_max:
         raise HTTPException(status_code=400, detail="participants_min cannot exceed participants_max")
 
@@ -1278,7 +1280,8 @@ async def create_route(payload: RouteCreate):
         "difficulty": payload.difficulty,
         "participants_min": payload.participants_min,
         "participants_max": payload.participants_max,
-        "participants": [],
+        "participants": [uid],  # Creator automatically joins
+        "created_by": uid,
         "created_at": now,
     }
 
@@ -1296,9 +1299,9 @@ async def create_route(payload: RouteCreate):
         difficulty=doc["difficulty"],
         participants_min=doc["participants_min"],
         participants_max=doc["participants_max"],
-        participants_count=0,
-        is_joined=False,
-        created_by=doc.get("created_by", ""),
+        participants_count=1,
+        is_joined=True,
+        created_by=uid,
         created_at=doc["created_at"],
     )
     return out
