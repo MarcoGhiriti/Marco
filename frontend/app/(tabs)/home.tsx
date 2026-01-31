@@ -199,6 +199,12 @@ export default function HomeScreen() {
             <Text style={styles.sub}>Recommended routes</Text>
           </View>
           <View style={styles.headerRight}>
+            <Pressable 
+              onPress={() => router.push("/(tabs)/shop")} 
+              style={styles.shopBtn}
+            >
+              <Ionicons name="storefront" size={18} color={Colors.bg} />
+            </Pressable>
             <View style={styles.iconBtn}>
               <Ionicons name="search-outline" size={20} color={Colors.text} />
             </View>
