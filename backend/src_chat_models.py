@@ -18,6 +18,7 @@ class GroupCreate(BaseModel):
     name: str = Field(min_length=2, max_length=40)
     description: str = Field(default="", max_length=400)
     is_private: bool = False
+    photo_base64: Optional[str] = Field(default=None, description="Base64 encoded group photo")
 
 
 class GroupOut(BaseModel):
@@ -29,6 +30,7 @@ class GroupOut(BaseModel):
     admins: list[str]
     members_count: int
     members: list[str] = []
+    photo_base64: Optional[str] = None
     created_at: datetime
 
 
