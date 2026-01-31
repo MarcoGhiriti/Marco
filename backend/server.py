@@ -1135,6 +1135,149 @@ async def list_events(
 
 
 
+# -----------------
+# Stories Endpoints
+# -----------------
+
+STORY_EXPIRATION_SECONDS = 24 * 60 * 60  # 24 hours
+
+
+async def ensure_stories_ttl_index():
+    """Create TTL index on stories collection for automatic 24h expiration."""
+    try:
+        await db.stories.create_index(
+            "expires_at",
+            expireAfterSeconds=0,
+            name="stories_ttl_idx",
+            background=True,
+        )
+    except Exception:
+        # Index might already exist
+        pass
+
+
+@api_router.post("/stories", response_model=StoryOut)
+async def create_story(payload: StoryCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new story (24h expiration)."""
+    await ensure_stories_ttl_index()
+    
+    uid = current_user["id"]
+    now = datetime.utcnow()
+    expires = now + timedelta(seconds=STORY_EXPIRATION_SECONDS)
+    
+    doc = {
+        "owner_id": uid,
+        "media_base64": payload.media_base64,
+        "media_type": payload.media_type,
+        "caption": payload.caption,
+        "created_at": now,
+        "expires_at": expires,
+    }
+    
+    res = await db.stories.insert_one(doc)
+    
+    return StoryOut(
+        id=oid_str(res.inserted_id),
+        owner_id=uid,
+        owner_username=current_user.get("username", ""),
+        owner_photo=current_user.get("profile_photo_base64"),
+        media_base64=doc["media_base64"],
+        media_type=doc["media_type"],
+        caption=doc["caption"],
+        created_at=doc["created_at"],
+        expires_at=doc["expires_at"],
+    )
+
+
+@api_router.get("/stories", response_model=list[StoryOwner])
+async def get_stories(current_user: dict = Depends(get_current_user)):
+    """Get stories from friends (and self) from the last 24h, grouped by owner."""
+    uid = current_user["id"]
+    friend_ids = current_user.get("friends") or []
+    
+    # Include self and friends
+    relevant_user_ids = [uid] + friend_ids
+    
+    # Fetch non-expired stories from relevant users
+    now = datetime.utcnow()
+    cursor = db.stories.find({
+        "owner_id": {"$in": relevant_user_ids},
+        "expires_at": {"$gt": now},
+    }).sort("created_at", 1)
+    
+    stories_docs = await cursor.to_list(length=500)
+    
+    if not stories_docs:
+        return []
+    
+    # Get unique owner IDs
+    owner_ids = list(set(s.get("owner_id") for s in stories_docs if s.get("owner_id")))
+    
+    # Fetch owner info
+    owner_oids = [_as_object_id(oid) for oid in owner_ids]
+    owners_cursor = db.users.find({"_id": {"$in": owner_oids}}, {"username": 1, "profile_photo_base64": 1})
+    owners_docs = await owners_cursor.to_list(length=100)
+    owners_map = {oid_str(o.get("_id")): o for o in owners_docs}
+    
+    # Group stories by owner
+    grouped: dict[str, list[StoryOut]] = {}
+    for s in stories_docs:
+        owner_id = s.get("owner_id", "")
+        owner_info = owners_map.get(owner_id, {})
+        
+        story = StoryOut(
+            id=oid_str(s.get("_id")),
+            owner_id=owner_id,
+            owner_username=owner_info.get("username", "Unknown"),
+            owner_photo=owner_info.get("profile_photo_base64"),
+            media_base64=s.get("media_base64", ""),
+            media_type=s.get("media_type", "image"),
+            caption=s.get("caption"),
+            created_at=s.get("created_at") or now,
+            expires_at=s.get("expires_at") or now,
+        )
+        
+        if owner_id not in grouped:
+            grouped[owner_id] = []
+        grouped[owner_id].append(story)
+    
+    # Build final response with owner first (self), then friends
+    result: list[StoryOwner] = []
+    
+    # Self first
+    if uid in grouped:
+        owner_info = owners_map.get(uid, {})
+        result.append(StoryOwner(
+            user_id=uid,
+            username=owner_info.get("username", current_user.get("username", "")),
+            profile_photo=owner_info.get("profile_photo_base64") or current_user.get("profile_photo_base64"),
+            stories=grouped[uid],
+        ))
+    
+    # Then friends
+    for friend_id in friend_ids:
+        if friend_id in grouped and friend_id != uid:
+            owner_info = owners_map.get(friend_id, {})
+            result.append(StoryOwner(
+                user_id=friend_id,
+                username=owner_info.get("username", ""),
+                profile_photo=owner_info.get("profile_photo_base64"),
+                stories=grouped[friend_id],
+            ))
+    
+    return result
+
+
+@api_router.delete("/stories/{story_id}")
+async def delete_story(story_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete own story."""
+    uid = current_user["id"]
+    res = await db.stories.delete_one({"_id": _as_object_id(story_id), "owner_id": uid})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Story not found or not owned by you")
+    return {"ok": True}
+
+
 @api_router.post("/routes/{route_id}/join")
 async def route_join(route_id: str, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
