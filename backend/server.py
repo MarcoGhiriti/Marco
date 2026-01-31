@@ -441,7 +441,7 @@ class RouteOut(BaseModel):
 
     participants_count: int = 0
     is_joined: bool = False
-
+    created_by: str = ""
 
     rules: str
     difficulty: Difficulty
