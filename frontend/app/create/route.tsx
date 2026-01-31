@@ -41,95 +41,88 @@ const DIFFICULTY_OPTIONS = ["easy", "medium", "hard"] as const;
 function RoutePreviewMap({ 
   startPoint, 
   endPoint, 
+  waypoints,
   polyline 
 }: { 
   startPoint: PlaceDetails | null; 
   endPoint: PlaceDetails | null;
+  waypoints: PlaceDetails[];
   polyline: number[][];
 }) {
   const width = 340;
   const height = 200;
 
   const svgData = useMemo(() => {
-    if (polyline.length < 2) {
-      // Just show start/end points if no polyline yet
-      const points: { lat: number; lng: number }[] = [];
-      if (startPoint) points.push({ lat: startPoint.lat, lng: startPoint.lng });
-      if (endPoint) points.push({ lat: endPoint.lat, lng: endPoint.lng });
-      
-      if (points.length === 0) return { points: "", start: null, end: null };
-      
+    const allPoints: { lat: number; lng: number; type: 'start' | 'end' | 'waypoint' }[] = [];
+    if (startPoint) allPoints.push({ lat: startPoint.lat, lng: startPoint.lng, type: 'start' });
+    waypoints.forEach(wp => allPoints.push({ lat: wp.lat, lng: wp.lng, type: 'waypoint' }));
+    if (endPoint) allPoints.push({ lat: endPoint.lat, lng: endPoint.lng, type: 'end' });
+
+    if (polyline.length >= 2) {
+      // Full polyline rendering
       const pad = 20;
       const w = width - pad * 2;
       const h = height - pad * 2;
       
-      let minLat = points[0].lat, maxLat = points[0].lat;
-      let minLng = points[0].lng, maxLng = points[0].lng;
+      let minLat = polyline[0][0], maxLat = polyline[0][0];
+      let minLng = polyline[0][1], maxLng = polyline[0][1];
       
-      for (const p of points) {
-        minLat = Math.min(minLat, p.lat);
-        maxLat = Math.max(maxLat, p.lat);
-        minLng = Math.min(minLng, p.lng);
-        maxLng = Math.max(maxLng, p.lng);
+      for (const p of polyline) {
+        minLat = Math.min(minLat, p[0]);
+        maxLat = Math.max(maxLat, p[0]);
+        minLng = Math.min(minLng, p[1]);
+        maxLng = Math.max(maxLng, p[1]);
       }
       
-      const latSpan = Math.max(0.01, maxLat - minLat);
-      const lngSpan = Math.max(0.01, maxLng - minLng);
+      const latSpan = Math.max(0.001, maxLat - minLat);
+      const lngSpan = Math.max(0.001, maxLng - minLng);
       
-      const startSvg = startPoint ? {
-        x: pad + ((startPoint.lng - minLng) / lngSpan) * w,
-        y: pad + (1 - (startPoint.lat - minLat) / latSpan) * h,
-      } : null;
+      const pts = polyline.map(p => {
+        const x = pad + ((p[1] - minLng) / lngSpan) * w;
+        const y = pad + (1 - (p[0] - minLat) / latSpan) * h;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(" ");
       
-      const endSvg = endPoint ? {
-        x: pad + ((endPoint.lng - minLng) / lngSpan) * w,
-        y: pad + (1 - (endPoint.lat - minLat) / latSpan) * h,
-      } : null;
+      // Calculate marker positions
+      const markers = allPoints.map(p => ({
+        x: pad + ((p.lng - minLng) / lngSpan) * w,
+        y: pad + (1 - (p.lat - minLat) / latSpan) * h,
+        type: p.type,
+      }));
       
-      return { points: "", start: startSvg, end: endSvg };
+      return { points: pts, markers };
     }
     
-    // Full polyline rendering
+    // Just show markers without polyline
+    if (allPoints.length === 0) return { points: "", markers: [] };
+    
     const pad = 20;
     const w = width - pad * 2;
     const h = height - pad * 2;
     
-    let minLat = polyline[0][0], maxLat = polyline[0][0];
-    let minLng = polyline[0][1], maxLng = polyline[0][1];
+    let minLat = allPoints[0].lat, maxLat = allPoints[0].lat;
+    let minLng = allPoints[0].lng, maxLng = allPoints[0].lng;
     
-    for (const p of polyline) {
-      minLat = Math.min(minLat, p[0]);
-      maxLat = Math.max(maxLat, p[0]);
-      minLng = Math.min(minLng, p[1]);
-      maxLng = Math.max(maxLng, p[1]);
+    for (const p of allPoints) {
+      minLat = Math.min(minLat, p.lat);
+      maxLat = Math.max(maxLat, p.lat);
+      minLng = Math.min(minLng, p.lng);
+      maxLng = Math.max(maxLng, p.lng);
     }
     
-    const latSpan = Math.max(0.001, maxLat - minLat);
-    const lngSpan = Math.max(0.001, maxLng - minLng);
+    const latSpan = Math.max(0.01, maxLat - minLat);
+    const lngSpan = Math.max(0.01, maxLng - minLng);
     
-    const pts = polyline.map(p => {
-      const x = pad + ((p[1] - minLng) / lngSpan) * w;
-      const y = pad + (1 - (p[0] - minLat) / latSpan) * h;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(" ");
+    const markers = allPoints.map(p => ({
+      x: pad + ((p.lng - minLng) / lngSpan) * w,
+      y: pad + (1 - (p.lat - minLat) / latSpan) * h,
+      type: p.type,
+    }));
     
-    const start = polyline[0];
-    const end = polyline[polyline.length - 1];
-    
-    return {
-      points: pts,
-      start: {
-        x: pad + ((start[1] - minLng) / lngSpan) * w,
-        y: pad + (1 - (start[0] - minLat) / latSpan) * h,
-      },
-      end: {
-        x: pad + ((end[1] - minLng) / lngSpan) * w,
-        y: pad + (1 - (end[0] - minLat) / latSpan) * h,
-      },
-    };
-  }, [startPoint, endPoint, polyline]);
+    return { points: "", markers };
+  }, [startPoint, endPoint, waypoints, polyline]);
 
-  const hasData = startPoint || endPoint || polyline.length > 0;
+  const hasData = startPoint || endPoint || waypoints.length > 0 || polyline.length > 0;
 
   return (
     <View style={mapStyles.container}>
@@ -137,7 +130,7 @@ function RoutePreviewMap({
         <View style={mapStyles.placeholder}>
           <Ionicons name="map-outline" size={48} color={Colors.muted} />
           <Text style={mapStyles.placeholderText}>
-            Selectează punctul de Start și Finish
+            Selectează punctele traseului
           </Text>
         </View>
       ) : (
@@ -154,21 +147,16 @@ function RoutePreviewMap({
             />
           )}
           
-          {/* Start Point */}
-          {svgData.start && (
-            <>
-              <Circle cx={svgData.start.x} cy={svgData.start.y} r={12} fill={Colors.success} opacity={0.3} />
-              <Circle cx={svgData.start.x} cy={svgData.start.y} r={8} fill={Colors.success} />
-            </>
-          )}
-          
-          {/* End Point */}
-          {svgData.end && (
-            <>
-              <Circle cx={svgData.end.x} cy={svgData.end.y} r={12} fill={Colors.danger} opacity={0.3} />
-              <Circle cx={svgData.end.x} cy={svgData.end.y} r={8} fill={Colors.danger} />
-            </>
-          )}
+          {/* Markers */}
+          {svgData.markers.map((m, i) => {
+            const color = m.type === 'start' ? Colors.success : m.type === 'end' ? Colors.danger : Colors.accent;
+            return (
+              <React.Fragment key={i}>
+                <Circle cx={m.x} cy={m.y} r={12} fill={color} opacity={0.3} />
+                <Circle cx={m.x} cy={m.y} r={8} fill={color} />
+              </React.Fragment>
+            );
+          })}
         </Svg>
       )}
       
@@ -179,6 +167,12 @@ function RoutePreviewMap({
             <View style={[mapStyles.legendDot, { backgroundColor: Colors.success }]} />
             <Text style={mapStyles.legendText}>Start</Text>
           </View>
+          {waypoints.length > 0 && (
+            <View style={mapStyles.legendItem}>
+              <View style={[mapStyles.legendDot, { backgroundColor: Colors.accent }]} />
+              <Text style={mapStyles.legendText}>Oprire</Text>
+            </View>
+          )}
           <View style={mapStyles.legendItem}>
             <View style={[mapStyles.legendDot, { backgroundColor: Colors.danger }]} />
             <Text style={mapStyles.legendText}>Finish</Text>
@@ -247,6 +241,7 @@ export default function CreateRouteScreen() {
   const [step, setStep] = useState<1 | 2>(1);
   const [startPoint, setStartPoint] = useState<PlaceDetails | null>(null);
   const [endPoint, setEndPoint] = useState<PlaceDetails | null>(null);
+  const [waypoints, setWaypoints] = useState<PlaceDetails[]>([]);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
   
@@ -256,17 +251,20 @@ export default function CreateRouteScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // For adding new waypoint
+  const [showWaypointInput, setShowWaypointInput] = useState(false);
+
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
-  // Fetch route when both points are selected
+  // Fetch route when we have start and end
   useEffect(() => {
     if (startPoint && endPoint && headers) {
       fetchRoute();
     }
-  }, [startPoint, endPoint]);
+  }, [startPoint, endPoint, waypoints]);
 
   const fetchRoute = async () => {
     if (!startPoint || !endPoint || !headers) return;
@@ -275,11 +273,16 @@ export default function CreateRouteScreen() {
     setError(null);
     
     try {
-      const data = await apiGet(
-        `/api/directions/route?origin_lat=${startPoint.lat}&origin_lng=${startPoint.lng}&dest_lat=${endPoint.lat}&dest_lng=${endPoint.lng}`,
-        headers
-      ) as RouteInfo;
+      // Build waypoints string for API
+      let url = `/api/directions/route?origin_lat=${startPoint.lat}&origin_lng=${startPoint.lng}&dest_lat=${endPoint.lat}&dest_lng=${endPoint.lng}`;
       
+      // Add waypoints if any
+      if (waypoints.length > 0) {
+        const waypointsStr = waypoints.map(wp => `${wp.lat},${wp.lng}`).join('|');
+        url += `&waypoints=${encodeURIComponent(waypointsStr)}`;
+      }
+      
+      const data = await apiGet(url, headers) as RouteInfo;
       setRouteInfo(data);
     } catch (e) {
       console.error("Route fetch error:", e);
@@ -287,6 +290,18 @@ export default function CreateRouteScreen() {
     } finally {
       setLoadingRoute(false);
     }
+  };
+
+  const addWaypoint = (place: PlaceDetails) => {
+    setWaypoints([...waypoints, place]);
+    setShowWaypointInput(false);
+    setRouteInfo(null); // Reset to trigger recalculation
+  };
+
+  const removeWaypoint = (index: number) => {
+    const newWaypoints = waypoints.filter((_, i) => i !== index);
+    setWaypoints(newWaypoints);
+    setRouteInfo(null);
   };
 
   const canProceed = startPoint && endPoint && routeInfo && !loadingRoute;
@@ -304,6 +319,7 @@ export default function CreateRouteScreen() {
           description: description.trim(),
           polyline: routeInfo.polyline,
           difficulty,
+          stops_count: waypoints.length,
         },
         headers
       );
@@ -361,11 +377,13 @@ export default function CreateRouteScreen() {
             <RoutePreviewMap 
               startPoint={startPoint}
               endPoint={endPoint}
+              waypoints={waypoints}
               polyline={routeInfo?.polyline || []}
             />
 
             {/* Search Inputs */}
             <View style={styles.searchSection}>
+              {/* Start Point */}
               <View style={styles.searchInputWrapper}>
                 <PlaceSearchInput
                   label="PUNCT DE START"
@@ -380,6 +398,54 @@ export default function CreateRouteScreen() {
                 />
               </View>
 
+              {/* Waypoints */}
+              {waypoints.map((wp, index) => (
+                <View key={index} style={styles.waypointItem}>
+                  <View style={styles.waypointInfo}>
+                    <View style={styles.waypointIcon}>
+                      <Ionicons name="location" size={16} color={Colors.accent} />
+                      <Text style={styles.waypointNumber}>{index + 1}</Text>
+                    </View>
+                    <View style={styles.waypointText}>
+                      <Text style={styles.waypointName} numberOfLines={1}>{wp.name}</Text>
+                      <Text style={styles.waypointAddress} numberOfLines={1}>{wp.address}</Text>
+                    </View>
+                  </View>
+                  <Pressable onPress={() => removeWaypoint(index)} style={styles.removeWaypointBtn}>
+                    <Ionicons name="close-circle" size={22} color={Colors.danger} />
+                  </Pressable>
+                </View>
+              ))}
+
+              {/* Add Waypoint */}
+              {showWaypointInput ? (
+                <View style={styles.searchInputWrapper}>
+                  <PlaceSearchInput
+                    label={`OPRIRE ${waypoints.length + 1}`}
+                    placeholder="Caută oraș sau locație..."
+                    icon="location"
+                    iconColor={Colors.accent}
+                    onPlaceSelected={addWaypoint}
+                    headers={headers}
+                  />
+                  <Pressable 
+                    onPress={() => setShowWaypointInput(false)} 
+                    style={styles.cancelWaypointBtn}
+                  >
+                    <Text style={styles.cancelWaypointText}>Anulează</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable 
+                  onPress={() => setShowWaypointInput(true)} 
+                  style={styles.addWaypointBtn}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
+                  <Text style={styles.addWaypointText}>Adaugă oprire intermediară</Text>
+                </Pressable>
+              )}
+
+              {/* End Point */}
               <View style={styles.searchInputWrapper}>
                 <PlaceSearchInput
                   label="PUNCT DE FINAL"
@@ -424,21 +490,17 @@ export default function CreateRouteScreen() {
                     <Text style={styles.routeStatValue}>{routeInfo.duration_min} min</Text>
                     <Text style={styles.routeStatLabel}>Durată</Text>
                   </View>
-                </View>
 
-                <View style={styles.addressesSection}>
-                  <View style={styles.addressRow}>
-                    <View style={[styles.addressDot, { backgroundColor: Colors.success }]} />
-                    <Text style={styles.addressText} numberOfLines={2}>
-                      {startPoint?.name || routeInfo.start_address}
-                    </Text>
-                  </View>
-                  <View style={styles.addressRow}>
-                    <View style={[styles.addressDot, { backgroundColor: Colors.danger }]} />
-                    <Text style={styles.addressText} numberOfLines={2}>
-                      {endPoint?.name || routeInfo.end_address}
-                    </Text>
-                  </View>
+                  {waypoints.length > 0 && (
+                    <>
+                      <View style={styles.routeStatDivider} />
+                      <View style={styles.routeStat}>
+                        <Ionicons name="flag" size={20} color={Colors.accent} />
+                        <Text style={styles.routeStatValue}>{waypoints.length}</Text>
+                        <Text style={styles.routeStatLabel}>Opriri</Text>
+                      </View>
+                    </>
+                  )}
                 </View>
               </View>
             )}
@@ -460,6 +522,12 @@ export default function CreateRouteScreen() {
                   <Text style={styles.summaryText}>{routeInfo.distance_km} km</Text>
                   <Ionicons name="time-outline" size={18} color={Colors.accent} style={{ marginLeft: 16 }} />
                   <Text style={styles.summaryText}>{routeInfo.duration_min} min</Text>
+                  {waypoints.length > 0 && (
+                    <>
+                      <Ionicons name="flag-outline" size={18} color={Colors.accent} style={{ marginLeft: 16 }} />
+                      <Text style={styles.summaryText}>{waypoints.length} opriri</Text>
+                    </>
+                  )}
                 </View>
               </View>
             )}
@@ -548,11 +616,93 @@ const styles = StyleSheet.create({
   },
   
   searchSection: {
-    gap: 20,
+    gap: 16,
     zIndex: 100,
   },
   searchInputWrapper: {
     zIndex: 100,
+  },
+
+  // Waypoints
+  waypointItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    padding: 12,
+    gap: 12,
+  },
+  waypointInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  waypointIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: Colors.card2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  waypointNumber: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    backgroundColor: Colors.accent,
+    color: Colors.bg,
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  waypointText: {
+    flex: 1,
+  },
+  waypointName: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  waypointAddress: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 2,
+  },
+  removeWaypointBtn: {
+    padding: 4,
+  },
+
+  addWaypointBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    borderStyle: "dashed",
+    borderRadius: 14,
+    padding: 14,
+  },
+  addWaypointText: {
+    color: Colors.accent,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  cancelWaypointBtn: {
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  cancelWaypointText: {
+    color: Colors.muted,
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
   },
   
   infoCard: {
@@ -617,25 +767,6 @@ const styles = StyleSheet.create({
     width: 1,
     height: 40,
     backgroundColor: Colors.border,
-  },
-  addressesSection: {
-    gap: 10,
-  },
-  addressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  addressDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  addressText: {
-    flex: 1,
-    color: Colors.muted,
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
   },
   
   errorCard: {
