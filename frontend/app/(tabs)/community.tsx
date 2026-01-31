@@ -182,7 +182,9 @@ function GroupsTab() {
   const { accessToken, me } = useAuthStore();
 
   const [groups, setGroups] = useState<GroupOut[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -217,15 +219,17 @@ function GroupsTab() {
     setError(null);
     setLoading(true);
     try {
-      await apiPost("/api/groups", { name: n, description: "", is_private: false }, headers);
+      await apiPost("/api/groups", { name: n, description: description.trim(), is_private: false }, headers);
       setName("");
+      setDescription("");
+      setShowCreateModal(false);
       await loadGroups();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Create failed");
     } finally {
       setLoading(false);
     }
-  }, [headers, name, loadGroups]);
+  }, [headers, name, description, loadGroups]);
 
   const openGroup = (groupId: string) => {
     router.push(`/community/group/${groupId}`);
@@ -233,20 +237,68 @@ function GroupsTab() {
 
   return (
     <View style={styles.inner}>
-      <View style={styles.createRow}>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="New group name"
-          placeholderTextColor={Colors.muted}
-          style={styles.createInput}
-        />
-        <Pressable onPress={createGroup} style={styles.searchBtn}>
-          <Text style={styles.searchBtnText}>Create</Text>
-        </Pressable>
-      </View>
+      {/* Create Group Button */}
+      <Pressable onPress={() => setShowCreateModal(true)} style={styles.createGroupBtn}>
+        <View style={styles.createGroupIcon}>
+          <Ionicons name="add" size={24} color={Colors.bg} />
+        </View>
+        <View style={styles.createGroupText}>
+          <Text style={styles.createGroupTitle}>Create New Group</Text>
+          <Text style={styles.createGroupSub}>Start a riding community</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
+      </Pressable>
 
-      {loading ? (
+      {/* Create Modal */}
+      {showCreateModal && (
+        <View style={styles.createModal}>
+          <View style={styles.createModalHeader}>
+            <Text style={styles.createModalTitle}>New Group</Text>
+            <Pressable onPress={() => setShowCreateModal(false)}>
+              <Ionicons name="close" size={24} color={Colors.text} />
+            </Pressable>
+          </View>
+          
+          <View style={styles.createModalForm}>
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Group Name *</Text>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholder="E.g.: Transylvania Riders"
+                placeholderTextColor={Colors.muted}
+                style={styles.formInput}
+              />
+            </View>
+            
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Description</Text>
+              <TextInput
+                value={description}
+                onChangeText={setDescription}
+                placeholder="What's this group about?"
+                placeholderTextColor={Colors.muted}
+                style={[styles.formInput, styles.formTextarea]}
+                multiline
+              />
+            </View>
+            
+            <Pressable 
+              onPress={createGroup} 
+              style={[styles.createBtn, !name.trim() && styles.createBtnDisabled]}
+              disabled={!name.trim() || loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={Colors.bg} />
+              ) : (
+                <Text style={styles.createBtnText}>Create Group</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {loading && !showCreateModal ? (
         <View style={styles.center}>
           <ActivityIndicator color={Colors.accent} />
         </View>
@@ -255,24 +307,30 @@ function GroupsTab() {
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Groups</Text>
+        <Text style={styles.sectionTitle}>Your Groups</Text>
         {groups.length === 0 ? (
-          <Text style={styles.mutedText}>No groups yet.</Text>
+          <View style={styles.emptyGroups}>
+            <Ionicons name="people-outline" size={48} color={Colors.muted} />
+            <Text style={styles.emptyGroupsText}>No groups yet</Text>
+          </View>
         ) : (
           groups.map((g) => {
             const isAdmin = !!me?.id && (g.admins ?? []).includes(me.id);
             const membersCount = g.members_count ?? (g.members ? g.members.length : 0);
             return (
-              <Pressable key={g.id} onPress={() => openGroup(g.id)} style={styles.rowCard}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.rowTitle}>{g.name}</Text>
-                  <Text style={styles.mutedText}>{membersCount} members</Text>
-                  {isAdmin && g.members?.length ? (
-                    <Text style={styles.mutedText} numberOfLines={1}>
-                      Members: {g.members.join(", ")}
-                    </Text>
-                  ) : null}
+              <Pressable key={g.id} onPress={() => openGroup(g.id)} style={styles.groupCard}>
+                <View style={styles.groupIcon}>
+                  <Ionicons name="people" size={24} color={Colors.accent} />
                 </View>
+                <View style={styles.groupInfo}>
+                  <Text style={styles.groupName}>{g.name}</Text>
+                  <Text style={styles.groupMembers}>{membersCount} members</Text>
+                </View>
+                {isAdmin && (
+                  <View style={styles.adminBadge}>
+                    <Text style={styles.adminBadgeText}>Admin</Text>
+                  </View>
+                )}
                 <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
               </Pressable>
             );
