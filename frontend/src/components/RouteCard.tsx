@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, Share, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
 import { RouteMiniMap } from "./RouteMiniMap";
@@ -9,6 +9,7 @@ interface RouteCardProps {
   item: RouteOut;
   currentUserId?: string;
   activeRideRouteId?: string | null;
+  onPress?: () => void;
   onToggleJoin: () => void;
   onStartRide?: () => void;
   onEndRide?: () => void;
@@ -18,6 +19,7 @@ export function RouteCard({
   item, 
   currentUserId,
   activeRideRouteId,
+  onPress,
   onToggleJoin, 
   onStartRide,
   onEndRide,
@@ -30,12 +32,22 @@ export function RouteCard({
 
   const isCreator = currentUserId && item.created_by === currentUserId;
   const hasActiveRide = activeRideRouteId === item.id;
-  const canStartRide = isCreator && item.is_joined && !activeRideRouteId;
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `🏍️ Check out this route on Moto GO!\n\n📍 ${item.title}\n📏 ${item.distance_km.toFixed(1)} km\n⏱️ ${item.duration_min} min\n\n${item.description || "Join me for this ride!"}`,
+        title: item.title,
+      });
+    } catch (error) {
+      Alert.alert("Error", "Could not share this route");
+    }
+  };
 
   return (
-    <View style={styles.card}>
+    <Pressable onPress={onPress} style={styles.card}>
       {/* Mini Map */}
-      <RouteMiniMap polyline={item.polyline} height={140} />
+      <RouteMiniMap polyline={item.polyline} />
 
       {/* Card Content */}
       <View style={styles.cardContent}>
@@ -46,15 +58,17 @@ export function RouteCard({
           </Text>
           <View style={[styles.diffBadge, { backgroundColor: diffColor }]}>
             <Text style={styles.diffText}>
-              {item.difficulty.charAt(0).toUpperCase() + item.difficulty.slice(1)}
+              {item.difficulty === "easy" ? "Ușor" : item.difficulty === "medium" ? "Mediu" : "Greu"}
             </Text>
           </View>
         </View>
 
         {/* Description */}
-        <Text style={styles.desc} numberOfLines={2}>
-          {item.description || "No description"}
-        </Text>
+        {item.description ? (
+          <Text style={styles.desc} numberOfLines={2}>
+            {item.description}
+          </Text>
+        ) : null}
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
@@ -70,13 +84,22 @@ export function RouteCard({
             <Ionicons name="people-outline" size={14} color={Colors.accent} />
             <Text style={styles.statText}>{item.participants_count}</Text>
           </View>
+          {item.stops_count > 0 && (
+            <View style={styles.statItem}>
+              <Ionicons name="flag-outline" size={14} color={Colors.accent} />
+              <Text style={styles.statText}>{item.stops_count} opriri</Text>
+            </View>
+          )}
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
           {/* Join/Leave Button */}
           <Pressable
-            onPress={onToggleJoin}
+            onPress={(e) => {
+              e.stopPropagation();
+              onToggleJoin();
+            }}
             style={[styles.joinBtn, item.is_joined && styles.joinBtnJoined]}
           >
             <Ionicons
@@ -85,24 +108,47 @@ export function RouteCard({
               color={item.is_joined ? Colors.text : Colors.bg}
             />
             <Text style={[styles.joinBtnText, item.is_joined && styles.joinBtnTextJoined]}>
-              {item.is_joined ? "Joined" : "Join"}
+              {item.is_joined ? "Alăturat" : "Alătură-te"}
             </Text>
           </Pressable>
 
           {/* Start/End Ride Button (only for creator) */}
           {isCreator && item.is_joined && (
             hasActiveRide ? (
-              <Pressable onPress={onEndRide} style={styles.rideBtn}>
+              <Pressable 
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onEndRide?.();
+                }} 
+                style={styles.rideBtn}
+              >
                 <Ionicons name="flag" size={16} color="#FFF" />
-                <Text style={styles.rideBtnText}>End Ride</Text>
+                <Text style={styles.rideBtnText}>Termină</Text>
               </Pressable>
             ) : !activeRideRouteId ? (
-              <Pressable onPress={onStartRide} style={[styles.rideBtn, styles.startRideBtn]}>
+              <Pressable 
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onStartRide?.();
+                }} 
+                style={[styles.rideBtn, styles.startRideBtn]}
+              >
                 <Ionicons name="play" size={16} color="#FFF" />
-                <Text style={styles.rideBtnText}>Start Ride</Text>
+                <Text style={styles.rideBtnText}>Start</Text>
               </Pressable>
             ) : null
           )}
+
+          {/* Share Button */}
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              handleShare();
+            }}
+            style={styles.shareBtn}
+          >
+            <Ionicons name="share-social-outline" size={18} color={Colors.text} />
+          </Pressable>
 
           {/* Creator Badge */}
           {isCreator && (
@@ -113,7 +159,7 @@ export function RouteCard({
           )}
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -159,6 +205,7 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 16,
   },
   statItem: {
@@ -215,6 +262,16 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 13,
     fontFamily: "Inter_700Bold",
+  },
+  shareBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
   creatorBadge: {
     flexDirection: "row",
