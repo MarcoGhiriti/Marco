@@ -313,11 +313,11 @@ export default function CreateEventScreen() {
             )}
 
             <View style={styles.formCard}>
-              <Text style={styles.formLabel}>Titlu Eveniment *</Text>
+              <Text style={styles.formLabel}>Event Title *</Text>
               <TextInput
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Ex: Deschidere Sezon 2025"
+                placeholder="Ex: Season Opening 2025"
                 placeholderTextColor={Colors.muted}
                 style={styles.formInput}
                 maxLength={80}
@@ -325,7 +325,7 @@ export default function CreateEventScreen() {
             </View>
 
             <View style={styles.formCard}>
-              <Text style={styles.formLabel}>Tip Eveniment</Text>
+              <Text style={styles.formLabel}>Event Type</Text>
               <View style={styles.eventTypeGrid}>
                 {EVENT_TYPES.map((type) => (
                   <Pressable
@@ -355,11 +355,11 @@ export default function CreateEventScreen() {
             </View>
 
             <View style={styles.formCard}>
-              <Text style={styles.formLabel}>Descriere</Text>
+              <Text style={styles.formLabel}>Description</Text>
               <TextInput
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Detalii despre eveniment..."
+                placeholder="Event details..."
                 placeholderTextColor={Colors.muted}
                 style={[styles.formInput, styles.formTextarea]}
                 multiline
@@ -368,7 +368,7 @@ export default function CreateEventScreen() {
             </View>
 
             <View style={styles.formCard}>
-              <Text style={styles.formLabel}>Data & Ora *</Text>
+              <Text style={styles.formLabel}>Date & Time *</Text>
               <View style={styles.dateTimeRow}>
                 <View style={styles.dateTimeField}>
                   <Ionicons name="calendar-outline" size={18} color={Colors.muted} />
