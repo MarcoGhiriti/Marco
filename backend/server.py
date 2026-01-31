@@ -929,6 +929,20 @@ async def users_search(
     return results
 
 
+@api_router.get("/users/{user_id}", response_model=UserSearchOut)
+async def get_user(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a user's public profile info."""
+    user = await db.users.find_one({"_id": _as_object_id(user_id)}, {"username": 1, "profile_photo_base64": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return UserSearchOut(
+        id=oid_str(user.get("_id")),
+        username=user.get("username", ""),
+        profile_photo_base64=user.get("profile_photo_base64"),
+    )
+
+
 @api_router.get("/stats")
 async def stats(current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
