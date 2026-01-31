@@ -30,7 +30,7 @@ export default function DmChatScreen() {
   const [messages, setMessages] = useState<MessageOut[]>([]);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [otherUsername, setOtherUsername] = useState("");
+  const [otherUser, setOtherUser] = useState<{ username: string; photo: string | null }>({ username: "", photo: null });
 
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
 
@@ -44,12 +44,26 @@ export default function DmChatScreen() {
     setError(null);
     setLoading(true);
     try {
+      // Load messages
       const data = await apiGet<MessageOut[]>(`/api/dm/${otherUserId}/messages`, authHeader);
       setMessages(data);
-      // Try to get username from messages
-      const otherMsg = data.find(m => m.from_user_id === otherUserId);
-      if (otherMsg?.from_username) {
-        setOtherUsername(otherMsg.from_username);
+      
+      // Try to get user info
+      try {
+        const userInfo = await apiGet<{ id: string; username: string; profile_photo_base64?: string | null }>(
+          `/api/users/${otherUserId}`,
+          authHeader
+        );
+        setOtherUser({
+          username: userInfo.username || "User",
+          photo: userInfo.profile_photo_base64 || null,
+        });
+      } catch {
+        // Fallback: get username from messages
+        const otherMsg = data.find(m => m.from_user_id === otherUserId);
+        if (otherMsg?.from_username) {
+          setOtherUser({ username: otherMsg.from_username, photo: null });
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load messages");
