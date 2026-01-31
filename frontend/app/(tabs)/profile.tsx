@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   SafeAreaView,
@@ -12,8 +13,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
-import { apiGet } from "../../src/lib/api";
+import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
+import type { RouteOut, RideSessionOut } from "../../src/types/api";
+import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 
 type Stats = {
   km_total: number;
