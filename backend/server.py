@@ -386,6 +386,8 @@ class UserPublic(BaseModel):
 
 
 class MeUpdate(BaseModel):
+    country: Optional[str] = Field(default=None, max_length=2)
+
     bio: Optional[str] = Field(default=None, max_length=280)
     bike: Optional[BikeInfo] = None
     profile_photo_base64: Optional[str] = None
@@ -565,6 +567,9 @@ async def update_me(payload: MeUpdate, current_user: dict = Depends(get_current_
 
     if payload.bike is not None:
         update["bike"] = payload.bike.model_dump()
+
+    if payload.country is not None:
+        update["country"] = payload.country
 
     if payload.profile_photo_base64 is not None:
         update["profile_photo_base64"] = payload.profile_photo_base64
