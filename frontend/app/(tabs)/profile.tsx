@@ -579,6 +579,130 @@ export default function ProfileScreen() {
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* LICENSE UPLOAD MODAL */}
+      <Modal
+        visible={showLicenseModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowLicenseModal(false)}
+      >
+        <SafeAreaView style={styles.modalSafe}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>License Verification</Text>
+            <Pressable onPress={() => setShowLicenseModal(false)} style={styles.modalCloseBtn}>
+              <Ionicons name="close" size={22} color={Colors.text} />
+            </Pressable>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            {/* Info Card */}
+            <View style={styles.licenseInfoCard}>
+              <Ionicons name="information-circle" size={24} color={Colors.accent} />
+              <Text style={styles.licenseInfoText}>
+                To participate in rankings and track kilometers, you need to verify your motorcycle license (A1, A2, or A).
+              </Text>
+            </View>
+
+            {/* Current Status */}
+            {licenseStatus?.license_type && (
+              <View style={[
+                styles.currentStatusCard,
+                licenseStatus.license_verified && styles.currentStatusVerified,
+              ]}>
+                <Ionicons 
+                  name={licenseStatus.license_verified ? "checkmark-circle" : "time"} 
+                  size={24} 
+                  color={licenseStatus.license_verified ? Colors.success : Colors.warning} 
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.currentStatusTitle}>
+                    {licenseStatus.license_verified ? "License Verified!" : "Verification Pending"}
+                  </Text>
+                  <Text style={styles.currentStatusSub}>
+                    License Type: {licenseStatus.license_type}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* License Type Selection */}
+            {!licenseStatus?.license_verified && (
+              <>
+                <Text style={styles.modalSectionTitle}>Select License Type</Text>
+                <View style={styles.licenseTypeGrid}>
+                  {["A1", "A2", "A"].map((type) => (
+                    <Pressable
+                      key={type}
+                      onPress={() => setSelectedLicenseType(type)}
+                      style={[
+                        styles.licenseTypeBtn,
+                        selectedLicenseType === type && styles.licenseTypeBtnActive,
+                      ]}
+                    >
+                      <Ionicons 
+                        name="card" 
+                        size={20} 
+                        color={selectedLicenseType === type ? Colors.bg : Colors.text} 
+                      />
+                      <Text style={[
+                        styles.licenseTypeBtnText,
+                        selectedLicenseType === type && styles.licenseTypeBtnTextActive,
+                      ]}>
+                        {type}
+                      </Text>
+                      <Text style={[
+                        styles.licenseTypeBtnSub,
+                        selectedLicenseType === type && styles.licenseTypeBtnSubActive,
+                      ]}>
+                        {type === "A1" ? "≤125cc" : type === "A2" ? "≤35kW" : "Unlimited"}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {/* Photo Upload */}
+                <Text style={styles.modalSectionTitle}>Upload License Photo</Text>
+                <Pressable onPress={pickLicensePhoto} style={styles.photoUploadArea}>
+                  {licensePhoto ? (
+                    <Image source={{ uri: licensePhoto }} style={styles.licensePhotoPreview} />
+                  ) : (
+                    <>
+                      <Ionicons name="camera" size={48} color={Colors.muted} />
+                      <Text style={styles.photoUploadText}>Tap to select photo</Text>
+                      <Text style={styles.photoUploadSub}>Make sure all details are visible</Text>
+                    </>
+                  )}
+                </Pressable>
+
+                {/* Submit Button */}
+                <Pressable
+                  onPress={submitLicense}
+                  disabled={!licensePhoto || uploadingLicense}
+                  style={[
+                    styles.submitLicenseBtn,
+                    (!licensePhoto || uploadingLicense) && styles.submitLicenseBtnDisabled,
+                  ]}
+                >
+                  {uploadingLicense ? (
+                    <ActivityIndicator color={Colors.bg} />
+                  ) : (
+                    <>
+                      <Ionicons name="cloud-upload" size={20} color={licensePhoto ? Colors.bg : Colors.muted} />
+                      <Text style={[
+                        styles.submitLicenseBtnText,
+                        !licensePhoto && styles.submitLicenseBtnTextDisabled,
+                      ]}>
+                        Submit for Verification
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              </>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
