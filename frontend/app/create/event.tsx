@@ -265,9 +265,9 @@ export default function CreateEventScreen() {
             <View style={styles.infoBanner}>
               <Ionicons name="calendar" size={24} color={Colors.accent} />
               <View style={styles.infoBannerText}>
-                <Text style={styles.infoBannerTitle}>Creează un Eveniment</Text>
+                <Text style={styles.infoBannerTitle}>Create an Event</Text>
                 <Text style={styles.infoBannerSub}>
-                  Evenimentele sunt adunări de motocicliști, nu trasee. Selectează punctul de întâlnire.
+                  Events are gatherings for motorcyclists, not routes. Select the meeting point.
                 </Text>
               </View>
             </View>
