@@ -1070,6 +1070,25 @@ async def list_events(
     return result
 
 
+
+
+@api_router.post("/routes/{route_id}/join")
+async def route_join(route_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    res = await db.routes.update_one({"_id": _as_object_id(route_id)}, {"$addToSet": {"participants": uid}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Route not found")
+    return {"ok": True}
+
+
+@api_router.post("/routes/{route_id}/leave")
+async def route_leave(route_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    res = await db.routes.update_one({"_id": _as_object_id(route_id)}, {"$pull": {"participants": uid}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Route not found")
+    return {"ok": True}
+
 # Include router
 fastapi_app.include_router(api_router)
 
