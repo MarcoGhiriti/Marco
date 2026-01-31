@@ -1736,6 +1736,42 @@ async def route_leave(route_id: str, current_user: dict = Depends(get_current_us
     return {"ok": True}
 
 
+@api_router.get("/routes/my", response_model=list[RouteOut])
+async def get_my_routes(current_user: dict = Depends(get_current_user)):
+    """Get routes created by the current user."""
+    uid = current_user["id"]
+    cursor = db.routes.find({"created_by": uid}).sort("created_at", -1)
+    routes = await cursor.to_list(length=50)
+    result: list[RouteOut] = []
+    
+    for r in routes:
+        participants = r.get("participants") or []
+        polyline = r.get("polyline", [])
+        
+        result.append(
+            RouteOut(
+                id=_oid_str(r.get("_id")),
+                title=r.get("title", ""),
+                description=r.get("description", ""),
+                polyline=polyline,
+                distance_km=float(r.get("distance_km", 0.0)),
+                duration_min=int(r.get("duration_min", 0)),
+                stops_count=int(r.get("stops_count", 0)),
+                cost_estimate=CostEstimate(**(r.get("cost_estimate") or {"fuel": 0, "tolls": 0, "currency": "RON"})),
+                rules=r.get("rules", ""),
+                difficulty=r.get("difficulty", "medium"),
+                participants_min=int(r.get("participants_min", 1)),
+                participants_max=int(r.get("participants_max", 10)),
+                participants_count=len(participants),
+                is_joined=uid in participants,
+                created_by=r.get("created_by", ""),
+                start_date=r.get("start_date"),
+                created_at=r.get("created_at") or datetime.utcnow(),
+            )
+        )
+    return result
+
+
 # -----------------
 # Ride Sessions Endpoints (Anti-fraud km tracking)
 # -----------------
