@@ -93,6 +93,7 @@ export default function EditProfileScreen() {
             model: bikeModel.trim() ? bikeModel.trim() : null,
             cc: Number.isFinite(cc) ? cc : null,
           },
+          profile_photo_base64: photoBase64,
         },
         headers
       );
