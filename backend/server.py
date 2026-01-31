@@ -479,6 +479,25 @@ class EventOut(BaseModel):
 
 
 # -----------------
+# Places Autocomplete Models
+# -----------------
+
+class PlaceAutocompleteResult(BaseModel):
+    place_id: str
+    description: str
+    main_text: str
+    secondary_text: str
+
+
+class PlaceDetailsResult(BaseModel):
+    place_id: str
+    name: str
+    address: str
+    lat: float
+    lng: float
+
+
+# -----------------
 # Stories Models
 # -----------------
 
