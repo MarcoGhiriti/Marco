@@ -190,6 +190,30 @@ export default function EditProfileScreen() {
               placeholder="RO"
               placeholderTextColor={Colors.muted}
               autoCapitalize="characters"
+  photoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  photoCircle: {
+    height: 48,
+    width: 48,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card2,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  photo: { height: 48, width: 48 },
+  photoBtn: {
+    height: 44,
+    width: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
               maxLength={2}
               style={styles.input}
             />
