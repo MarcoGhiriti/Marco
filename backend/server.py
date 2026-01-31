@@ -1054,6 +1054,28 @@ async def friends_accept(payload: FriendAccept, current_user: dict = Depends(get
     return {"ok": True}
 
 
+@api_router.post("/friends/reject")
+async def friends_reject(payload: FriendAccept, current_user: dict = Depends(get_current_user)):
+    """Reject a friend request."""
+    from_id = payload.from_user_id
+    to_id = current_user["id"]
+
+    # must exist in incoming
+    if from_id not in (current_user.get("friend_requests_in") or []):
+        raise HTTPException(status_code=400, detail="No such request")
+
+    # remove from both sides without adding as friend
+    await db.users.update_one(
+        {"_id": _as_object_id(to_id)},
+        {"$pull": {"friend_requests_in": from_id}},
+    )
+    await db.users.update_one(
+        {"_id": _as_object_id(from_id)},
+        {"$pull": {"friend_requests_out": to_id}},
+    )
+    return {"ok": True}
+
+
 @api_router.post("/groups", response_model=GroupOut)
 async def groups_create(payload: GroupCreate, current_user: dict = Depends(get_current_user)):
     now = datetime.utcnow()
