@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Stack } from "expo-router";
+import React, { useEffect, useState, useRef } from "react";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
@@ -10,11 +10,19 @@ import {
   Inter_700Bold,
   Inter_900Black,
 } from "@expo-google-fonts/inter";
+import * as Notifications from "expo-notifications";
+import {
+  registerForPushNotificationsAsync,
+  addNotificationResponseReceivedListener,
+} from "../src/lib/notifications";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  const router = useRouter();
+  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
+  const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
   const [loaded] = useFonts({
     Inter_400Regular,
@@ -32,6 +40,36 @@ export default function RootLayout() {
       }
     })();
   }, [loaded]);
+
+  // Initialize push notifications
+  useEffect(() => {
+    registerForPushNotificationsAsync().then((token) => {
+      if (token) {
+        console.log("Push token:", token);
+      }
+    });
+
+    // Handle notification taps
+    responseListener.current = addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data;
+      if (data?.type === "badge") {
+        router.push("/(tabs)/store"); // Go to Rankings/Badges
+      } else if (data?.type === "message") {
+        router.push("/(tabs)/community");
+      } else if (data?.type === "friend_request") {
+        router.push("/profile/friends");
+      }
+    });
+
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, [router]);
 
   if (!ready) {
     return null;
