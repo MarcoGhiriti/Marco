@@ -253,6 +253,17 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "✅ STORIES FEATURE FRONTEND TESTING COMPLETE! Comprehensive mobile viewport (390x844) testing of all 7 scenarios from review request completed successfully: 1) Login with user1@example.com/Password123 and Home tab navigation ✅ 2) StoriesBar appears at top of Home screen with 'Your story' circle (visible and clickable) ✅ 3) Clicking 'Your story' successfully navigates to /story/create screen ✅ 4) Create story screen verification: 'New Story' header ✅, Camera/Photo/Video picker buttons ✅, Post button present ✅, 'Stories disappear after 24 hours' info text ✅ 5) Back navigation to Home works and StoriesBar remains visible ✅ 6) Tab navigation between Home/Events/Community/Profile all functional ✅ 7) App stable with no crashes, proper mobile layout ✅. Minor: Plus (+) badge styling not visually prominent, Post button appears enabled without media (opacity 1.0) but core functionality working perfectly. Stories feature fully functional on mobile."
+##   - task: "Map Reports API (police/hazard/radar/accident reports with voting)"
+##     implemented: true
+##     working: true
+##     file: "backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: false
+##     status_history:
+##       - working: true
+##         agent: "testing"
+##         comment: "🎉 MAP REPORTS API TESTING COMPLETE! All 14 test scenarios from review request passed with 100% success rate: 1) Authentication with user1@example.com/Password123 ✅ 2) POST /api/reports creates police report with all required fields (id, report_type, location, votes_up, votes_down, created_at, expires_at) ✅ 3) GET /api/reports?lat=44.4268&lng=26.1025&radius_km=50 returns array of reports within radius ✅ 4) POST /api/reports/{id}/vote?vote=up extends expiration time ✅ 5) POST /api/reports/{id}/vote?vote=down multiple times (3 downvotes expire report) ✅ 6) Created other report types: hazard, radar, accident all working ✅ 7) Regression check: POST /api/routes still working ✅ 8) Regression check: POST /api/events still working ✅. Map Reports API fully functional with proper TTL expiration, voting system, and geographic filtering. All endpoints production-ready."
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
