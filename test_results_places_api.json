@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "total_tests": 6,
+    "passed": 5,
+    "failed": 1,
+    "success_rate": "83.3%"
+  },
+  "results": [
+    {
+      "test": "POST /api/auth/login",
+      "success": true,
+      "details": "Got token: eyJhbGciOiJIUzI1NiIs...",
+      "timestamp": "2026-01-31T13:17:57.030962"
+    },
+    {
+      "test": "GET /api/places/autocomplete",
+      "success": true,
+      "details": "Found 5 results, first place_id: ChIJT608vzr5sUARKKacfOMyBqw",
+      "timestamp": "2026-01-31T13:17:57.126588"
+    },
+    {
+      "test": "GET /api/places/details",
+      "success": true,
+      "details": "Got coordinates: lat=44.4267674, lng=26.1025384, name='Bucharest'",
+      "timestamp": "2026-01-31T13:17:57.239181"
+    },
+    {
+      "test": "GET /api/directions/route",
+      "success": true,
+      "details": "Got route: 229 points, 553.39km, 413min",
+      "timestamp": "2026-01-31T13:17:57.483012"
+    },
+    {
+      "test": "POST /api/routes",
+      "success": true,
+      "details": "Route created with created_by: 697b5d8b1b0ad06ac5ba7463, id: 697e010546048a5389eacaf9",
+      "timestamp": "2026-01-31T13:17:57.503778"
+    },
+    {
+      "test": "POST /api/events",
+      "success": false,
+      "details": "Event created but missing or empty created_by field",
+      "timestamp": "2026-01-31T13:17:57.550488"
+    }
+  ],
+  "timestamp": "2026-01-31T13:17:57.550803"
+}
