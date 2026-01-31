@@ -1592,7 +1592,7 @@ async def start_ride(payload: RideSessionStart, current_user: dict = Depends(get
 
 @api_router.post("/rides/end", response_model=RideSessionOut)
 async def end_ride(payload: RideSessionEnd, current_user: dict = Depends(get_current_user)):
-    """End a ride session and validate kilometers."""
+    """End a ride session and validate kilometers for ALL participants."""
     uid = current_user["id"]
     
     session = await db.ride_sessions.find_one({
@@ -1603,9 +1603,13 @@ async def end_ride(payload: RideSessionEnd, current_user: dict = Depends(get_cur
     if not session:
         raise HTTPException(status_code=404, detail="Active ride session not found")
     
-    # Get route to calculate expected km
+    # Get route to calculate expected km and get participants
     route = await db.routes.find_one({"_id": _as_object_id(session.get("route_id"))})
-    route_km = route.get("distance_km", 0) if route else 0
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+    
+    route_km = route.get("distance_km", 0)
+    participants = route.get("participants") or []
     
     now = datetime.utcnow()
     start_time = session.get("start_time", now)
@@ -1625,18 +1629,20 @@ async def end_ride(payload: RideSessionEnd, current_user: dict = Depends(get_cur
             "end_time": now,
             "km_tracked": km_tracked,
             "is_validated": is_validated,
+            "participants_credited": participants if is_validated else [],
         }}
     )
     
-    # Update user stats if validated
-    if is_validated:
-        await db.stats.update_one(
-            {"user_id": uid},
-            {"$inc": {"km_total": km_tracked, "km_month": km_tracked, "completed_routes": 1}},
-            upsert=True,
-        )
-        # Check for badge achievements
-        await check_and_award_badges(uid)
+    # Update stats for ALL participants if validated
+    if is_validated and participants:
+        for participant_id in participants:
+            await db.stats.update_one(
+                {"user_id": participant_id},
+                {"$inc": {"km_total": km_tracked, "km_month": km_tracked, "completed_routes": 1}},
+                upsert=True,
+            )
+            # Check for badge achievements for each participant
+            await check_and_award_badges(participant_id)
     
     return RideSessionOut(
         id=payload.session_id,
