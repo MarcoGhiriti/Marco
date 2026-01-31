@@ -1342,7 +1342,8 @@ async def list_routes(
 
 
 @api_router.post("/events", response_model=EventOut)
-async def create_event(payload: EventCreate):
+async def create_event(payload: EventCreate, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
     now = datetime.utcnow()
 
     doc = {
@@ -1352,11 +1353,15 @@ async def create_event(payload: EventCreate):
         "start_time": payload.start_time,
         "poster_base64": payload.poster_base64,
         "associated_route_id": payload.associated_route_id,
-        "participants": [],
+        "participants": [uid],  # Creator automatically joins
+        "created_by": uid,
         "created_at": now,
     }
 
     res = await db.events.insert_one(doc)
+    
+    # Award badge for first event creation
+    await check_and_award_badges(uid)
 
     return EventOut(
         id=_oid_str(res.inserted_id),
@@ -1366,6 +1371,8 @@ async def create_event(payload: EventCreate):
         start_time=doc["start_time"],
         poster_base64=doc.get("poster_base64"),
         associated_route_id=doc.get("associated_route_id"),
+        participants_count=1,
+        is_joined=True,
         created_at=doc["created_at"],
     )
 
