@@ -138,13 +138,28 @@ function ChatsTab() {
 
         {requests?.incoming?.length ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Requests</Text>
+            <Text style={styles.sectionTitle}>Friend Requests</Text>
             {requests.incoming.map((u) => (
-              <View key={u.id} style={styles.rowCard}>
-                <Text style={styles.rowTitle}>{u.username}</Text>
-                <Pressable onPress={() => acceptRequest(u.id)} style={styles.smallBtn}>
-                  <Text style={styles.smallBtnText}>Accept</Text>
-                </Pressable>
+              <View key={u.id} style={styles.requestCard}>
+                <View style={styles.requestUser}>
+                  <View style={styles.requestAvatar}>
+                    {u.profile_photo_base64 ? (
+                      <Image source={{ uri: u.profile_photo_base64 }} style={styles.requestAvatarImg} />
+                    ) : (
+                      <Ionicons name="person" size={20} color={Colors.accent} />
+                    )}
+                  </View>
+                  <Text style={styles.requestUsername}>{u.username}</Text>
+                </View>
+                <View style={styles.requestActions}>
+                  <Pressable onPress={() => rejectRequest(u.id)} style={styles.rejectBtn}>
+                    <Ionicons name="close" size={18} color={Colors.danger} />
+                  </Pressable>
+                  <Pressable onPress={() => acceptRequest(u.id)} style={styles.acceptBtn}>
+                    <Ionicons name="checkmark" size={18} color={Colors.bg} />
+                    <Text style={styles.acceptBtnText}>Accept</Text>
+                  </Pressable>
+                </View>
               </View>
             ))}
           </View>
