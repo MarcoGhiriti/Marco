@@ -18,6 +18,7 @@ export type GroupOut = {
   admins: string[];
   members_count: number;
   members: string[];
+  photo_base64?: string | null;
   created_at: string;
 };
 
