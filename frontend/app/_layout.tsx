@@ -15,11 +15,13 @@ import {
   registerForPushNotificationsAsync,
   addNotificationResponseReceivedListener,
 } from "../src/lib/notifications";
+import { AnimatedSplash } from "../src/components/AnimatedSplash";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const router = useRouter();
   const notificationListener = useRef<Notifications.EventSubscription | null>(null);
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
@@ -71,8 +73,16 @@ export default function RootLayout() {
     };
   }, [router]);
 
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
+
   if (!ready) {
     return null;
+  }
+
+  if (showSplash) {
+    return <AnimatedSplash onFinish={handleSplashFinish} />;
   }
 
   return (
