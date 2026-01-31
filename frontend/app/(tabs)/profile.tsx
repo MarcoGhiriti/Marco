@@ -3,6 +3,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -12,6 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
@@ -30,6 +33,12 @@ type Friend = {
   id: string;
   username: string;
   profile_photo_base64?: string | null;
+};
+
+type LicenseStatus = {
+  license_type: string | null;
+  license_verified: boolean;
+  license_submitted_at: string | null;
 };
 
 // Calculate level based on kilometers
