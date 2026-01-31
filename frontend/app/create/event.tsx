@@ -194,7 +194,7 @@ export default function CreateEventScreen() {
     try {
       const startTime = new Date(`${dateStr}T${timeStr}:00`);
       if (isNaN(startTime.getTime())) {
-        setError("Format dată/oră invalid");
+        setError("Invalid date/time format");
         setLoading(false);
         return;
       }
