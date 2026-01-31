@@ -1816,6 +1816,34 @@ async def get_my_routes(current_user: dict = Depends(get_current_user)):
     return result
 
 
+@api_router.delete("/routes/{route_id}")
+async def delete_route(route_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a route (only creator can delete)."""
+    uid = current_user["id"]
+    route = await db.routes.find_one({"_id": _as_object_id(route_id)})
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+    if route.get("created_by") != uid:
+        raise HTTPException(status_code=403, detail="Only the creator can delete this route")
+    
+    await db.routes.delete_one({"_id": _as_object_id(route_id)})
+    return {"ok": True}
+
+
+@api_router.delete("/events/{event_id}")
+async def delete_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete an event (only creator can delete)."""
+    uid = current_user["id"]
+    event = await db.events.find_one({"_id": _as_object_id(event_id)})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if event.get("created_by") != uid:
+        raise HTTPException(status_code=403, detail="Only the creator can delete this event")
+    
+    await db.events.delete_one({"_id": _as_object_id(event_id)})
+    return {"ok": True}
+
+
 # -----------------
 # Ride Sessions Endpoints (Anti-fraud km tracking)
 # -----------------
