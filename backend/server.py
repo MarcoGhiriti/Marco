@@ -544,8 +544,82 @@ class ReportOut(BaseModel):
 
 
 # -----------------
-# Routes
+# Ride Sessions Models (Anti-fraud km tracking)
 # -----------------
+
+class RideSessionStart(BaseModel):
+    route_id: str
+
+
+class RideSessionEnd(BaseModel):
+    session_id: str
+    end_location: list[float] = Field(..., min_length=2, max_length=2)
+
+
+class RideSessionOut(BaseModel):
+    id: str
+    user_id: str
+    route_id: str
+    status: str  # "active", "completed", "cancelled"
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    km_tracked: float = 0
+    is_validated: bool = False
+
+
+# -----------------
+# Badges & Gamification Models
+# -----------------
+
+BadgeType = Literal[
+    "first_ride",      # Complete first route
+    "explorer_10",     # Complete 10 routes
+    "explorer_50",     # Complete 50 routes
+    "km_100",          # Reach 100 km
+    "km_500",          # Reach 500 km
+    "km_1000",         # Reach 1000 km
+    "km_5000",         # Reach 5000 km
+    "km_10000",        # Reach 10000 km
+    "event_creator",   # Create first event
+    "social_5",        # Have 5 friends
+    "social_20",       # Have 20 friends
+    "reporter",        # Report 10 map issues
+    "early_adopter",   # Joined in first month
+]
+
+BADGE_INFO = {
+    "first_ride": {"name": "First Ride", "description": "Completed your first route", "icon": "bicycle"},
+    "explorer_10": {"name": "Explorer", "description": "Completed 10 routes", "icon": "compass"},
+    "explorer_50": {"name": "Adventurer", "description": "Completed 50 routes", "icon": "map"},
+    "km_100": {"name": "Century Rider", "description": "Rode 100 kilometers", "icon": "speedometer"},
+    "km_500": {"name": "Road Warrior", "description": "Rode 500 kilometers", "icon": "flash"},
+    "km_1000": {"name": "Highway King", "description": "Rode 1,000 kilometers", "icon": "trophy"},
+    "km_5000": {"name": "Legend", "description": "Rode 5,000 kilometers", "icon": "star"},
+    "km_10000": {"name": "Immortal", "description": "Rode 10,000 kilometers", "icon": "ribbon"},
+    "event_creator": {"name": "Event Organizer", "description": "Created your first event", "icon": "calendar"},
+    "social_5": {"name": "Social Rider", "description": "Made 5 friends", "icon": "people"},
+    "social_20": {"name": "Popular Rider", "description": "Made 20 friends", "icon": "heart"},
+    "reporter": {"name": "Road Guardian", "description": "Reported 10 road issues", "icon": "shield"},
+    "early_adopter": {"name": "Early Adopter", "description": "Joined Moto GO early", "icon": "rocket"},
+}
+
+
+class BadgeOut(BaseModel):
+    badge_type: str
+    name: str
+    description: str
+    icon: str
+    earned_at: datetime
+
+
+class LeaderboardEntry(BaseModel):
+    rank: int
+    user_id: str
+    username: str
+    profile_photo: Optional[str] = None
+    km_total: float
+    level: int
+    badges_count: int
 
 
 @api_router.get("/")
