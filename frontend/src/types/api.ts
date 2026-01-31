@@ -21,6 +21,7 @@ export type RouteOut = {
   participants_max: number;
   participants_count: number;
   is_joined: boolean;
+  created_by: string;
   created_at: string;
 };
 
