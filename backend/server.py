@@ -508,6 +508,42 @@ class StoryOwner(BaseModel):
 
 
 # -----------------
+# Map Reports Models
+# -----------------
+
+ReportType = Literal["police", "hazard", "road_closure", "radar", "accident", "traffic"]
+
+# TTL in minutes for each report type
+REPORT_TTL_MINUTES = {
+    "police": 30,
+    "hazard": 60,
+    "road_closure": 120,
+    "radar": 45,
+    "accident": 90,
+    "traffic": 30,
+}
+
+
+class ReportCreate(BaseModel):
+    report_type: ReportType
+    location: list[float] = Field(..., min_length=2, max_length=2, description="[lat, lng]")
+    description: Optional[str] = Field(default=None, max_length=200)
+
+
+class ReportOut(BaseModel):
+    id: str
+    report_type: str
+    location: list[float]
+    description: Optional[str] = None
+    reporter_id: str
+    reporter_username: str
+    votes_up: int = 0
+    votes_down: int = 0
+    created_at: datetime
+    expires_at: datetime
+
+
+# -----------------
 # Routes
 # -----------------
 
