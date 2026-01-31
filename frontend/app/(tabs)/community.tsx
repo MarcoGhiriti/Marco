@@ -187,6 +187,7 @@ function GroupsTab() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -214,6 +215,26 @@ function GroupsTab() {
     })();
   }, [loadGroups]);
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      setError("Permission to access photos was denied");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      setPhotoBase64(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
+  };
+
   const createGroup = useCallback(async () => {
     if (!headers) return;
     const n = name.trim();
@@ -221,9 +242,15 @@ function GroupsTab() {
     setError(null);
     setLoading(true);
     try {
-      await apiPost("/api/groups", { name: n, description: description.trim(), is_private: false }, headers);
+      await apiPost("/api/groups", { 
+        name: n, 
+        description: description.trim(), 
+        is_private: false,
+        photo_base64: photoBase64,
+      }, headers);
       setName("");
       setDescription("");
+      setPhotoBase64(null);
       setShowCreateModal(false);
       await loadGroups();
     } catch (e) {
@@ -231,7 +258,7 @@ function GroupsTab() {
     } finally {
       setLoading(false);
     }
-  }, [headers, name, description, loadGroups]);
+  }, [headers, name, description, photoBase64, loadGroups]);
 
   const openGroup = (groupId: string) => {
     router.push(`/community/group/${groupId}`);
@@ -256,12 +283,36 @@ function GroupsTab() {
         <View style={styles.createModal}>
           <View style={styles.createModalHeader}>
             <Text style={styles.createModalTitle}>New Group</Text>
-            <Pressable onPress={() => setShowCreateModal(false)}>
+            <Pressable onPress={() => {
+              setShowCreateModal(false);
+              setPhotoBase64(null);
+              setName("");
+              setDescription("");
+            }}>
               <Ionicons name="close" size={24} color={Colors.text} />
             </Pressable>
           </View>
           
           <View style={styles.createModalForm}>
+            {/* Group Photo */}
+            <View style={styles.photoSection}>
+              <Pressable onPress={pickImage} style={styles.photoPicker}>
+                {photoBase64 ? (
+                  <Image source={{ uri: photoBase64 }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Ionicons name="camera" size={32} color={Colors.accent} />
+                    <Text style={styles.photoPlaceholderText}>Add Photo</Text>
+                  </View>
+                )}
+              </Pressable>
+              {photoBase64 && (
+                <Pressable onPress={() => setPhotoBase64(null)} style={styles.removePhotoBtn}>
+                  <Ionicons name="close-circle" size={20} color={Colors.danger} />
+                </Pressable>
+              )}
+            </View>
+
             <View style={styles.formField}>
               <Text style={styles.formLabel}>Group Name *</Text>
               <TextInput
@@ -322,7 +373,11 @@ function GroupsTab() {
             return (
               <Pressable key={g.id} onPress={() => openGroup(g.id)} style={styles.groupCard}>
                 <View style={styles.groupIcon}>
-                  <Ionicons name="people" size={24} color={Colors.accent} />
+                  {g.photo_base64 ? (
+                    <Image source={{ uri: g.photo_base64 }} style={styles.groupPhoto} />
+                  ) : (
+                    <Ionicons name="people" size={24} color={Colors.accent} />
+                  )}
                 </View>
                 <View style={styles.groupInfo}>
                   <Text style={styles.groupName}>{g.name}</Text>
