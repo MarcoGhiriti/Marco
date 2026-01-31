@@ -261,6 +261,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  headerAvatarImage: {
+    width: "100%",
+    height: "100%",
   },
   headerTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_700Bold" },
   headerSub: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
