@@ -112,6 +112,13 @@ export default function ProfileScreen() {
   const [activeRide, setActiveRide] = useState<RideSessionOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // License verification state
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
+  const [selectedLicenseType, setSelectedLicenseType] = useState<string>("A");
+  const [licensePhoto, setLicensePhoto] = useState<string | null>(null);
+  const [uploadingLicense, setUploadingLicense] = useState(false);
 
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
@@ -124,16 +131,18 @@ export default function ProfileScreen() {
     setLoading(true);
     try {
       await refreshMe();
-      const [statsData, friendsData, routesData, rideData] = await Promise.all([
+      const [statsData, friendsData, routesData, rideData, licenseData] = await Promise.all([
         apiGet<Stats>("/api/stats", headers),
         apiGet<Friend[]>("/api/friends", headers),
         apiGet<RouteOut[]>("/api/routes/my", headers),
         apiGet<RideSessionOut | null>("/api/rides/active", headers).catch(() => null),
+        apiGet<LicenseStatus>("/api/me/license-status", headers).catch(() => null),
       ]);
       setStats(statsData);
       setFriends(friendsData);
       setMyRoutes(routesData);
       setActiveRide(rideData);
+      setLicenseStatus(licenseData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load profile");
     } finally {
@@ -144,6 +153,56 @@ export default function ProfileScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const pickLicensePhoto = async () => {
+    if (Platform.OS === "web") {
+      // Web: use file input
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = (e: any) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setLicensePhoto(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    } else {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.5,
+        base64: true,
+      });
+      if (!result.canceled && result.assets[0].base64) {
+        setLicensePhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      }
+    }
+  };
+
+  const submitLicense = async () => {
+    if (!headers || !licensePhoto) return;
+    setUploadingLicense(true);
+    try {
+      await apiPost("/api/me/license", {
+        license_type: selectedLicenseType,
+        license_photo_base64: licensePhoto,
+      }, headers);
+      Alert.alert("Success", "Your license has been submitted for verification!");
+      setShowLicenseModal(false);
+      setLicensePhoto(null);
+      load();
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to submit license");
+    } finally {
+      setUploadingLicense(false);
+    }
+  };
 
   const handleStartRide = async (routeId: string) => {
     if (!headers) return;
