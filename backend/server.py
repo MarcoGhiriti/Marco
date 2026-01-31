@@ -729,6 +729,7 @@ async def get_directions_route(
     origin_lng: float = Query(...),
     dest_lat: float = Query(...),
     dest_lng: float = Query(...),
+    waypoints: str = Query(None, description="Pipe-separated waypoints: lat,lng|lat,lng"),
     current_user: dict = Depends(get_current_user),
 ):
     """Get route polyline and info from Google Directions API."""
@@ -742,6 +743,10 @@ async def get_directions_route(
         "key": GOOGLE_MAPS_API_KEY,
         "mode": "driving",
     }
+    
+    # Add waypoints if provided
+    if waypoints:
+        params["waypoints"] = waypoints
     
     async with httpx.AsyncClient(timeout=15) as http:
         resp = await http.get(url, params=params)
@@ -769,7 +774,7 @@ async def get_directions_route(
         "distance_km": round(total_distance_m / 1000, 2),
         "duration_min": int(round(total_duration_s / 60)),
         "start_address": legs[0].get("start_address", "") if legs else "",
-        "end_address": legs[0].get("end_address", "") if legs else "",
+        "end_address": legs[-1].get("end_address", "") if legs else "",
     }
 
 
