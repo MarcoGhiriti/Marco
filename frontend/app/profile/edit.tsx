@@ -32,6 +32,9 @@ export default function EditProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [photoBase64, setPhotoBase64] = useState<string | null>(me?.profile_photo_base64 ?? null);
+
+
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
