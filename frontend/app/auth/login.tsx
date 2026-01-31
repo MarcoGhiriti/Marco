@@ -75,6 +75,13 @@ export default function LoginScreen() {
               style={styles.input}
             />
 
+            {/* Forgot Password Link */}
+            <Link href="/auth/forgot-password" asChild>
+              <Pressable style={styles.forgotPasswordRow}>
+                <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+              </Pressable>
+            </Link>
+
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <Pressable
