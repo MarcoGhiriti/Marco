@@ -1314,6 +1314,145 @@ async def delete_story(story_id: str, current_user: dict = Depends(get_current_u
     return {"ok": True}
 
 
+# -----------------
+# Map Reports Endpoints
+# -----------------
+
+async def ensure_reports_ttl_index():
+    """Create TTL index on reports collection for automatic expiration."""
+    try:
+        await db.reports.create_index(
+            "expires_at",
+            expireAfterSeconds=0,
+            name="reports_ttl_idx",
+            background=True,
+        )
+    except Exception:
+        pass
+
+
+@api_router.post("/reports", response_model=ReportOut)
+async def create_report(payload: ReportCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new map report (police, hazard, etc.)."""
+    await ensure_reports_ttl_index()
+    
+    uid = current_user["id"]
+    now = datetime.utcnow()
+    ttl_minutes = REPORT_TTL_MINUTES.get(payload.report_type, 60)
+    expires = now + timedelta(minutes=ttl_minutes)
+    
+    doc = {
+        "report_type": payload.report_type,
+        "location": payload.location,
+        "description": payload.description,
+        "reporter_id": uid,
+        "votes_up": 0,
+        "votes_down": 0,
+        "voters": [],
+        "created_at": now,
+        "expires_at": expires,
+    }
+    
+    res = await db.reports.insert_one(doc)
+    
+    return ReportOut(
+        id=oid_str(res.inserted_id),
+        report_type=doc["report_type"],
+        location=doc["location"],
+        description=doc["description"],
+        reporter_id=uid,
+        reporter_username=current_user.get("username", ""),
+        votes_up=0,
+        votes_down=0,
+        created_at=doc["created_at"],
+        expires_at=doc["expires_at"],
+    )
+
+
+@api_router.get("/reports", response_model=list[ReportOut])
+async def get_reports(
+    lat: float = Query(..., description="Center latitude"),
+    lng: float = Query(..., description="Center longitude"),
+    radius_km: float = Query(default=50, ge=1, le=200, description="Radius in km"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Get active reports within a radius from a point."""
+    now = datetime.utcnow()
+    
+    # Get all non-expired reports (MongoDB TTL handles cleanup, but filter just in case)
+    cursor = db.reports.find({"expires_at": {"$gt": now}}).sort("created_at", -1).limit(500)
+    docs = await cursor.to_list(length=500)
+    
+    # Filter by distance
+    result: list[ReportOut] = []
+    for r in docs:
+        loc = r.get("location", [0, 0])
+        dist = haversine_km([lat, lng], loc)
+        if dist <= radius_km:
+            # Get reporter username
+            reporter_id = r.get("reporter_id", "")
+            reporter = await db.users.find_one({"_id": _as_object_id(reporter_id)}, {"username": 1})
+            reporter_username = reporter.get("username", "Unknown") if reporter else "Unknown"
+            
+            result.append(ReportOut(
+                id=oid_str(r.get("_id")),
+                report_type=r.get("report_type", "hazard"),
+                location=loc,
+                description=r.get("description"),
+                reporter_id=reporter_id,
+                reporter_username=reporter_username,
+                votes_up=r.get("votes_up", 0),
+                votes_down=r.get("votes_down", 0),
+                created_at=r.get("created_at") or now,
+                expires_at=r.get("expires_at") or now,
+            ))
+    
+    return result
+
+
+@api_router.post("/reports/{report_id}/vote")
+async def vote_report(
+    report_id: str,
+    vote: Literal["up", "down"] = Query(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Vote on a report (up = confirm, down = invalid)."""
+    uid = current_user["id"]
+    
+    report = await db.reports.find_one({"_id": _as_object_id(report_id)})
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    voters = report.get("voters") or []
+    if uid in voters:
+        return {"ok": True, "message": "Already voted"}
+    
+    update = {"$push": {"voters": uid}}
+    if vote == "up":
+        update["$inc"] = {"votes_up": 1}
+        # Extend expiration by 10 minutes on upvote
+        new_expires = report.get("expires_at", datetime.utcnow()) + timedelta(minutes=10)
+        update["$set"] = {"expires_at": new_expires}
+    else:
+        update["$inc"] = {"votes_down": 1}
+        # If too many downvotes, expire immediately
+        if report.get("votes_down", 0) + 1 >= 3:
+            update["$set"] = {"expires_at": datetime.utcnow()}
+    
+    await db.reports.update_one({"_id": _as_object_id(report_id)}, update)
+    return {"ok": True}
+
+
+@api_router.delete("/reports/{report_id}")
+async def delete_report(report_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete own report."""
+    uid = current_user["id"]
+    res = await db.reports.delete_one({"_id": _as_object_id(report_id), "reporter_id": uid})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Report not found or not owned by you")
+    return {"ok": True}
+
+
 @api_router.post("/routes/{route_id}/join")
 async def route_join(route_id: str, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
