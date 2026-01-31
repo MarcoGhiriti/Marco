@@ -205,6 +205,7 @@ export default function CreateEventScreen() {
           title: title.trim(),
           description: description.trim(),
           start_point: [meetingLocation.lat, meetingLocation.lng],
+          location_name: meetingLocation.address || meetingLocation.name,
           start_time: startTime.toISOString(),
           event_type: eventType,
         },
