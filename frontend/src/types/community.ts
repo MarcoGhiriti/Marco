@@ -17,6 +17,7 @@ export type GroupOut = {
   owner_id: string;
   admins: string[];
   members_count: number;
+  members: string[];
   created_at: string;
 };
 
