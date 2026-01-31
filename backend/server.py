@@ -524,6 +524,7 @@ async def auth_register(payload: AuthRegister):
         "profile_photo_base64": None,
         "bio": "",
         "bike": None,
+        "country": None,
         "privacy": {"location_visible": False, "routes_visible": "public"},
         "level": 1,
         "km_total": 0.0,
