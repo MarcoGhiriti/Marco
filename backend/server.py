@@ -1211,8 +1211,11 @@ async def remove_group_member(group_id: str, payload: dict, current_user: dict =
     if not user_id:
         raise HTTPException(status_code=400, detail="user_id is required")
     
+    # Use owner_id as it's the field name in DB
+    owner_id = g.get("owner_id") or g.get("created_by", "")
+    
     # Allow creator to remove anyone, or user to remove themselves
-    if g.get("created_by") != uid and user_id != uid:
+    if owner_id != uid and user_id != uid:
         raise HTTPException(status_code=403, detail="Only the group creator can remove members")
     
     await db.groups.update_one({"_id": _as_object_id(group_id)}, {"$pull": {"members": user_id}})
