@@ -1544,6 +1544,296 @@ async def route_leave(route_id: str, current_user: dict = Depends(get_current_us
         raise HTTPException(status_code=404, detail="Route not found")
     return {"ok": True}
 
+
+# -----------------
+# Ride Sessions Endpoints (Anti-fraud km tracking)
+# -----------------
+
+@api_router.post("/rides/start", response_model=RideSessionOut)
+async def start_ride(payload: RideSessionStart, current_user: dict = Depends(get_current_user)):
+    """Start a ride session for a route."""
+    uid = current_user["id"]
+    
+    # Check if route exists
+    route = await db.routes.find_one({"_id": _as_object_id(payload.route_id)})
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+    
+    # Check if user already has an active ride
+    active = await db.ride_sessions.find_one({"user_id": uid, "status": "active"})
+    if active:
+        raise HTTPException(status_code=400, detail="You already have an active ride. End it first.")
+    
+    now = datetime.utcnow()
+    doc = {
+        "user_id": uid,
+        "route_id": payload.route_id,
+        "status": "active",
+        "start_time": now,
+        "end_time": None,
+        "km_tracked": 0,
+        "is_validated": False,
+    }
+    
+    res = await db.ride_sessions.insert_one(doc)
+    
+    return RideSessionOut(
+        id=oid_str(res.inserted_id),
+        user_id=uid,
+        route_id=payload.route_id,
+        status="active",
+        start_time=now,
+        km_tracked=0,
+        is_validated=False,
+    )
+
+
+@api_router.post("/rides/end", response_model=RideSessionOut)
+async def end_ride(payload: RideSessionEnd, current_user: dict = Depends(get_current_user)):
+    """End a ride session and validate kilometers."""
+    uid = current_user["id"]
+    
+    session = await db.ride_sessions.find_one({
+        "_id": _as_object_id(payload.session_id),
+        "user_id": uid,
+        "status": "active",
+    })
+    if not session:
+        raise HTTPException(status_code=404, detail="Active ride session not found")
+    
+    # Get route to calculate expected km
+    route = await db.routes.find_one({"_id": _as_object_id(session.get("route_id"))})
+    route_km = route.get("distance_km", 0) if route else 0
+    
+    now = datetime.utcnow()
+    start_time = session.get("start_time", now)
+    duration_mins = (now - start_time).total_seconds() / 60
+    
+    # Simple validation: ride must take at least 1 min per 2 km (reasonable motorcycle pace)
+    min_duration = route_km / 2
+    is_validated = duration_mins >= min_duration and route_km > 0
+    
+    # If validated, count the route's distance
+    km_tracked = route_km if is_validated else 0
+    
+    await db.ride_sessions.update_one(
+        {"_id": _as_object_id(payload.session_id)},
+        {"$set": {
+            "status": "completed",
+            "end_time": now,
+            "km_tracked": km_tracked,
+            "is_validated": is_validated,
+        }}
+    )
+    
+    # Update user stats if validated
+    if is_validated:
+        await db.stats.update_one(
+            {"user_id": uid},
+            {"$inc": {"km_total": km_tracked, "km_month": km_tracked, "completed_routes": 1}},
+            upsert=True,
+        )
+        # Check for badge achievements
+        await check_and_award_badges(uid)
+    
+    return RideSessionOut(
+        id=payload.session_id,
+        user_id=uid,
+        route_id=session.get("route_id", ""),
+        status="completed",
+        start_time=start_time,
+        end_time=now,
+        km_tracked=km_tracked,
+        is_validated=is_validated,
+    )
+
+
+@api_router.post("/rides/cancel")
+async def cancel_ride(session_id: str, current_user: dict = Depends(get_current_user)):
+    """Cancel an active ride session."""
+    uid = current_user["id"]
+    
+    res = await db.ride_sessions.update_one(
+        {"_id": _as_object_id(session_id), "user_id": uid, "status": "active"},
+        {"$set": {"status": "cancelled", "end_time": datetime.utcnow()}}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Active ride session not found")
+    return {"ok": True}
+
+
+@api_router.get("/rides/active", response_model=Optional[RideSessionOut])
+async def get_active_ride(current_user: dict = Depends(get_current_user)):
+    """Get current active ride session if any."""
+    uid = current_user["id"]
+    
+    session = await db.ride_sessions.find_one({"user_id": uid, "status": "active"})
+    if not session:
+        return None
+    
+    return RideSessionOut(
+        id=oid_str(session.get("_id")),
+        user_id=uid,
+        route_id=session.get("route_id", ""),
+        status="active",
+        start_time=session.get("start_time"),
+        km_tracked=0,
+        is_validated=False,
+    )
+
+
+# -----------------
+# Badges & Gamification Endpoints
+# -----------------
+
+async def check_and_award_badges(user_id: str):
+    """Check and award badges based on user achievements."""
+    # Get user stats
+    stats = await db.stats.find_one({"user_id": user_id}) or {}
+    km_total = stats.get("km_total", 0)
+    completed_routes = stats.get("completed_routes", 0)
+    
+    # Get user info
+    user = await db.users.find_one({"_id": _as_object_id(user_id)})
+    friends_count = len(user.get("friends", [])) if user else 0
+    
+    # Get existing badges
+    existing = await db.badges.find({"user_id": user_id}).to_list(length=100)
+    existing_types = {b.get("badge_type") for b in existing}
+    
+    # Count reports made
+    reports_count = await db.reports.count_documents({"reporter_id": user_id})
+    
+    # Count events created
+    events_created = await db.events.count_documents({"created_by": user_id})
+    
+    badges_to_award = []
+    now = datetime.utcnow()
+    
+    # Check each badge condition
+    if completed_routes >= 1 and "first_ride" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "first_ride", "earned_at": now})
+    
+    if completed_routes >= 10 and "explorer_10" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "explorer_10", "earned_at": now})
+    
+    if completed_routes >= 50 and "explorer_50" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "explorer_50", "earned_at": now})
+    
+    if km_total >= 100 and "km_100" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "km_100", "earned_at": now})
+    
+    if km_total >= 500 and "km_500" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "km_500", "earned_at": now})
+    
+    if km_total >= 1000 and "km_1000" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "km_1000", "earned_at": now})
+    
+    if km_total >= 5000 and "km_5000" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "km_5000", "earned_at": now})
+    
+    if km_total >= 10000 and "km_10000" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "km_10000", "earned_at": now})
+    
+    if events_created >= 1 and "event_creator" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "event_creator", "earned_at": now})
+    
+    if friends_count >= 5 and "social_5" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "social_5", "earned_at": now})
+    
+    if friends_count >= 20 and "social_20" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "social_20", "earned_at": now})
+    
+    if reports_count >= 10 and "reporter" not in existing_types:
+        badges_to_award.append({"user_id": user_id, "badge_type": "reporter", "earned_at": now})
+    
+    if badges_to_award:
+        await db.badges.insert_many(badges_to_award)
+
+
+@api_router.get("/badges", response_model=list[BadgeOut])
+async def get_my_badges(current_user: dict = Depends(get_current_user)):
+    """Get all badges earned by current user."""
+    uid = current_user["id"]
+    
+    # Check for new badges first
+    await check_and_award_badges(uid)
+    
+    cursor = db.badges.find({"user_id": uid}).sort("earned_at", -1)
+    badges = await cursor.to_list(length=100)
+    
+    result = []
+    for b in badges:
+        badge_type = b.get("badge_type", "")
+        info = BADGE_INFO.get(badge_type, {})
+        result.append(BadgeOut(
+            badge_type=badge_type,
+            name=info.get("name", badge_type),
+            description=info.get("description", ""),
+            icon=info.get("icon", "star"),
+            earned_at=b.get("earned_at", datetime.utcnow()),
+        ))
+    
+    return result
+
+
+@api_router.get("/badges/all")
+async def get_all_badges():
+    """Get all available badges with their info."""
+    return [
+        {
+            "badge_type": bt,
+            "name": info["name"],
+            "description": info["description"],
+            "icon": info["icon"],
+        }
+        for bt, info in BADGE_INFO.items()
+    ]
+
+
+@api_router.get("/leaderboard", response_model=list[LeaderboardEntry])
+async def get_leaderboard(limit: int = Query(default=50, ge=1, le=100)):
+    """Get top riders by total kilometers."""
+    cursor = db.stats.find().sort("km_total", -1).limit(limit)
+    stats = await cursor.to_list(length=limit)
+    
+    result = []
+    for rank, s in enumerate(stats, 1):
+        user_id = s.get("user_id", "")
+        user = await db.users.find_one({"_id": _as_object_id(user_id)}, {"username": 1, "profile_photo_base64": 1})
+        username = user.get("username", "Unknown") if user else "Unknown"
+        profile_photo = user.get("profile_photo_base64") if user else None
+        
+        km_total = s.get("km_total", 0)
+        
+        # Calculate level
+        level = 1
+        if km_total >= 100: level = 2
+        if km_total >= 500: level = 3
+        if km_total >= 1000: level = 4
+        if km_total >= 2500: level = 5
+        if km_total >= 5000: level = 6
+        if km_total >= 10000: level = 7
+        if km_total >= 25000: level = 8
+        if km_total >= 50000: level = 9
+        if km_total >= 100000: level = 10
+        
+        # Count badges
+        badges_count = await db.badges.count_documents({"user_id": user_id})
+        
+        result.append(LeaderboardEntry(
+            rank=rank,
+            user_id=user_id,
+            username=username,
+            profile_photo=profile_photo,
+            km_total=km_total,
+            level=level,
+            badges_count=badges_count,
+        ))
+    
+    return result
+
+
 # Include router
 fastapi_app.include_router(api_router)
 
