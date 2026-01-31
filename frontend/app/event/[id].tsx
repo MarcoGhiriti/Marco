@@ -1,31 +1,37 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Linking,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import Svg, { Circle, Rect } from "react-native-svg";
+import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { EventOut } from "../../src/types/api";
 
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
+// Haversine distance calculator
+function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
       Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -33,58 +39,103 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { accessToken } = useAuthStore();
+  const { accessToken, me } = useAuthStore();
 
   const [event, setEvent] = useState<EventOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [joining, setJoining] = useState(false);
+  const [distance, setDistance] = useState<number | null>(null);
 
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
-  const loadEvent = useCallback(async () => {
-    if (!headers || !id) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const events = await apiGet<EventOut[]>("/api/events", headers);
-      const found = events.find((e) => e.id === id);
-      if (!found) {
-        setError("Event not found");
+  // Get user location
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS === "web") {
+        // Web fallback - try to get location
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status === "granted") {
+            const loc = await Location.getCurrentPositionAsync({});
+            setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+          }
+        } catch (e) {
+          console.log("Location not available on web");
+        }
       } else {
-        setEvent(found);
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status === "granted") {
+            const loc = await Location.getCurrentPositionAsync({});
+            setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+          }
+        } catch (e) {
+          console.log("Location error", e);
+        }
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load event");
-    } finally {
-      setLoading(false);
-    }
-  }, [headers, id]);
-
-  const loadLocation = useCallback(async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === "granted") {
-        const loc = await Location.getCurrentPositionAsync({});
-        setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-      }
-    } catch (e) {
-      console.log("Location not available");
-    }
+    })();
   }, []);
+
+  // Calculate distance when we have both event and user location
+  useEffect(() => {
+    if (event && userLocation && event.start_point.length >= 2) {
+      const d = haversineDistance(
+        userLocation.lat,
+        userLocation.lng,
+        event.start_point[0],
+        event.start_point[1]
+      );
+      setDistance(d);
+    }
+  }, [event, userLocation]);
 
   useEffect(() => {
     loadEvent();
-    loadLocation();
-  }, [loadEvent, loadLocation]);
+  }, [id]);
 
-  const joinOrLeave = async () => {
+  const loadEvent = async () => {
+    if (!headers || !id) return;
+    setLoading(true);
+    try {
+      const events = await apiGet<EventOut[]>("/api/events", headers);
+      const found = events.find((e) => e.id === id);
+      if (found) {
+        setEvent(found);
+      } else {
+        setError("Event not found");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error loading event");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!event) return;
+    try {
+      const dateStr = new Date(event.start_time).toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      await Share.share({
+        message: `🏍️ Moto Event on Moto GO!\n\n📍 ${event.title}\n📅 ${dateStr}\n📌 ${event.location_name || "Location TBD"}\n\n${event.description || "Join us for this amazing moto event!"}`,
+        title: event.title,
+      });
+    } catch (error) {
+      Alert.alert("Error", "Could not share event");
+    }
+  };
+
+  const handleJoin = async () => {
     if (!headers || !event) return;
-    setJoining(true);
     try {
       if (event.is_joined) {
         await apiPost(`/api/events/${event.id}/leave`, {}, headers);
@@ -93,40 +144,62 @@ export default function EventDetailScreen() {
       }
       await loadEvent();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Action failed");
-    } finally {
-      setJoining(false);
+      Alert.alert("Error", e instanceof Error ? e.message : "Action failed");
     }
   };
 
-  const distance = useMemo(() => {
-    if (!userLocation || !event) return null;
-    return haversineKm(
-      userLocation.lat,
-      userLocation.lng,
-      event.start_point[0],
-      event.start_point[1]
-    );
-  }, [userLocation, event]);
+  const openInMaps = () => {
+    if (!event || event.start_point.length < 2) return;
+    const lat = event.start_point[0];
+    const lng = event.start_point[1];
+    const label = encodeURIComponent(event.location_name || event.title);
+    
+    const url = Platform.select({
+      ios: `maps:0,0?q=${label}@${lat},${lng}`,
+      android: `geo:0,0?q=${lat},${lng}(${label})`,
+      default: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+    });
+    
+    Linking.openURL(url as string);
+  };
+
+  const isCreator = me?.id && event?.created_by === me.id;
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
       weekday: "long",
-      year: "numeric",
       month: "long",
       day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
   };
 
+  const getDaysUntil = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = date.getTime() - now.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days < 0) return "Past event";
+    if (days === 0) return "Today";
+    if (days === 1) return "Tomorrow";
+    return `In ${days} days`;
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator color={Colors.accent} size="large" />
-          <Text style={styles.loadingText}>Loading event...</Text>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+          <Text style={styles.centerText}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
@@ -136,13 +209,11 @@ export default function EventDetailScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerBtn}>
-            <Ionicons name="chevron-back" size={20} color={Colors.text} />
+          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color={Colors.text} />
           </Pressable>
-          <Text style={styles.headerTitle}>Event Details</Text>
-          <View style={styles.headerBtn} />
         </View>
-        <View style={styles.errorContainer}>
+        <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.danger} />
           <Text style={styles.errorText}>{error || "Event not found"}</Text>
         </View>
@@ -152,195 +223,418 @@ export default function EventDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.headerBtn}>
-          <Ionicons name="chevron-back" size={20} color={Colors.text} />
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>Event Details</Text>
-        <View style={styles.headerBtn} />
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {event.title}
+        </Text>
+        <Pressable onPress={handleShare} style={styles.shareBtn}>
+          <Ionicons name="share-social-outline" size={20} color={Colors.text} />
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Distance Card */}
-        {distance !== null && (
-          <View style={styles.distanceCard}>
-            <Ionicons name="navigate" size={24} color={Colors.accent} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.distanceValue}>
-                {distance < 1
-                  ? `${Math.round(distance * 1000)} meters`
-                  : `${distance.toFixed(1)} km`}
-              </Text>
-              <Text style={styles.distanceLabel}>from your location</Text>
-            </View>
-            <View style={styles.locationBadge}>
-              <Ionicons name="location" size={14} color={Colors.text} />
-              <Text style={styles.locationBadgeText}>
-                {event.start_point[0].toFixed(4)}, {event.start_point[1].toFixed(4)}
-              </Text>
-            </View>
+        {/* Map Preview */}
+        <Pressable onPress={openInMaps} style={styles.mapContainer}>
+          <Svg width={360} height={180}>
+            {/* Grid pattern */}
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Rect
+                key={`h${i}`}
+                x={0}
+                y={i * 25}
+                width={360}
+                height={1}
+                fill={Colors.border}
+                opacity={0.3}
+              />
+            ))}
+            {Array.from({ length: 15 }).map((_, i) => (
+              <Rect
+                key={`v${i}`}
+                x={i * 25}
+                y={0}
+                width={1}
+                height={180}
+                fill={Colors.border}
+                opacity={0.3}
+              />
+            ))}
+            
+            {/* Center pin */}
+            <Circle cx={180} cy={90} r={25} fill={Colors.accent} opacity={0.2} />
+            <Circle cx={180} cy={90} r={15} fill={Colors.accent} />
+            <Circle cx={180} cy={90} r={5} fill={Colors.bg} />
+          </Svg>
+          
+          {/* Tap to open hint */}
+          <View style={styles.mapOverlay}>
+            <Ionicons name="navigate" size={16} color={Colors.accent} />
+            <Text style={styles.mapOverlayText}>Tap to open in Maps</Text>
           </View>
-        )}
+        </Pressable>
 
-        {/* Event Info Card */}
-        <View style={styles.infoCard}>
-          <View style={styles.titleRow}>
-            <View style={styles.dateBox}>
-              <Text style={styles.dateBoxDay}>
-                {new Date(event.start_time).getDate()}
-              </Text>
-              <Text style={styles.dateBoxMonth}>
-                {new Date(event.start_time).toLocaleDateString("en-US", { month: "short" })}
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>{event.title}</Text>
-              <Text style={styles.datetime}>{formatDate(event.start_time)}</Text>
-            </View>
+        {/* Location Card */}
+        <View style={styles.locationCard}>
+          <View style={styles.locationIconContainer}>
+            <Ionicons name="location" size={24} color={Colors.accent} />
           </View>
-
-          {event.description && (
-            <View style={styles.descSection}>
-              <Text style={styles.sectionLabel}>About</Text>
-              <Text style={styles.description}>{event.description}</Text>
-            </View>
-          )}
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Ionicons name="people" size={18} color={Colors.accent} />
-              <Text style={styles.statValue}>{event.participants_count}</Text>
-              <Text style={styles.statLabel}>going</Text>
-            </View>
+          <View style={styles.locationInfo}>
+            <Text style={styles.locationLabel}>LOCATION</Text>
+            <Text style={styles.locationName} numberOfLines={2}>
+              {event.location_name || "Location not specified"}
+            </Text>
             {distance !== null && (
-              <View style={styles.statItem}>
-                <Ionicons name="navigate" size={18} color={Colors.accent} />
-                <Text style={styles.statValue}>
-                  {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
+              <View style={styles.distanceRow}>
+                <Ionicons name="navigate-outline" size={14} color={Colors.muted} />
+                <Text style={styles.distanceText}>
+                  {distance < 1 
+                    ? `${(distance * 1000).toFixed(0)} m away` 
+                    : `${distance.toFixed(1)} km away`}
                 </Text>
-                <Text style={styles.statLabel}>away</Text>
               </View>
             )}
           </View>
         </View>
 
-        {/* Join Button */}
+        {/* Date & Time Cards */}
+        <View style={styles.dateTimeRow}>
+          <View style={styles.dateCard}>
+            <Ionicons name="calendar" size={24} color={Colors.accent} />
+            <Text style={styles.dateCardLabel}>DATE</Text>
+            <Text style={styles.dateCardValue}>{formatDate(event.start_time)}</Text>
+            <View style={styles.daysUntilBadge}>
+              <Text style={styles.daysUntilText}>{getDaysUntil(event.start_time)}</Text>
+            </View>
+          </View>
+          <View style={styles.timeCard}>
+            <Ionicons name="time" size={24} color={Colors.accent} />
+            <Text style={styles.dateCardLabel}>TIME</Text>
+            <Text style={styles.dateCardValue}>{formatTime(event.start_time)}</Text>
+          </View>
+        </View>
+
+        {/* Participants */}
+        <View style={styles.participantsCard}>
+          <Ionicons name="people" size={24} color={Colors.accent} />
+          <View style={styles.participantsInfo}>
+            <Text style={styles.participantsCount}>{event.participants_count}</Text>
+            <Text style={styles.participantsLabel}>participants</Text>
+          </View>
+        </View>
+
+        {/* Description */}
+        {event.description && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>About this Event</Text>
+            <Text style={styles.description}>{event.description}</Text>
+          </View>
+        )}
+
+        {/* Creator Badge */}
+        {isCreator && (
+          <View style={styles.creatorCard}>
+            <Ionicons name="star" size={20} color={Colors.accent} />
+            <Text style={styles.creatorText}>You created this event</Text>
+          </View>
+        )}
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* Bottom Action Button */}
+      <View style={styles.bottomBar}>
         <Pressable
-          onPress={joinOrLeave}
-          disabled={joining}
+          onPress={handleJoin}
           style={[styles.joinButton, event.is_joined && styles.joinButtonJoined]}
         >
-          {joining ? (
-            <ActivityIndicator color={event.is_joined ? Colors.text : Colors.bg} />
-          ) : (
-            <>
-              <Ionicons
-                name={event.is_joined ? "checkmark-circle" : "add-circle"}
-                size={22}
-                color={event.is_joined ? Colors.text : Colors.bg}
-              />
-              <Text style={[styles.joinButtonText, event.is_joined && styles.joinButtonTextJoined]}>
-                {event.is_joined ? "You're going!" : "Join Event"}
-              </Text>
-            </>
-          )}
+          <Ionicons
+            name={event.is_joined ? "checkmark-circle" : "add-circle-outline"}
+            size={22}
+            color={event.is_joined ? Colors.text : Colors.bg}
+          />
+          <Text style={[styles.joinButtonText, event.is_joined && styles.joinButtonTextJoined]}>
+            {event.is_joined ? "You're Going" : "Join Event"}
+          </Text>
         </Pressable>
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
-  loadingText: { color: Colors.muted, fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  errorContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 20 },
-  errorText: { color: Colors.muted, fontSize: 14, fontFamily: "Inter_600SemiBold", textAlign: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
+    gap: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  headerBtn: {
-    height: 44,
+  backBtn: {
     width: 44,
+    height: 44,
     borderRadius: 14,
+    backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
-    backgroundColor: Colors.card,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
-  content: { padding: 16, gap: 16 },
-  distanceCard: {
+  headerTitle: {
+    flex: 1,
+    color: Colors.text,
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+  },
+  shareBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  content: {
+    padding: 16,
+    gap: 16,
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  centerText: {
+    color: Colors.muted,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  errorText: {
+    color: Colors.danger,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    textAlign: "center",
+  },
+  mapContainer: {
+    backgroundColor: Colors.card2,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: "hidden",
+    alignItems: "center",
+  },
+  mapOverlay: {
+    position: "absolute",
+    bottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  mapOverlayText: {
+    color: Colors.text,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  locationCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 18,
+    padding: 16,
+  },
+  locationIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: Colors.card2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  locationInfo: {
+    flex: 1,
+  },
+  locationLabel: {
+    color: Colors.muted,
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  locationName: {
+    color: Colors.text,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+    lineHeight: 22,
+  },
+  distanceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    backgroundColor: Colors.card2,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  distanceText: {
+    color: Colors.accent,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+  dateTimeRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  dateCard: {
+    flex: 1.5,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 18,
+    padding: 16,
+    alignItems: "center",
+    gap: 6,
+  },
+  timeCard: {
+    flex: 1,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 18,
+    padding: 16,
+    alignItems: "center",
+    gap: 6,
+  },
+  dateCardLabel: {
+    color: Colors.muted,
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1,
+  },
+  dateCardValue: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    textAlign: "center",
+  },
+  daysUntilBadge: {
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  daysUntilText: {
+    color: Colors.bg,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
+  participantsCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
     backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.accent,
+    borderColor: Colors.border,
     borderRadius: 18,
     padding: 16,
   },
-  distanceValue: { color: Colors.text, fontSize: 20, fontFamily: "Inter_900Black" },
-  distanceLabel: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  locationBadge: {
+  participantsInfo: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.card2,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    alignItems: "baseline",
+    gap: 6,
   },
-  locationBadgeText: { color: Colors.muted, fontSize: 10, fontFamily: "Inter_600SemiBold" },
-  infoCard: {
+  participantsCount: {
+    color: Colors.text,
+    fontSize: 28,
+    fontFamily: "Inter_900Black",
+  },
+  participantsLabel: {
+    color: Colors.muted,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  section: {
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 20,
+    borderRadius: 18,
     padding: 16,
-    gap: 16,
   },
-  titleRow: { flexDirection: "row", gap: 14, alignItems: "center" },
-  dateBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    backgroundColor: Colors.card2,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  sectionTitle: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 10,
+  },
+  description: {
+    color: Colors.muted,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 22,
+  },
+  creatorCard: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 10,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    borderRadius: 14,
+    padding: 14,
   },
-  dateBoxDay: { color: Colors.accent, fontSize: 20, fontFamily: "Inter_900Black" },
-  dateBoxMonth: { color: Colors.muted, fontSize: 10, fontFamily: "Inter_700Bold", textTransform: "uppercase" },
-  title: { color: Colors.text, fontSize: 18, fontFamily: "Inter_900Black" },
-  datetime: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold", marginTop: 4 },
-  descSection: { paddingTop: 12, borderTopWidth: 1, borderTopColor: Colors.border },
-  sectionLabel: { color: Colors.muted, fontSize: 11, fontFamily: "Inter_700Bold", textTransform: "uppercase", marginBottom: 8 },
-  description: { color: Colors.text, fontSize: 14, fontFamily: "Inter_600SemiBold", lineHeight: 20 },
-  statsRow: { flexDirection: "row", gap: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: Colors.border },
-  statItem: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
-  statValue: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
-  statLabel: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  creatorText: {
+    color: Colors.accent,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.bg,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    padding: 16,
+    paddingBottom: 30,
+  },
   joinButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
     backgroundColor: Colors.accent,
-    borderRadius: 16,
     paddingVertical: 16,
+    borderRadius: 16,
   },
-  joinButtonJoined: { backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.accent },
-  joinButtonText: { color: Colors.bg, fontSize: 16, fontFamily: "Inter_700Bold" },
-  joinButtonTextJoined: { color: Colors.text },
+  joinButtonJoined: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  joinButtonText: {
+    color: Colors.bg,
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+  },
+  joinButtonTextJoined: {
+    color: Colors.text,
+  },
 });
