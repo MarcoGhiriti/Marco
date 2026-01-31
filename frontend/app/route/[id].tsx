@@ -83,25 +83,38 @@ export default function RouteDetailScreen() {
 
   const handleDelete = () => {
     if (!headers || !route) return;
-    Alert.alert(
-      "Delete Route",
-      "Are you sure you want to delete this route? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await apiDelete(`/api/routes/${route.id}`, headers);
-              router.back();
-            } catch (e) {
-              Alert.alert("Error", e instanceof Error ? e.message : "Could not delete route");
-            }
-          },
-        },
-      ]
-    );
+    
+    // Web fallback for Alert
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm("Are you sure you want to delete this route? This action cannot be undone.");
+      if (confirmed) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Route",
+        "Are you sure you want to delete this route? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: performDelete },
+        ]
+      );
+    }
+  };
+
+  const performDelete = async () => {
+    if (!headers || !route) return;
+    try {
+      await apiDelete(`/api/routes/${route.id}`, headers);
+      router.back();
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Could not delete route");
+    }
+  };
+
+  const handleEdit = () => {
+    if (!route) return;
+    router.push(`/create/route?edit=${route.id}`);
   };
 
   const isCreator = me?.id && route?.created_by === me.id;
