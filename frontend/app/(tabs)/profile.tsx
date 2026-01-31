@@ -262,6 +262,79 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
         </Pressable>
 
+        {/* MY ROUTES */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My Routes</Text>
+            <Pressable onPress={() => router.push("/create/route")} style={styles.addRouteBtn}>
+              <Ionicons name="add" size={18} color={Colors.accent} />
+              <Text style={styles.addRouteBtnText}>Create</Text>
+            </Pressable>
+          </View>
+
+          {myRoutes.length === 0 ? (
+            <View style={styles.emptyRoutes}>
+              <Ionicons name="map-outline" size={48} color={Colors.muted} />
+              <Text style={styles.emptyRoutesText}>No routes created yet</Text>
+              <Text style={styles.emptyRoutesSub}>Create your first route to start tracking rides!</Text>
+            </View>
+          ) : (
+            <View style={styles.myRoutesList}>
+              {myRoutes.map((route) => {
+                const isActiveRoute = activeRide?.route_id === route.id;
+                const startDateStr = route.start_date 
+                  ? new Date(route.start_date).toLocaleDateString("en-US", { 
+                      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" 
+                    })
+                  : null;
+                
+                return (
+                  <View key={route.id} style={styles.myRouteCard}>
+                    <RouteMiniMap polyline={route.polyline} />
+                    <View style={styles.myRouteContent}>
+                      <Text style={styles.myRouteTitle} numberOfLines={1}>{route.title}</Text>
+                      <View style={styles.myRouteStats}>
+                        <Text style={styles.myRouteStat}>
+                          <Ionicons name="navigate-outline" size={12} color={Colors.accent} /> {route.distance_km.toFixed(1)} km
+                        </Text>
+                        <Text style={styles.myRouteStat}>
+                          <Ionicons name="people-outline" size={12} color={Colors.accent} /> {route.participants_count}
+                        </Text>
+                      </View>
+                      {startDateStr && (
+                        <View style={styles.myRouteDateRow}>
+                          <Ionicons name="calendar-outline" size={12} color={Colors.muted} />
+                          <Text style={styles.myRouteDate}>{startDateStr}</Text>
+                        </View>
+                      )}
+                      
+                      {/* Action Buttons */}
+                      <View style={styles.myRouteActions}>
+                        {isActiveRoute ? (
+                          <Pressable onPress={handleEndRide} style={styles.endRideBtn}>
+                            <Ionicons name="flag" size={16} color="#FFF" />
+                            <Text style={styles.endRideBtnText}>End Ride</Text>
+                          </Pressable>
+                        ) : !activeRide ? (
+                          <Pressable onPress={() => handleStartRide(route.id)} style={styles.startRideBtn}>
+                            <Ionicons name="play" size={16} color="#FFF" />
+                            <Text style={styles.startRideBtnText}>Start Ride</Text>
+                          </Pressable>
+                        ) : (
+                          <View style={styles.rideLocked}>
+                            <Ionicons name="lock-closed" size={14} color={Colors.muted} />
+                            <Text style={styles.rideLockedText}>Ride in progress</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
         {/* PERSONAL STATS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Personal stats</Text>
