@@ -907,6 +907,52 @@ async def me(current_user: dict = Depends(get_current_user)):
     return UserPublic(**current_user)
 
 
+@api_router.post("/me/license")
+async def upload_license(payload: LicenseUpload, current_user: dict = Depends(get_current_user)):
+    """Upload motorcycle license for verification."""
+    uid = current_user["id"]
+    
+    # Store the license info (pending verification)
+    await db.users.update_one(
+        {"_id": _as_object_id(uid)},
+        {
+            "$set": {
+                "license_type": payload.license_type,
+                "license_photo_base64": payload.license_photo_base64,
+                "license_verified": False,  # Pending verification
+                "license_submitted_at": datetime.utcnow(),
+            }
+        }
+    )
+    
+    return {"ok": True, "message": "License submitted for verification"}
+
+
+@api_router.get("/me/license-status")
+async def get_license_status(current_user: dict = Depends(get_current_user)):
+    """Get current license verification status."""
+    uid = current_user["id"]
+    user = await db.users.find_one({"_id": _as_object_id(uid)})
+    
+    return {
+        "license_type": user.get("license_type"),
+        "license_verified": user.get("license_verified", False),
+        "license_submitted_at": user.get("license_submitted_at"),
+    }
+
+
+# Admin endpoint to verify licenses (for future use)
+@api_router.post("/admin/verify-license/{user_id}")
+async def verify_license(user_id: str, verified: bool = True, current_user: dict = Depends(get_current_user)):
+    """Admin endpoint to verify a user's license."""
+    # For now, auto-approve (in production, this would be admin-only)
+    await db.users.update_one(
+        {"_id": _as_object_id(user_id)},
+        {"$set": {"license_verified": verified}}
+    )
+    return {"ok": True}
+
+
 def _as_object_id(id_str: str) -> ObjectId:
     try:
         return ObjectId(id_str)
