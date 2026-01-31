@@ -307,8 +307,7 @@
 ##   run_ui: false
 ## test_plan:
 ##   current_focus:
-##     - "Ride Sessions API (Anti-fraud km tracking)"
-##     - "Gamification API (Badges & Leaderboard)"
+##     - "Places Autocomplete and Directions API (Google Maps integration)"
 ##   stuck_tasks: []
 ##   test_all: false
 ##   test_priority: "high_first"
