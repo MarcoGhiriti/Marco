@@ -99,6 +99,8 @@ export default function ProfileScreen() {
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [myRoutes, setMyRoutes] = useState<RouteOut[]>([]);
+  const [activeRide, setActiveRide] = useState<RideSessionOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,12 +115,16 @@ export default function ProfileScreen() {
     setLoading(true);
     try {
       await refreshMe();
-      const [statsData, friendsData] = await Promise.all([
+      const [statsData, friendsData, routesData, rideData] = await Promise.all([
         apiGet<Stats>("/api/stats", headers),
         apiGet<Friend[]>("/api/friends", headers),
+        apiGet<RouteOut[]>("/api/routes/my", headers),
+        apiGet<RideSessionOut | null>("/api/rides/active", headers).catch(() => null),
       ]);
       setStats(statsData);
       setFriends(friendsData);
+      setMyRoutes(routesData);
+      setActiveRide(rideData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load profile");
     } finally {
@@ -129,6 +135,29 @@ export default function ProfileScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleStartRide = async (routeId: string) => {
+    if (!headers) return;
+    try {
+      const data = await apiPost<RideSessionOut>("/api/rides/start", { route_id: routeId }, headers);
+      setActiveRide(data);
+      Alert.alert("Ride Started!", "Your ride has begun. Drive safe!");
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Could not start ride");
+    }
+  };
+
+  const handleEndRide = async () => {
+    if (!headers || !activeRide) return;
+    try {
+      await apiPost("/api/rides/end", { session_id: activeRide.id }, headers);
+      setActiveRide(null);
+      Alert.alert("Ride Completed!", "Congrats! Your kilometers have been recorded.");
+      load(); // Refresh to update stats and remove the route
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Could not end ride");
+    }
+  };
 
   const motoLine = me?.bike?.model 
     ? `${me.bike.model}${me.bike?.cc ? ` · ${me.bike.cc}cc` : ""}` 
