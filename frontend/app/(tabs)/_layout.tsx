@@ -76,10 +76,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="shop"
         options={{
-          title: "Shop",
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="storefront-outline" size={size} color={color} />
-          ),
+          href: null, // Hide from tab bar, accessible via button on Home
         }}
       />
       <Tabs.Screen
