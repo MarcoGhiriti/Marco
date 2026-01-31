@@ -2,95 +2,118 @@ import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
-import type { RouteOut } from "../types/api";
 import { RouteMiniMap } from "./RouteMiniMap";
+import type { RouteOut } from "../types/api";
 
-function difficultyLabel(d: RouteOut["difficulty"]) {
-  switch (d) {
-    case "easy":
-      return "Easy";
-    case "medium":
-      return "Medium";
-    case "hard":
-      return "Hard";
-    default:
-      return "Medium";
-  }
+interface RouteCardProps {
+  item: RouteOut;
+  currentUserId?: string;
+  activeRideRouteId?: string | null;
+  onToggleJoin: () => void;
+  onStartRide?: () => void;
+  onEndRide?: () => void;
 }
 
-export function RouteCard({
-  item,
-  onPress,
-  onToggleJoin,
-}: {
-  item: RouteOut;
-  onPress?: () => void;
-  onToggleJoin?: () => void;
-}) {
-  const meta = useMemo(() => {
-    return [
-      {
-        icon: "time-outline" as const,
-        label: `${item.duration_min} min`,
-      },
-      {
-        icon: "navigate-outline" as const,
-        label: `${item.distance_km} km`,
-      },
-      {
-        icon: "flash-outline" as const,
-        label: difficultyLabel(item.difficulty),
-      },
-    ];
-  }, [item.duration_min, item.distance_km, item.difficulty]);
+export function RouteCard({ 
+  item, 
+  currentUserId,
+  activeRideRouteId,
+  onToggleJoin, 
+  onStartRide,
+  onEndRide,
+}: RouteCardProps) {
+  const diffColor = useMemo(() => {
+    if (item.difficulty === "easy") return Colors.success;
+    if (item.difficulty === "medium") return "#FFC107";
+    return Colors.danger;
+  }, [item.difficulty]);
+
+  const isCreator = currentUserId && item.created_by === currentUserId;
+  const hasActiveRide = activeRideRouteId === item.id;
+  const canStartRide = isCreator && item.is_joined && !activeRideRouteId;
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-    >
-      <View style={styles.headerRow}>
-        <Text style={styles.title} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <View style={styles.pill}>
-          <Ionicons name="notifications-outline" size={16} color={Colors.muted} />
-        </View>
-      </View>
+    <View style={styles.card}>
+      {/* Mini Map */}
+      <RouteMiniMap polyline={item.polyline} height={140} />
 
-      <View style={styles.mapWrap}>
-        <RouteMiniMap polyline={item.polyline} />
-      </View>
-
-      <Text style={styles.desc} numberOfLines={2}>
-        {item.description || "Motorcycle route"}
-      </Text>
-
-      <View style={styles.metaRow}>
-        {meta.map((m) => (
-          <View key={m.icon} style={styles.metaItem}>
-            <Ionicons name={m.icon} size={16} color={Colors.muted} />
-            <Text style={styles.metaText}>{m.label}</Text>
+      {/* Card Content */}
+      <View style={styles.cardContent}>
+        {/* Header Row */}
+        <View style={styles.headerRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <View style={[styles.diffBadge, { backgroundColor: diffColor }]}>
+            <Text style={styles.diffText}>
+              {item.difficulty.charAt(0).toUpperCase() + item.difficulty.slice(1)}
+            </Text>
           </View>
-        ))}
-        <View style={styles.metaItem}>
-          <Ionicons name="people-outline" size={16} color={Colors.muted} />
-          <Text style={styles.metaText}>{item.participants_count} joined</Text>
+        </View>
+
+        {/* Description */}
+        <Text style={styles.desc} numberOfLines={2}>
+          {item.description || "No description"}
+        </Text>
+
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Ionicons name="navigate-outline" size={14} color={Colors.accent} />
+            <Text style={styles.statText}>{item.distance_km.toFixed(1)} km</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Ionicons name="time-outline" size={14} color={Colors.accent} />
+            <Text style={styles.statText}>{item.duration_min} min</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Ionicons name="people-outline" size={14} color={Colors.accent} />
+            <Text style={styles.statText}>{item.participants_count}</Text>
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionsRow}>
+          {/* Join/Leave Button */}
+          <Pressable
+            onPress={onToggleJoin}
+            style={[styles.joinBtn, item.is_joined && styles.joinBtnJoined]}
+          >
+            <Ionicons
+              name={item.is_joined ? "checkmark-circle" : "add-circle-outline"}
+              size={16}
+              color={item.is_joined ? Colors.text : Colors.bg}
+            />
+            <Text style={[styles.joinBtnText, item.is_joined && styles.joinBtnTextJoined]}>
+              {item.is_joined ? "Joined" : "Join"}
+            </Text>
+          </Pressable>
+
+          {/* Start/End Ride Button (only for creator) */}
+          {isCreator && item.is_joined && (
+            hasActiveRide ? (
+              <Pressable onPress={onEndRide} style={styles.rideBtn}>
+                <Ionicons name="flag" size={16} color="#FFF" />
+                <Text style={styles.rideBtnText}>End Ride</Text>
+              </Pressable>
+            ) : !activeRideRouteId ? (
+              <Pressable onPress={onStartRide} style={[styles.rideBtn, styles.startRideBtn]}>
+                <Ionicons name="play" size={16} color="#FFF" />
+                <Text style={styles.rideBtnText}>Start Ride</Text>
+              </Pressable>
+            ) : null
+          )}
+
+          {/* Creator Badge */}
+          {isCreator && (
+            <View style={styles.creatorBadge}>
+              <Ionicons name="star" size={12} color={Colors.accent} />
+              <Text style={styles.creatorText}>Creator</Text>
+            </View>
+          )}
         </View>
       </View>
-
-      <View style={styles.footerRow}>
-        <Pressable onPress={onToggleJoin} style={styles.ctaPrimary}>
-          <Ionicons name="checkmark-circle-outline" size={18} color={Colors.bg} />
-          <Text style={styles.ctaPrimaryText}>{item.is_joined ? "Joined" : "Join"}</Text>
-        </Pressable>
-
-        <View style={styles.ctaGhost}>
-          <Ionicons name="share-outline" size={18} color={Colors.text} />
-          <Text style={styles.ctaGhostText}>Share</Text>
-        </View>
-      </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -99,107 +122,115 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.45,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 10,
+    borderRadius: 20,
+    overflow: "hidden",
   },
-  cardPressed: {
-    opacity: 0.92,
+  cardContent: {
+    padding: 14,
+    gap: 10,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 10,
   },
   title: {
     flex: 1,
     color: Colors.text,
     fontSize: 16,
-    fontFamily: "Inter_900Black",
-    letterSpacing: 0.2,
+    fontFamily: "Inter_700Bold",
   },
-  pill: {
-    height: 36,
-    width: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.card2,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  diffBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  mapWrap: {
-    marginTop: 12,
+  diffText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
   },
   desc: {
-    marginTop: 8,
     color: Colors.muted,
     fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
     lineHeight: 18,
   },
-  metaRow: {
-    marginTop: 12,
+  statsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
+    gap: 16,
   },
-  metaItem: {
+  statItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    backgroundColor: Colors.card2,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    gap: 4,
   },
-  metaText: {
+  statText: {
     color: Colors.muted,
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
   },
-  footerRow: {
-    marginTop: 14,
+  actionsRow: {
     flexDirection: "row",
-    gap: 12,
-  },
-  ctaPrimary: {
-    flex: 1,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: Colors.accent,
     alignItems: "center",
-    justifyContent: "center",
+    gap: 10,
+    marginTop: 4,
+  },
+  joinBtn: {
     flexDirection: "row",
-    gap: 8,
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: Colors.accent,
   },
-  ctaPrimaryText: {
-    color: Colors.bg,
-    fontWeight: "800",
-    fontSize: 14,
-  },
-  ctaGhost: {
-    width: 110,
-    height: 48,
-    borderRadius: 14,
+  joinBtnJoined: {
+    backgroundColor: Colors.card2,
     borderWidth: 1,
     borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 8,
-    backgroundColor: "transparent",
   },
-  ctaGhostText: {
+  joinBtnText: {
+    color: Colors.bg,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+  joinBtnTextJoined: {
     color: Colors.text,
-    fontWeight: "700",
-    fontSize: 14,
+  },
+  rideBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: Colors.danger,
+  },
+  startRideBtn: {
+    backgroundColor: Colors.success,
+  },
+  rideBtnText: {
+    color: "#FFF",
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+  creatorBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginLeft: "auto",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  creatorText: {
+    color: Colors.accent,
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
   },
 });
