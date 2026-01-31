@@ -29,12 +29,12 @@ interface PlaceDetails {
 
 // Event types
 const EVENT_TYPES = [
-  { id: "opening", label: "Deschidere Sezon", icon: "sunny" },
-  { id: "closing", label: "Închidere Sezon", icon: "moon" },
-  { id: "meetup", label: "Meetup Moto", icon: "people" },
-  { id: "show", label: "Show Moto", icon: "star" },
-  { id: "ride", label: "Grup Ride", icon: "bicycle" },
-  { id: "other", label: "Altele", icon: "ellipsis-horizontal" },
+  { id: "opening", label: "Season Opening", icon: "sunny" },
+  { id: "closing", label: "Season Closing", icon: "moon" },
+  { id: "meetup", label: "Moto Meetup", icon: "people" },
+  { id: "show", label: "Moto Show", icon: "star" },
+  { id: "ride", label: "Group Ride", icon: "bicycle" },
+  { id: "other", label: "Other", icon: "ellipsis-horizontal" },
 ] as const;
 
 // Map Preview for single location
