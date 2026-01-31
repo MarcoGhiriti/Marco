@@ -30,7 +30,7 @@ export default function TermsScreen() {
           harmful, or misleading content.
         </Text>
         <Text style={styles.p}>
-          3) Availability: The service is provided "as is" and may change over time.
+          3) Availability: The service is provided as-is and may change over time.
         </Text>
         <Text style={styles.p}>
           4) Liability: Moto GO is not liable for accidents, damages, or losses.
