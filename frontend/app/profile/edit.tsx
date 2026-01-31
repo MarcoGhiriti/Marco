@@ -43,6 +43,43 @@ export default function EditProfileScreen() {
   const onSave = async () => {
     if (!headers) return;
     Keyboard.dismiss();
+
+  const pickPhoto = async () => {
+    if (!headers) return;
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      setError("Photo permission is required");
+      return;
+    }
+
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+      base64: true,
+    });
+
+    if (res.canceled) return;
+    const asset = res.assets?.[0];
+    if (!asset) return;
+
+    // Ensure reasonable size
+    const manip = await ImageManipulator.manipulateAsync(
+      asset.uri,
+      [{ resize: { width: 512 } }],
+      { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    );
+
+    const b64 = manip.base64 ? `data:image/jpeg;base64,${manip.base64}` : null;
+    if (!b64) {
+      setError("Failed to process image");
+      return;
+    }
+
+    setPhotoBase64(b64);
+  };
+
     setError(null);
     setSaving(true);
     try {
