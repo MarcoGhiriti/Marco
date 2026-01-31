@@ -16,7 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
-import { apiPost } from "../../src/lib/api";
+import { apiPatch } from "../../src/lib/api";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useAuthStore } from "../../src/state/authStore";
@@ -33,17 +33,14 @@ export default function EditProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [photoBase64, setPhotoBase64] = useState<string | null>(me?.profile_photo_base64 ?? null);
-
+  const [photoBase64, setPhotoBase64] = useState<string | null>(
+    me?.profile_photo_base64 ?? null
+  );
 
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
-
-  const onSave = async () => {
-    if (!headers) return;
-    Keyboard.dismiss();
 
   const pickPhoto = async () => {
     if (!headers) return;
@@ -81,11 +78,15 @@ export default function EditProfileScreen() {
     setPhotoBase64(b64);
   };
 
+  const onSave = async () => {
+    if (!headers) return;
+    Keyboard.dismiss();
+
     setError(null);
     setSaving(true);
     try {
       const cc = bikeCc.trim() ? Number(bikeCc.trim()) : undefined;
-      await apiPost(
+      await apiPatch(
         "/api/me",
         {
           bio: bio.trim(),
@@ -127,7 +128,10 @@ export default function EditProfileScreen() {
           </Pressable>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.card}>
             <View style={styles.photoRow}>
               <View style={styles.photoCircle}>
@@ -190,34 +194,12 @@ export default function EditProfileScreen() {
               placeholder="RO"
               placeholderTextColor={Colors.muted}
               autoCapitalize="characters"
-  photoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  photoCircle: {
-    height: 48,
-    width: 48,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card2,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  photo: { height: 48, width: 48 },
-  photoBtn: {
-    height: 44,
-    width: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
               maxLength={2}
               style={styles.input}
             />
-            <Text style={styles.help}>Used for local regulations & reminders.</Text>
+            <Text style={styles.help}>
+              Used for local regulations & reminders.
+            </Text>
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -252,7 +234,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
+  headerTitle: {
+    color: Colors.text,
+    fontSize: 16,
+    fontFamily: "Inter_900Black",
+  },
   content: { padding: 16, gap: 12 },
   card: {
     backgroundColor: Colors.card,
@@ -261,8 +247,36 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
   },
+  photoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  photoCircle: {
+    height: 48,
+    width: 48,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card2,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  photo: { height: 48, width: 48 },
+  photoBtn: {
+    height: 44,
+    width: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   label: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
-  value: { marginTop: 8, color: Colors.text, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  value: {
+    marginTop: 8,
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
   input: {
     marginTop: 10,
     borderWidth: 1,
@@ -275,6 +289,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
   },
-  help: { marginTop: 8, color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  help: {
+    marginTop: 8,
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
   error: { color: Colors.danger, fontSize: 12, fontFamily: "Inter_700Bold" },
 });
