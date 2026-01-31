@@ -8,9 +8,11 @@ import {
   Text,
   View,
   Alert,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
@@ -29,6 +31,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   // Story viewer state
   const [storyViewerVisible, setStoryViewerVisible] = useState(false);
@@ -39,15 +42,42 @@ export default function HomeScreen() {
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
+  // Get user location
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS === "web") {
+        // On web, use a default location or skip
+        return;
+      }
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          const loc = await Location.getCurrentPositionAsync({});
+          setUserLocation({
+            lat: loc.coords.latitude,
+            lng: loc.coords.longitude,
+          });
+        }
+      } catch (e) {
+        console.log("Location error:", e);
+      }
+    })();
+  }, []);
+
   const loadRoutes = useCallback(async () => {
     if (!authHeader) return;
     try {
-      const data = await apiGet<RouteOut[]>("/api/routes", authHeader);
+      // Build URL with location params if available
+      let url = "/api/routes";
+      if (userLocation) {
+        url += `?lat=${userLocation.lat}&lng=${userLocation.lng}&radius_km=500`;
+      }
+      const data = await apiGet<RouteOut[]>(url, authHeader);
       setRoutes(data);
     } catch (e) {
       console.error("Failed to load routes:", e);
     }
-  }, [authHeader]);
+  }, [authHeader, userLocation]);
 
   const loadStories = useCallback(async () => {
     if (!authHeader) return;
