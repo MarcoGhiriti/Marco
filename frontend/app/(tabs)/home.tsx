@@ -108,6 +108,16 @@ export default function HomeScreen() {
     }
   }, [authHeader]);
 
+  const loadLicenseStatus = useCallback(async () => {
+    if (!authHeader) return;
+    try {
+      const data = await apiGet<LicenseStatus>("/api/me/license-status", authHeader);
+      setLicenseStatus(data);
+    } catch (e) {
+      console.error("Failed to load license status:", e);
+    }
+  }, [authHeader]);
+
   const load = useCallback(async () => {
     if (!authHeader) {
       setLoading(false);
@@ -115,7 +125,7 @@ export default function HomeScreen() {
     }
     setError(null);
     try {
-      await Promise.all([loadRoutes(), loadStories(), loadActiveRide()]);
+      await Promise.all([loadRoutes(), loadStories(), loadActiveRide(), loadLicenseStatus()]);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       setError(msg);
