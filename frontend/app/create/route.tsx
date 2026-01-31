@@ -12,7 +12,6 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
@@ -27,7 +26,7 @@ export default function CreateRouteScreen() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
 
-  const [step, setStep] = useState<1 | 2>(1); // 1: map, 2: details
+  const [step, setStep] = useState<1 | 2>(1);
   const [points, setPoints] = useState<Point[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -35,12 +34,9 @@ export default function CreateRouteScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [region, setRegion] = useState({
-    latitude: 44.4268,
-    longitude: 26.1025,
-    latitudeDelta: 0.1,
-    longitudeDelta: 0.1,
-  });
+  // For web input
+  const [latInput, setLatInput] = useState("44.4268");
+  const [lngInput, setLngInput] = useState("26.1025");
 
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
@@ -48,15 +44,15 @@ export default function CreateRouteScreen() {
   }, [accessToken]);
 
   const loadLocation = useCallback(async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status === "granted") {
-      const loc = await Location.getCurrentPositionAsync({});
-      setRegion({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        latitudeDelta: 0.1,
-        longitudeDelta: 0.1,
-      });
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const loc = await Location.getCurrentPositionAsync({});
+        setLatInput(loc.coords.latitude.toFixed(6));
+        setLngInput(loc.coords.longitude.toFixed(6));
+      }
+    } catch (e) {
+      console.log("Location not available");
     }
   }, []);
 
@@ -64,9 +60,12 @@ export default function CreateRouteScreen() {
     loadLocation();
   }, [loadLocation]);
 
-  const handleMapPress = (e: any) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    setPoints([...points, { lat: latitude, lng: longitude }]);
+  const addPoint = () => {
+    const lat = parseFloat(latInput);
+    const lng = parseFloat(lngInput);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      setPoints([...points, { lat, lng }]);
+    }
   };
 
   const removeLastPoint = () => {
@@ -108,23 +107,18 @@ export default function CreateRouteScreen() {
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.headerBtn}>
             <Ionicons name="close" size={22} color={Colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>
-            {step === 1 ? "Draw Route" : "Route Details"}
+            {step === 1 ? "Add Points" : "Route Details"}
           </Text>
           {step === 1 ? (
             <Pressable
               onPress={() => setStep(2)}
               disabled={points.length < 2}
-              style={[
-                styles.headerBtn,
-                styles.nextBtn,
-                points.length < 2 && styles.nextBtnDisabled,
-              ]}
+              style={[styles.headerBtn, styles.nextBtn, points.length < 2 && styles.nextBtnDisabled]}
             >
               <Text style={styles.nextBtnText}>Next</Text>
             </Pressable>
@@ -132,11 +126,7 @@ export default function CreateRouteScreen() {
             <Pressable
               onPress={handleCreate}
               disabled={loading || !title.trim()}
-              style={[
-                styles.headerBtn,
-                styles.nextBtn,
-                (loading || !title.trim()) && styles.nextBtnDisabled,
-              ]}
+              style={[styles.headerBtn, styles.nextBtn, (loading || !title.trim()) && styles.nextBtnDisabled]}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={Colors.bg} />
@@ -148,110 +138,80 @@ export default function CreateRouteScreen() {
         </View>
 
         {step === 1 ? (
-          /* Step 1: Map */
-          <View style={styles.mapContainer}>
-            <MapView
-              style={styles.map}
-              provider={PROVIDER_GOOGLE}
-              initialRegion={region}
-              onRegionChangeComplete={setRegion}
-              onPress={handleMapPress}
-              showsUserLocation
-              customMapStyle={darkMapStyle}
-            >
-              {points.map((p, i) => (
-                <Marker
-                  key={i}
-                  coordinate={{ latitude: p.lat, longitude: p.lng }}
-                  pinColor={i === 0 ? Colors.success : i === points.length - 1 ? Colors.danger : Colors.accent}
-                >
-                  <View style={[styles.pointMarker, i === 0 && styles.startMarker, i === points.length - 1 && styles.endMarker]}>
-                    <Text style={styles.pointMarkerText}>{i + 1}</Text>
-                  </View>
-                </Marker>
-              ))}
-              {points.length >= 2 && (
-                <Polyline
-                  coordinates={points.map((p) => ({
-                    latitude: p.lat,
-                    longitude: p.lng,
-                  }))}
-                  strokeColor={Colors.accent}
-                  strokeWidth={4}
-                />
-              )}
-            </MapView>
-
-            {/* Map Controls */}
-            <View style={styles.mapControls}>
-              <Pressable
-                onPress={removeLastPoint}
-                disabled={points.length === 0}
-                style={[styles.mapControlBtn, points.length === 0 && styles.mapControlBtnDisabled]}
-              >
-                <Ionicons name="arrow-undo" size={20} color={Colors.text} />
-              </Pressable>
-              <Pressable
-                onPress={clearPoints}
-                disabled={points.length === 0}
-                style={[styles.mapControlBtn, points.length === 0 && styles.mapControlBtnDisabled]}
-              >
-                <Ionicons name="trash-outline" size={20} color={Colors.danger} />
-              </Pressable>
-            </View>
-
-            {/* Instructions */}
-            <View style={styles.instructions}>
-              <Ionicons name="finger-print" size={18} color={Colors.accent} />
-              <Text style={styles.instructionsText}>
-                Tap on the map to add points. Min 2 points required.
+          <ScrollView contentContainerStyle={styles.step1Content}>
+            <View style={styles.locationCard}>
+              <Ionicons name="trail-sign" size={48} color={Colors.accent} />
+              <Text style={styles.locationTitle}>Build Your Route</Text>
+              <Text style={styles.locationSub}>
+                Add at least 2 points to create a route. On mobile, you can tap points on the map.
               </Text>
-            </View>
 
-            {/* Points Counter */}
-            <View style={styles.pointsCounter}>
-              <Text style={styles.pointsCounterText}>
-                {points.length} points
-              </Text>
-            </View>
-          </View>
-        ) : (
-          /* Step 2: Details Form */
-          <ScrollView
-            contentContainerStyle={styles.formContainer}
-            keyboardShouldPersistTaps="handled"
-          >
-            <Pressable onPress={() => setStep(1)} style={styles.miniMapContainer}>
-              <MapView
-                style={styles.miniMap}
-                provider={PROVIDER_GOOGLE}
-                region={{
-                  latitude: points[0]?.lat || region.latitude,
-                  longitude: points[0]?.lng || region.longitude,
-                  latitudeDelta: 0.05,
-                  longitudeDelta: 0.05,
-                }}
-                scrollEnabled={false}
-                zoomEnabled={false}
-                customMapStyle={darkMapStyle}
-              >
-                {points.length >= 2 && (
-                  <Polyline
-                    coordinates={points.map((p) => ({
-                      latitude: p.lat,
-                      longitude: p.lng,
-                    }))}
-                    strokeColor={Colors.accent}
-                    strokeWidth={3}
+              <View style={styles.coordRow}>
+                <View style={styles.coordField}>
+                  <Text style={styles.coordLabel}>Latitude</Text>
+                  <TextInput
+                    value={latInput}
+                    onChangeText={setLatInput}
+                    keyboardType="numeric"
+                    style={styles.coordInput}
+                    placeholder="e.g. 44.4268"
+                    placeholderTextColor={Colors.muted}
                   />
-                )}
-              </MapView>
-              <View style={styles.miniMapOverlay}>
-                <Ionicons name="create-outline" size={16} color={Colors.text} />
-                <Text style={styles.miniMapText}>Tap to edit route</Text>
+                </View>
+                <View style={styles.coordField}>
+                  <Text style={styles.coordLabel}>Longitude</Text>
+                  <TextInput
+                    value={lngInput}
+                    onChangeText={setLngInput}
+                    keyboardType="numeric"
+                    style={styles.coordInput}
+                    placeholder="e.g. 26.1025"
+                    placeholderTextColor={Colors.muted}
+                  />
+                </View>
               </View>
-            </Pressable>
 
+              <View style={styles.btnRow}>
+                <Pressable onPress={addPoint} style={styles.addPointBtn}>
+                  <Ionicons name="add" size={18} color={Colors.bg} />
+                  <Text style={styles.addPointBtnText}>Add Point</Text>
+                </Pressable>
+                <Pressable onPress={removeLastPoint} disabled={points.length === 0} style={[styles.undoBtn, points.length === 0 && styles.undoBtnDisabled]}>
+                  <Ionicons name="arrow-undo" size={18} color={Colors.text} />
+                </Pressable>
+                <Pressable onPress={clearPoints} disabled={points.length === 0} style={[styles.undoBtn, points.length === 0 && styles.undoBtnDisabled]}>
+                  <Ionicons name="trash-outline" size={18} color={Colors.danger} />
+                </Pressable>
+              </View>
+
+              <View style={styles.pointsBadge}>
+                <Ionicons name="location" size={16} color={Colors.accent} />
+                <Text style={styles.pointsBadgeText}>{points.length} points added</Text>
+              </View>
+
+              {points.length > 0 && (
+                <View style={styles.pointsList}>
+                  {points.map((p, i) => (
+                    <View key={i} style={styles.pointItem}>
+                      <View style={[styles.pointDot, i === 0 && styles.pointDotStart, i === points.length - 1 && styles.pointDotEnd]}>
+                        <Text style={styles.pointDotText}>{i + 1}</Text>
+                      </View>
+                      <Text style={styles.pointCoords}>
+                        {p.lat.toFixed(4)}, {p.lng.toFixed(4)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <Pressable onPress={loadLocation} style={styles.useCurrentBtn}>
+                <Ionicons name="locate" size={16} color={Colors.accent} />
+                <Text style={styles.useCurrentBtnText}>Use my current location</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        ) : (
+          <ScrollView contentContainerStyle={styles.formContainer} keyboardShouldPersistTaps="handled">
             <View style={styles.formCard}>
               <Text style={styles.formLabel}>Title *</Text>
               <TextInput
@@ -284,17 +244,9 @@ export default function CreateRouteScreen() {
                   <Pressable
                     key={d}
                     onPress={() => setDifficulty(d)}
-                    style={[
-                      styles.difficultyBtn,
-                      difficulty === d && styles.difficultyBtnActive,
-                    ]}
+                    style={[styles.difficultyBtn, difficulty === d && styles.difficultyBtnActive]}
                   >
-                    <Text
-                      style={[
-                        styles.difficultyBtnText,
-                        difficulty === d && styles.difficultyBtnTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.difficultyBtnText, difficulty === d && styles.difficultyBtnTextActive]}>
                       {d.charAt(0).toUpperCase() + d.slice(1)}
                     </Text>
                   </Pressable>
@@ -303,7 +255,6 @@ export default function CreateRouteScreen() {
             </View>
 
             {error && <Text style={styles.errorText}>{error}</Text>}
-
             <View style={{ height: 40 }} />
           </ScrollView>
         )}
@@ -311,15 +262,6 @@ export default function CreateRouteScreen() {
     </SafeAreaView>
   );
 }
-
-const darkMapStyle = [
-  { elementType: "geometry", stylers: [{ color: "#1d1d1d" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c2c2c" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3c3c3c" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-];
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
@@ -343,127 +285,90 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: {
+  headerTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
+  nextBtn: { width: 80, backgroundColor: Colors.accent, borderColor: Colors.accent },
+  nextBtnDisabled: { opacity: 0.5 },
+  nextBtnText: { color: Colors.bg, fontSize: 14, fontFamily: "Inter_700Bold" },
+  step1Content: { padding: 16 },
+  locationCard: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    gap: 16,
+  },
+  locationTitle: { color: Colors.text, fontSize: 20, fontFamily: "Inter_900Black" },
+  locationSub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
+  coordRow: { flexDirection: "row", gap: 12, width: "100%" },
+  coordField: { flex: 1 },
+  coordLabel: { color: Colors.muted, fontSize: 11, fontFamily: "Inter_700Bold", marginBottom: 6 },
+  coordInput: {
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     color: Colors.text,
-    fontSize: 16,
-    fontFamily: "Inter_900Black",
-  },
-  nextBtn: {
-    width: 80,
-    backgroundColor: Colors.accent,
-    borderColor: Colors.accent,
-  },
-  nextBtnDisabled: {
-    opacity: 0.5,
-  },
-  nextBtnText: {
-    color: Colors.bg,
     fontSize: 14,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "Inter_600SemiBold",
   },
-  mapContainer: { flex: 1 },
-  map: { flex: 1 },
-  pointMarker: {
+  btnRow: { flexDirection: "row", gap: 10 },
+  addPointBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  addPointBtnText: { color: Colors.bg, fontSize: 14, fontFamily: "Inter_700Bold" },
+  undoBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  undoBtnDisabled: { opacity: 0.5 },
+  pointsBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.card2,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  pointsBadgeText: { color: Colors.accent, fontSize: 13, fontFamily: "Inter_700Bold" },
+  pointsList: { width: "100%", gap: 8 },
+  pointItem: { flexDirection: "row", alignItems: "center", gap: 12 },
+  pointDot: {
     width: 28,
     height: 28,
     borderRadius: 14,
     backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#FFF",
   },
-  startMarker: { backgroundColor: Colors.success },
-  endMarker: { backgroundColor: Colors.danger },
-  pointMarkerText: {
-    color: "#FFF",
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-  },
-  mapControls: {
-    position: "absolute",
-    right: 12,
-    top: 12,
-    gap: 8,
-  },
-  mapControlBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mapControlBtnDisabled: {
-    opacity: 0.5,
-  },
-  instructions: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    bottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 14,
-    padding: 12,
-  },
-  instructionsText: {
-    flex: 1,
-    color: Colors.text,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
-  pointsCounter: {
-    position: "absolute",
-    left: 12,
-    top: 12,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  pointsCounterText: {
-    color: Colors.accent,
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-  },
-  formContainer: {
-    padding: 16,
-    gap: 12,
-  },
-  miniMapContainer: {
-    height: 150,
-    borderRadius: 18,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  miniMap: { flex: 1 },
-  miniMapOverlay: {
-    position: "absolute",
-    bottom: 8,
-    left: 8,
+  pointDotStart: { backgroundColor: Colors.success },
+  pointDotEnd: { backgroundColor: Colors.danger },
+  pointDotText: { color: "#FFF", fontSize: 12, fontFamily: "Inter_700Bold" },
+  pointCoords: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  useCurrentBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: Colors.card,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingVertical: 8,
   },
-  miniMapText: {
-    color: Colors.text,
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-  },
+  useCurrentBtnText: { color: Colors.accent, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  formContainer: { padding: 16, gap: 12 },
   formCard: {
     backgroundColor: Colors.card,
     borderWidth: 1,
@@ -471,12 +376,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
   },
-  formLabel: {
-    color: Colors.muted,
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 8,
-  },
+  formLabel: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold", marginBottom: 8 },
   formInput: {
     backgroundColor: Colors.card2,
     borderWidth: 1,
@@ -488,14 +388,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
   },
-  formTextarea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  difficultyRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
+  formTextarea: { height: 100, textAlignVertical: "top" },
+  difficultyRow: { flexDirection: "row", gap: 10 },
   difficultyBtn: {
     flex: 1,
     paddingVertical: 12,
@@ -505,22 +399,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card2,
     alignItems: "center",
   },
-  difficultyBtnActive: {
-    borderColor: Colors.accent,
-    backgroundColor: Colors.accent,
-  },
-  difficultyBtnText: {
-    color: Colors.text,
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-  },
-  difficultyBtnTextActive: {
-    color: Colors.bg,
-  },
-  errorText: {
-    color: Colors.danger,
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "center",
-  },
+  difficultyBtnActive: { borderColor: Colors.accent, backgroundColor: Colors.accent },
+  difficultyBtnText: { color: Colors.text, fontSize: 13, fontFamily: "Inter_700Bold" },
+  difficultyBtnTextActive: { color: Colors.bg },
+  errorText: { color: Colors.danger, fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
 });
