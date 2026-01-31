@@ -1401,6 +1401,7 @@ async def list_events(
                 associated_route_id=e.get("associated_route_id"),
                 participants_count=len(participants),
                 is_joined=uid in participants,
+                created_by=e.get("created_by", ""),
                 created_at=e.get("created_at") or datetime.utcnow(),
             )
         )
