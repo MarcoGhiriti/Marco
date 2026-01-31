@@ -130,7 +130,7 @@ function RoutePreviewMap({
         <View style={mapStyles.placeholder}>
           <Ionicons name="map-outline" size={48} color={Colors.muted} />
           <Text style={mapStyles.placeholderText}>
-            Selectează punctele traseului
+            Select route points
           </Text>
         </View>
       ) : (
