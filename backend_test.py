@@ -635,11 +635,230 @@ class BackendTester:
         return success_rate >= 90
 
 
+async def test_profile_settings_readiness():
+    """Test backend updates for profile/settings readiness as per review request"""
+    print("🧪 Testing Backend Profile/Settings Readiness")
+    print("=" * 60)
+    
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        
+        # 1) Register/login random user
+        print("\n1️⃣ Testing User Registration and Login")
+        
+        # Generate random credentials
+        random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        email = f"testuser_{random_str}@example.com"
+        username = f"user_{random.randint(1000, 9999)}"
+        password = "TestPassword123"
+        
+        print(f"   📧 Email: {email}")
+        print(f"   👤 Username: {username}")
+        
+        # Register user
+        register_payload = {
+            "email": email,
+            "username": username,
+            "password": password
+        }
+        
+        try:
+            register_response = await client.post("https://riderzone-1.preview.emergentagent.com/api/auth/register", json=register_payload)
+            print(f"   ✅ Register Status: {register_response.status_code}")
+            
+            if register_response.status_code != 200:
+                print(f"   ❌ Register failed: {register_response.text}")
+                return False
+                
+            register_data = register_response.json()
+            token = register_data.get("access_token")
+            
+            if not token:
+                print("   ❌ No access token received from registration")
+                return False
+                
+            print(f"   🔑 Token received: {token[:20]}...")
+            
+        except Exception as e:
+            print(f"   ❌ Registration failed with exception: {e}")
+            return False
+        
+        # Test login with same credentials
+        login_payload = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            login_response = await client.post("https://riderzone-1.preview.emergentagent.com/api/auth/login", json=login_payload)
+            print(f"   ✅ Login Status: {login_response.status_code}")
+            
+            if login_response.status_code != 200:
+                print(f"   ❌ Login failed: {login_response.text}")
+                return False
+                
+            login_data = login_response.json()
+            login_token = login_data.get("access_token")
+            
+            if not login_token:
+                print("   ❌ No access token received from login")
+                return False
+                
+            print(f"   🔑 Login token received: {login_token[:20]}...")
+            
+        except Exception as e:
+            print(f"   ❌ Login failed with exception: {e}")
+            return False
+        
+        # Use the login token for subsequent requests
+        headers = {"Authorization": f"Bearer {login_token}"}
+        
+        # 2) PATCH /api/me with bio, bike, country, privacy
+        print("\n2️⃣ Testing Profile Update (PATCH /api/me)")
+        
+        update_payload = {
+            "bio": "Passionate motorcycle rider exploring scenic routes across Romania",
+            "bike": {
+                "model": "Yamaha MT-07",
+                "cc": 689
+            },
+            "country": "RO",
+            "privacy": {
+                "location_visible": True,
+                "routes_visible": "friends"
+            }
+        }
+        
+        try:
+            patch_response = await client.patch("https://riderzone-1.preview.emergentagent.com/api/me", json=update_payload, headers=headers)
+            print(f"   ✅ PATCH /api/me Status: {patch_response.status_code}")
+            
+            if patch_response.status_code != 200:
+                print(f"   ❌ Profile update failed: {patch_response.text}")
+                return False
+                
+            patch_data = patch_response.json()
+            print(f"   ✅ Profile updated successfully")
+            print(f"   📝 Bio: {patch_data.get('bio', 'N/A')}")
+            print(f"   🏍️ Bike: {patch_data.get('bike', 'N/A')}")
+            print(f"   🌍 Country: {patch_data.get('country', 'N/A')}")
+            print(f"   🔒 Privacy: {patch_data.get('privacy', 'N/A')}")
+            
+        except Exception as e:
+            print(f"   ❌ Profile update failed with exception: {e}")
+            return False
+        
+        # 3) GET /api/me returns these fields
+        print("\n3️⃣ Testing Profile Retrieval (GET /api/me)")
+        
+        try:
+            get_me_response = await client.get("https://riderzone-1.preview.emergentagent.com/api/me", headers=headers)
+            print(f"   ✅ GET /api/me Status: {get_me_response.status_code}")
+            
+            if get_me_response.status_code != 200:
+                print(f"   ❌ Profile retrieval failed: {get_me_response.text}")
+                return False
+                
+            me_data = get_me_response.json()
+            
+            # Verify all required fields are present and match
+            required_fields = ["bio", "bike", "country", "privacy"]
+            missing_fields = []
+            
+            for field in required_fields:
+                if field not in me_data:
+                    missing_fields.append(field)
+                else:
+                    print(f"   ✅ {field}: {me_data[field]}")
+            
+            if missing_fields:
+                print(f"   ❌ Missing fields in GET /api/me: {missing_fields}")
+                return False
+            
+            # Verify specific values match what we set
+            if me_data.get("bio") != update_payload["bio"]:
+                print(f"   ❌ Bio mismatch: expected '{update_payload['bio']}', got '{me_data.get('bio')}'")
+                return False
+                
+            if me_data.get("country") != update_payload["country"]:
+                print(f"   ❌ Country mismatch: expected '{update_payload['country']}', got '{me_data.get('country')}'")
+                return False
+                
+            bike_data = me_data.get("bike", {})
+            expected_bike = update_payload["bike"]
+            if bike_data.get("model") != expected_bike["model"] or bike_data.get("cc") != expected_bike["cc"]:
+                print(f"   ❌ Bike mismatch: expected {expected_bike}, got {bike_data}")
+                return False
+                
+            privacy_data = me_data.get("privacy", {})
+            expected_privacy = update_payload["privacy"]
+            if (privacy_data.get("location_visible") != expected_privacy["location_visible"] or 
+                privacy_data.get("routes_visible") != expected_privacy["routes_visible"]):
+                print(f"   ❌ Privacy mismatch: expected {expected_privacy}, got {privacy_data}")
+                return False
+                
+            print(f"   ✅ All profile fields verified successfully")
+            
+        except Exception as e:
+            print(f"   ❌ Profile retrieval failed with exception: {e}")
+            return False
+        
+        # 4) GET /api/stats returns required keys
+        print("\n4️⃣ Testing Stats Endpoint (GET /api/stats)")
+        
+        try:
+            stats_response = await client.get("https://riderzone-1.preview.emergentagent.com/api/stats", headers=headers)
+            print(f"   ✅ GET /api/stats Status: {stats_response.status_code}")
+            
+            if stats_response.status_code != 200:
+                print(f"   ❌ Stats retrieval failed: {stats_response.text}")
+                return False
+                
+            stats_data = stats_response.json()
+            
+            # Verify all required keys are present
+            required_keys = ["km_total", "km_month", "joined_routes", "events_joined", "completed_routes"]
+            missing_keys = []
+            
+            for key in required_keys:
+                if key not in stats_data:
+                    missing_keys.append(key)
+                else:
+                    print(f"   ✅ {key}: {stats_data[key]}")
+            
+            if missing_keys:
+                print(f"   ❌ Missing keys in GET /api/stats: {missing_keys}")
+                return False
+                
+            # Verify data types
+            numeric_keys = ["km_total", "km_month", "joined_routes", "events_joined", "completed_routes"]
+            for key in numeric_keys:
+                value = stats_data.get(key)
+                if not isinstance(value, (int, float)):
+                    print(f"   ❌ {key} should be numeric, got {type(value)}: {value}")
+                    return False
+                    
+            print(f"   ✅ All stats keys verified successfully")
+            
+        except Exception as e:
+            print(f"   ❌ Stats retrieval failed with exception: {e}")
+            return False
+        
+        print("\n🎉 ALL PROFILE/SETTINGS TESTS PASSED!")
+        print("=" * 60)
+        return True
+
 async def main():
     """Main test execution"""
-    tester = BackendTester()
-    await tester.run_comprehensive_tests()
+    success = await test_profile_settings_readiness()
+    
+    if success:
+        print("\n✅ Backend Profile/Settings Readiness: PASSED")
+        return 0
+    else:
+        print("\n❌ Backend Profile/Settings Readiness: FAILED")
+        return 1
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    exit_code = asyncio.run(main())
+    exit(exit_code)
