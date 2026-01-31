@@ -9,6 +9,8 @@ export type Me = {
   username: string;
   profile_photo_base64?: string | null;
   bio: string;
+  bike?: { model?: string | null; cc?: number | null } | null;
+  country?: string | null;
   km_total: number;
   km_month: number;
   level: number;
