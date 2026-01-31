@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   lockedText: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
 });
 
-const styles = StyleSheet.create({
+const legacyStyles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.bg,
