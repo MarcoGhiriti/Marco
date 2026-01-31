@@ -9,23 +9,53 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
-import { apiGet, apiPost } from "../../src/lib/api";
+import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
-import type { RouteOut } from "../../src/types/api";
+import type { RouteOut, StoryOwner } from "../../src/types/api";
 import { RouteCard } from "../../src/components/RouteCard";
+import { StoriesBar } from "../../src/components/StoriesBar";
+import { StoryViewer } from "../../src/components/StoryViewer";
 
 export default function HomeScreen() {
-  const { accessToken } = useAuthStore();
+  const router = useRouter();
+  const { accessToken, me } = useAuthStore();
+  
   const [routes, setRoutes] = useState<RouteOut[]>([]);
+  const [stories, setStories] = useState<StoryOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Story viewer state
+  const [storyViewerVisible, setStoryViewerVisible] = useState(false);
+  const [storyOwnerIndex, setStoryOwnerIndex] = useState(0);
 
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
+
+  const loadRoutes = useCallback(async () => {
+    if (!authHeader) return;
+    try {
+      const data = await apiGet<RouteOut[]>("/api/routes", authHeader);
+      setRoutes(data);
+    } catch (e) {
+      console.error("Failed to load routes:", e);
+    }
+  }, [authHeader]);
+
+  const loadStories = useCallback(async () => {
+    if (!authHeader) return;
+    try {
+      const data = await apiGet<StoryOwner[]>("/api/stories", authHeader);
+      setStories(data);
+    } catch (e) {
+      console.error("Failed to load stories:", e);
+    }
+  }, [authHeader]);
 
   const load = useCallback(async () => {
     if (!authHeader) {
@@ -34,8 +64,7 @@ export default function HomeScreen() {
     }
     setError(null);
     try {
-      const data = await apiGet<RouteOut[]>("/api/routes", authHeader);
-      setRoutes(data);
+      await Promise.all([loadRoutes(), loadStories()]);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       setError(msg);
@@ -43,7 +72,7 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [authHeader]);
+  }, [authHeader, loadRoutes, loadStories]);
 
   useEffect(() => {
     load();
@@ -53,6 +82,31 @@ export default function HomeScreen() {
     setRefreshing(true);
     load();
   }, [load]);
+
+  const handleAddStory = () => {
+    router.push("/story/create");
+  };
+
+  const handleViewStory = (ownerIndex: number) => {
+    setStoryOwnerIndex(ownerIndex);
+    setStoryViewerVisible(true);
+  };
+
+  const handleDeleteStory = async (storyId: string) => {
+    if (!authHeader) return;
+    try {
+      await apiDelete(`/api/stories/${storyId}`, authHeader);
+      // Refresh stories
+      await loadStories();
+      // If no more stories from current owner, close viewer
+      const currentOwner = stories[storyOwnerIndex];
+      if (currentOwner && currentOwner.stories.length <= 1) {
+        setStoryViewerVisible(false);
+      }
+    } catch (e) {
+      console.error("Failed to delete story:", e);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -86,6 +140,14 @@ export default function HomeScreen() {
             />
           }
         >
+          {/* Stories Bar */}
+          <StoriesBar
+            stories={stories}
+            currentUserId={me?.id}
+            onAddStory={handleAddStory}
+            onViewStory={handleViewStory}
+          />
+
           {loading ? (
             <View style={styles.center}>
               <ActivityIndicator color={Colors.accent} />
@@ -94,7 +156,7 @@ export default function HomeScreen() {
           ) : error ? (
             <View style={styles.center}>
               <Ionicons name="alert-circle-outline" size={22} color={Colors.danger} />
-              <Text style={styles.errorTitle}>Couldn’t load routes</Text>
+              <Text style={styles.errorTitle}>Couldn't load routes</Text>
               <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : routes.length === 0 ? (
@@ -103,30 +165,42 @@ export default function HomeScreen() {
               <Text style={styles.centerText}>No routes yet.</Text>
             </View>
           ) : (
-            routes.map((r) => (
-              <RouteCard
-                key={r.id}
-                item={r}
-                onToggleJoin={async () => {
-                  if (!authHeader) return;
-                  try {
-                    if (r.is_joined) {
-                      await apiPost(`/api/routes/${r.id}/leave`, {}, authHeader);
-                    } else {
-                      await apiPost(`/api/routes/${r.id}/join`, {}, authHeader);
+            <View style={styles.routesList}>
+              {routes.map((r) => (
+                <RouteCard
+                  key={r.id}
+                  item={r}
+                  onToggleJoin={async () => {
+                    if (!authHeader) return;
+                    try {
+                      if (r.is_joined) {
+                        await apiPost(`/api/routes/${r.id}/leave`, {}, authHeader);
+                      } else {
+                        await apiPost(`/api/routes/${r.id}/join`, {}, authHeader);
+                      }
+                      await loadRoutes();
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : "Action failed");
                     }
-                    await load();
-                  } catch (e) {
-                    setError(e instanceof Error ? e.message : "Action failed");
-                  }
-                }}
-              />
-            ))
+                  }}
+                />
+              ))}
+            </View>
           )}
 
           <View style={{ height: 12 }} />
         </ScrollView>
       </View>
+
+      {/* Story Viewer Modal */}
+      <StoryViewer
+        visible={storyViewerVisible}
+        stories={stories}
+        initialOwnerIndex={storyOwnerIndex}
+        currentUserId={me?.id}
+        onClose={() => setStoryViewerVisible(false)}
+        onDeleteStory={handleDeleteStory}
+      />
     </SafeAreaView>
   );
 }
@@ -177,9 +251,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   content: {
+    paddingBottom: 20,
+  },
+  routesList: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 20,
+    gap: 12,
   },
   center: {
     paddingTop: 80,
