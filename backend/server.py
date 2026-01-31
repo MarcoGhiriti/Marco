@@ -608,6 +608,21 @@ async def users_search(
     # prefix search, case-insensitive
     q = {"username": {"$regex": f"^{username}", "$options": "i"}}
     cursor = db.users.find(q, {"username": 1, "profile_photo_base64": 1}).limit(20)
+    docs = await cursor.to_list(length=20)
+
+    results: list[UserSearchOut] = []
+    for u in docs:
+        uid = oid_str(u.get("_id"))
+        if uid == current_user["id"]:
+            continue
+        results.append(
+            UserSearchOut(
+                id=uid,
+                username=u.get("username", ""),
+                profile_photo_base64=u.get("profile_photo_base64"),
+            )
+        )
+    return results
 
 
 @api_router.get("/stats")
@@ -626,22 +641,6 @@ async def stats(current_user: dict = Depends(get_current_user)):
         "events_joined": int(joined_events),
         "completed_routes": 0,
     }
-
-    docs = await cursor.to_list(length=20)
-
-    results: list[UserSearchOut] = []
-    for u in docs:
-        uid = oid_str(u.get("_id"))
-        if uid == current_user["id"]:
-            continue
-        results.append(
-            UserSearchOut(
-                id=uid,
-                username=u.get("username", ""),
-                profile_photo_base64=u.get("profile_photo_base64"),
-            )
-        )
-    return results
 
 
 @api_router.get("/friends", response_model=list[UserSearchOut])
