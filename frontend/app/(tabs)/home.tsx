@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -22,10 +22,19 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const authHeader = useMemo(() => {
+    if (!accessToken) return undefined;
+    return { Authorization: `Bearer ${accessToken}` };
+  }, [accessToken]);
+
   const load = useCallback(async () => {
+    if (!authHeader) {
+      setLoading(false);
+      return;
+    }
     setError(null);
     try {
-      const data = await apiGet<RouteOut[]>("/api/routes");
+      const data = await apiGet<RouteOut[]>("/api/routes", authHeader);
       setRoutes(data);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
@@ -34,7 +43,7 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [authHeader]);
 
   useEffect(() => {
     load();
@@ -94,7 +103,25 @@ export default function HomeScreen() {
               <Text style={styles.centerText}>No routes yet.</Text>
             </View>
           ) : (
-            routes.map((r) => <RouteCard key={r.id} item={r} />)
+            routes.map((r) => (
+              <RouteCard
+                key={r.id}
+                item={r}
+                onToggleJoin={async () => {
+                  if (!authHeader) return;
+                  try {
+                    if (r.is_joined) {
+                      await apiPost(`/api/routes/${r.id}/leave`, {}, authHeader);
+                    } else {
+                      await apiPost(`/api/routes/${r.id}/join`, {}, authHeader);
+                    }
+                    await load();
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "Action failed");
+                  }
+                }}
+              />
+            ))
           )}
 
           <View style={{ height: 12 }} />

@@ -21,9 +21,11 @@ function difficultyLabel(d: RouteOut["difficulty"]) {
 export function RouteCard({
   item,
   onPress,
+  onToggleJoin,
 }: {
   item: RouteOut;
   onPress?: () => void;
+  onToggleJoin?: () => void;
 }) {
   const meta = useMemo(() => {
     return [
@@ -71,13 +73,17 @@ export function RouteCard({
             <Text style={styles.metaText}>{m.label}</Text>
           </View>
         ))}
+        <View style={styles.metaItem}>
+          <Ionicons name="people-outline" size={16} color={Colors.muted} />
+          <Text style={styles.metaText}>{item.participants_count} joined</Text>
+        </View>
       </View>
 
       <View style={styles.footerRow}>
-        <View style={styles.ctaPrimary}>
+        <Pressable onPress={onToggleJoin} style={styles.ctaPrimary}>
           <Ionicons name="checkmark-circle-outline" size={18} color={Colors.bg} />
-          <Text style={styles.ctaPrimaryText}>Join</Text>
-        </View>
+          <Text style={styles.ctaPrimaryText}>{item.is_joined ? "Joined" : "Join"}</Text>
+        </Pressable>
 
         <View style={styles.ctaGhost}>
           <Ionicons name="share-outline" size={18} color={Colors.text} />
