@@ -1374,6 +1374,7 @@ async def create_event(payload: EventCreate, current_user: dict = Depends(get_cu
         associated_route_id=doc.get("associated_route_id"),
         participants_count=1,
         is_joined=True,
+        created_by=uid,
         created_at=doc["created_at"],
     )
 
