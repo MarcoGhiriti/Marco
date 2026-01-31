@@ -48,7 +48,7 @@ function EventMapPreview({ location }: { location: PlaceDetails | null }) {
         <View style={mapStyles.placeholder}>
           <Ionicons name="location-outline" size={48} color={Colors.muted} />
           <Text style={mapStyles.placeholderText}>
-            Selectează punctul de întâlnire
+            Select meeting point
           </Text>
         </View>
       ) : (
