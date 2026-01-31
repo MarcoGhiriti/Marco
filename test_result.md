@@ -162,7 +162,7 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "Events Join/Leave backend testing completed successfully! All 8 test scenarios from review request passed: 1) User registration and JWT token acquisition ✅ 2) Event creation via POST /api/events (no auth required) ✅ 3) GET /api/events without token returns 401 as expected ✅ 4) GET /api/events with token returns EventOut with participants_count and is_joined fields ✅ 5) POST /api/events/{id}/join with token returns ok:true ✅ 6) GET /api/events after join shows is_joined=true and participants_count=1 ✅ 7) POST /api/events/{id}/leave with token returns ok:true ✅ 8) GET /api/events after leave shows is_joined=false and participants_count=0 ✅. Regression test: /api/routes endpoint still working correctly (returned 8 routes). Backend Events Join/Leave functionality fully operational."
-##   - task: "Friends + Groups + Chat (REST history + Socket.IO realtime)"
+##   - task: "Profile/Settings Backend Readiness (PATCH /api/me + GET /api/stats)"
 ##     implemented: true
 ##     working: true
 ##     file: "backend/server.py"
@@ -172,10 +172,10 @@
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
-##         comment: "Implemented friends: search users, send request, accept, list friends + requests. Groups: create/list/join. Chat: REST history endpoints for DM and group + realtime Socket.IO events dm:send/dm:new and group:join/group:send/group:new, storing messages in Mongo."
+##         comment: "Profile/settings backend endpoints ready for testing: PATCH /api/me supports bio, bike, country, privacy fields. GET /api/stats returns km_total, km_month, joined_routes, events_joined, completed_routes."
 ##       - working: true
 ##         agent: "testing"
-##         comment: "Comprehensive Friends + Groups + Chat testing completed successfully! All 10 test scenarios passed: 1) User registration and authentication ✅ 2) User search functionality ✅ 3) Friend request system (send/receive/accept) ✅ 4) Friends list management ✅ 5) Group creation and joining ✅ 6) Group listing ✅ 7) REST DM messaging and history ✅ 8) REST group messaging and history ✅ 9) Socket.IO connections with JWT auth ✅ 10) Socket.IO message storage (dm:send and group:send events store messages correctly) ✅. Minor: Socket.IO realtime events (dm:new, group:new) have delivery issues - messages are stored in database but realtime notifications not received by clients. Core functionality working perfectly."
+##         comment: "Profile/Settings backend testing completed successfully! All 4 test scenarios from review request passed: 1) Register/login random user (testuser_7n27mjpo@example.com/user7719) ✅ 2) PATCH /api/me with bio, bike (Yamaha MT-07, 689cc), country (RO), privacy (location_visible: true, routes_visible: friends) returns 200 ✅ 3) GET /api/me returns all updated fields correctly - bio, bike, country, privacy verified ✅ 4) GET /api/stats returns all required keys: km_total (0.0), km_month (0.0), joined_routes (0), events_joined (0), completed_routes (0) ✅. Profile update and retrieval working perfectly. Stats endpoint providing all required metrics. Backend profile/settings functionality fully operational and ready for frontend integration."
 ## frontend:
 ##   - task: "Expo Router app shell with tab navigation + Home fetch routes"
 ##     implemented: true
