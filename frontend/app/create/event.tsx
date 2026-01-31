@@ -213,7 +213,7 @@ export default function CreateEventScreen() {
       );
       router.back();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Eroare la crearea evenimentului");
+      setError(e instanceof Error ? e.message : "Error creating event");
     } finally {
       setLoading(false);
     }
