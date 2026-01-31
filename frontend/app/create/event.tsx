@@ -250,7 +250,7 @@ export default function CreateEventScreen() {
               {loading ? (
                 <ActivityIndicator size="small" color={Colors.bg} />
               ) : (
-                <Text style={styles.nextBtnText}>Creează</Text>
+                <Text style={styles.nextBtnText}>Create</Text>
               )}
             </Pressable>
           )}
