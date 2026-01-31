@@ -67,9 +67,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="store"
         options={{
-          title: "Store",
+          title: "Rankings",
           tabBarIcon: ({ color, size }) => (
-            <TabIcon name="bag-handle-outline" size={size} color={color} />
+            <TabIcon name="podium-outline" size={size} color={color} />
           ),
         }}
       />
