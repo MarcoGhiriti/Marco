@@ -1418,6 +1418,7 @@ async def create_event(payload: EventCreate, current_user: dict = Depends(get_cu
         "title": payload.title,
         "description": payload.description,
         "start_point": payload.start_point,
+        "location_name": payload.location_name,
         "start_time": payload.start_time,
         "poster_base64": payload.poster_base64,
         "associated_route_id": payload.associated_route_id,
