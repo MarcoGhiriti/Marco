@@ -17,7 +17,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import Svg, { Circle, Rect } from "react-native-svg";
 import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
-import { apiGet, apiPost } from "../../src/lib/api";
+import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { EventOut } from "../../src/types/api";
 
