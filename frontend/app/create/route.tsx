@@ -248,6 +248,8 @@ export default function CreateRouteScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -258,6 +260,14 @@ export default function CreateRouteScreen() {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
+
+  // Set default date
+  useEffect(() => {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    setStartDate(nextWeek.toISOString().split("T")[0]);
+    setStartTime("10:00");
+  }, []);
 
   // Fetch route when we have start and end
   useEffect(() => {
