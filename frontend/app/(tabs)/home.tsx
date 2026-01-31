@@ -22,6 +22,11 @@ import { RouteCard } from "../../src/components/RouteCard";
 import { StoriesBar } from "../../src/components/StoriesBar";
 import { StoryViewer } from "../../src/components/StoryViewer";
 
+type LicenseStatus = {
+  license_type: string | null;
+  license_verified: boolean;
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
@@ -33,6 +38,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
   
   // Story viewer state
   const [storyViewerVisible, setStoryViewerVisible] = useState(false);
@@ -42,6 +48,8 @@ export default function HomeScreen() {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
+
+  const isLicenseVerified = licenseStatus?.license_verified === true;
 
   // Get user location
   useEffect(() => {
