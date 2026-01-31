@@ -317,11 +317,18 @@ export default function CreateRouteScreen() {
   const canProceed = startPoint && endPoint && routeInfo && !loadingRoute;
 
   const handleCreate = async () => {
-    if (!headers || !routeInfo || !title.trim()) return;
+    if (!headers || !routeInfo || !title.trim() || !startDate || !startTime) return;
 
     setLoading(true);
     setError(null);
     try {
+      const startDateTime = new Date(`${startDate}T${startTime}:00`);
+      if (isNaN(startDateTime.getTime())) {
+        setError("Invalid date/time format");
+        setLoading(false);
+        return;
+      }
+
       await apiPost(
         "/api/routes",
         {
@@ -330,12 +337,13 @@ export default function CreateRouteScreen() {
           polyline: routeInfo.polyline,
           difficulty,
           stops_count: waypoints.length,
+          start_date: startDateTime.toISOString(),
         },
         headers
       );
       router.back();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Eroare la crearea traseului");
+      setError(e instanceof Error ? e.message : "Error creating route");
     } finally {
       setLoading(false);
     }
