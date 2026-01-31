@@ -1,11 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,10 +18,24 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Colors } from "../../../src/theme/colors";
-import { apiGet } from "../../../src/lib/api";
+import { apiGet, apiPost } from "../../../src/lib/api";
 import { getSocket } from "../../../src/lib/realtime";
 import { useAuthStore } from "../../../src/state/authStore";
 import type { MessageOut } from "../../../src/types/community";
+
+type GroupMember = {
+  id: string;
+  username: string;
+  avatar?: string | null;
+  level: number;
+};
+
+type GroupInfo = {
+  group_id: string;
+  group_name: string;
+  created_by: string;
+  members: GroupMember[];
+};
 
 export default function GroupChatScreen() {
   const router = useRouter();
@@ -31,6 +49,13 @@ export default function GroupChatScreen() {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [groupName, setGroupName] = useState("Group Chat");
+  
+  // Members modal
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [groupInfo, setGroupInfo] = useState<GroupInfo | null>(null);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [friends, setFriends] = useState<GroupMember[]>([]);
+  const [showAddMember, setShowAddMember] = useState(false);
 
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
 
@@ -38,6 +63,8 @@ export default function GroupChatScreen() {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
+
+  const isCreator = groupInfo?.created_by === me?.id;
 
   const loadHistory = useCallback(async () => {
     if (!authHeader || !gid) return;
@@ -53,9 +80,34 @@ export default function GroupChatScreen() {
     }
   }, [authHeader, gid]);
 
+  const loadGroupInfo = useCallback(async () => {
+    if (!authHeader || !gid) return;
+    setLoadingMembers(true);
+    try {
+      const data = await apiGet<GroupInfo>(`/api/groups/${gid}/members`, authHeader);
+      setGroupInfo(data);
+      setGroupName(data.group_name || "Group Chat");
+    } catch (e) {
+      console.error("Failed to load group info:", e);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, [authHeader, gid]);
+
+  const loadFriends = useCallback(async () => {
+    if (!authHeader) return;
+    try {
+      const data = await apiGet<GroupMember[]>("/api/friends", authHeader);
+      setFriends(data);
+    } catch (e) {
+      console.error("Failed to load friends:", e);
+    }
+  }, [authHeader]);
+
   useEffect(() => {
     loadHistory();
-  }, [loadHistory]);
+    loadGroupInfo();
+  }, [loadHistory, loadGroupInfo]);
 
   useEffect(() => {
     if (!accessToken || !gid) return;
@@ -90,6 +142,76 @@ export default function GroupChatScreen() {
     setText("");
     s.emit("group:send", { group_id: gid, text: trimmed });
   }, [accessToken, gid, text]);
+
+  const handleOpenMembers = () => {
+    loadGroupInfo();
+    loadFriends();
+    setShowMembersModal(true);
+  };
+
+  const handleAddMember = async (userId: string) => {
+    if (!authHeader) return;
+    try {
+      await apiPost(`/api/groups/${gid}/add-member`, { user_id: userId }, authHeader);
+      Alert.alert("Success", "Member added to the group");
+      loadGroupInfo();
+      setShowAddMember(false);
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to add member");
+    }
+  };
+
+  const handleRemoveMember = (userId: string, username: string) => {
+    Alert.alert(
+      "Remove Member",
+      `Are you sure you want to remove ${username} from the group?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            if (!authHeader) return;
+            try {
+              await apiPost(`/api/groups/${gid}/remove-member`, { user_id: userId }, authHeader);
+              loadGroupInfo();
+            } catch (e) {
+              Alert.alert("Error", e instanceof Error ? e.message : "Failed to remove member");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleLeaveGroup = () => {
+    if (!me?.id) return;
+    Alert.alert(
+      "Leave Group",
+      "Are you sure you want to leave this group?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: async () => {
+            if (!authHeader) return;
+            try {
+              await apiPost(`/api/groups/${gid}/remove-member`, { user_id: me.id }, authHeader);
+              router.back();
+            } catch (e) {
+              Alert.alert("Error", e instanceof Error ? e.message : "Failed to leave group");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Friends not yet in group
+  const availableFriends = friends.filter(
+    (f) => !groupInfo?.members.some((m) => m.id === f.id)
+  );
 
   const renderMessage = ({ item: m }: { item: MessageOut }) => {
     const mine = m.from_user_id === me?.id;
@@ -134,12 +256,14 @@ export default function GroupChatScreen() {
               <Text style={styles.headerTitle} numberOfLines={1}>
                 {groupName}
               </Text>
-              <Text style={styles.headerSub}>Group Chat</Text>
+              <Text style={styles.headerSub}>
+                {groupInfo?.members.length || 0} members
+              </Text>
             </View>
           </View>
-          <View style={styles.headerBtn}>
+          <Pressable onPress={handleOpenMembers} style={styles.headerBtn}>
             <Ionicons name="ellipsis-vertical" size={18} color={Colors.text} />
-          </View>
+          </Pressable>
         </View>
 
         {/* Messages */}
@@ -196,6 +320,129 @@ export default function GroupChatScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Members Modal */}
+      <Modal
+        visible={showMembersModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowMembersModal(false)}
+      >
+        <SafeAreaView style={styles.modalSafe}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Group Members</Text>
+            <Pressable onPress={() => setShowMembersModal(false)} style={styles.modalCloseBtn}>
+              <Ionicons name="close" size={22} color={Colors.text} />
+            </Pressable>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            {/* Add Member Button (only for creator) */}
+            {isCreator && (
+              <Pressable 
+                onPress={() => setShowAddMember(!showAddMember)} 
+                style={styles.addMemberBtn}
+              >
+                <Ionicons name="person-add" size={20} color={Colors.bg} />
+                <Text style={styles.addMemberBtnText}>Add Member</Text>
+              </Pressable>
+            )}
+
+            {/* Add Member Section */}
+            {showAddMember && isCreator && (
+              <View style={styles.addMemberSection}>
+                <Text style={styles.sectionTitle}>Add from friends</Text>
+                {availableFriends.length === 0 ? (
+                  <Text style={styles.mutedText}>All your friends are already in this group</Text>
+                ) : (
+                  availableFriends.map((f) => (
+                    <View key={f.id} style={styles.memberRow}>
+                      <View style={styles.memberInfo}>
+                        <View style={styles.memberAvatar}>
+                          {f.avatar ? (
+                            <Image
+                              source={{ uri: f.avatar.startsWith("data:") ? f.avatar : `data:image/jpeg;base64,${f.avatar}` }}
+                              style={styles.memberAvatarImg}
+                            />
+                          ) : (
+                            <Ionicons name="person" size={18} color={Colors.muted} />
+                          )}
+                        </View>
+                        <Text style={styles.memberName}>{f.username}</Text>
+                      </View>
+                      <Pressable onPress={() => handleAddMember(f.id)} style={styles.addBtn}>
+                        <Ionicons name="add" size={18} color={Colors.bg} />
+                      </Pressable>
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
+
+            {/* Members List */}
+            <View style={styles.membersSection}>
+              <Text style={styles.sectionTitle}>
+                Members ({groupInfo?.members.length || 0})
+              </Text>
+              
+              {loadingMembers ? (
+                <ActivityIndicator color={Colors.accent} style={{ marginTop: 20 }} />
+              ) : (
+                groupInfo?.members.map((member) => {
+                  const isSelf = member.id === me?.id;
+                  const isGroupCreator = member.id === groupInfo?.created_by;
+                  
+                  return (
+                    <View key={member.id} style={styles.memberRow}>
+                      <Pressable 
+                        onPress={() => router.push(`/profile/${member.id}`)}
+                        style={styles.memberInfo}
+                      >
+                        <View style={styles.memberAvatar}>
+                          {member.avatar ? (
+                            <Image
+                              source={{ uri: member.avatar.startsWith("data:") ? member.avatar : `data:image/jpeg;base64,${member.avatar}` }}
+                              style={styles.memberAvatarImg}
+                            />
+                          ) : (
+                            <Ionicons name="person" size={18} color={Colors.muted} />
+                          )}
+                        </View>
+                        <View>
+                          <Text style={styles.memberName}>
+                            {member.username} {isSelf && "(You)"}
+                          </Text>
+                          <Text style={styles.memberLevel}>
+                            {isGroupCreator ? "👑 Creator" : `Level ${member.level}`}
+                          </Text>
+                        </View>
+                      </Pressable>
+                      
+                      {/* Remove button - creator can remove others, users can remove themselves */}
+                      {(isCreator && !isGroupCreator) || isSelf ? (
+                        <Pressable 
+                          onPress={() => isSelf ? handleLeaveGroup() : handleRemoveMember(member.id, member.username)}
+                          style={styles.removeBtn}
+                        >
+                          <Ionicons name={isSelf ? "exit-outline" : "remove"} size={18} color={Colors.danger} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  );
+                })
+              )}
+            </View>
+
+            {/* Leave Group Button (for non-creators) */}
+            {!isCreator && (
+              <Pressable onPress={handleLeaveGroup} style={styles.leaveGroupBtn}>
+                <Ionicons name="exit-outline" size={20} color={Colors.danger} />
+                <Text style={styles.leaveGroupBtnText}>Leave Group</Text>
+              </Pressable>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -261,16 +508,14 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: Colors.card,
-    borderWidth: 2,
-    borderColor: Colors.accent,
+    backgroundColor: Colors.card2,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
   },
   emptyTitle: {
     color: Colors.text,
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "Inter_700Bold",
   },
   emptyText: {
@@ -278,39 +523,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
     textAlign: "center",
-    lineHeight: 22,
   },
   
   // Messages
-  messagesList: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  bubbleRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    marginBottom: 8,
-  },
-  bubbleRowMine: {
-    flexDirection: "row-reverse",
-  },
+  messagesList: { paddingHorizontal: 16, paddingVertical: 12 },
+  bubbleRow: { flexDirection: "row", alignItems: "flex-end", marginBottom: 12 },
+  bubbleRowMine: { justifyContent: "flex-end" },
   avatar: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 8,
   },
   bubble: {
     maxWidth: "75%",
-    borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    borderRadius: 18,
   },
   bubbleMine: {
     backgroundColor: Colors.accent,
@@ -328,12 +560,7 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     marginBottom: 4,
   },
-  bubbleText: {
-    color: Colors.text,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    lineHeight: 20,
-  },
+  bubbleText: { color: Colors.text, fontSize: 14, fontFamily: "Inter_600SemiBold" },
   bubbleTime: {
     color: Colors.muted,
     fontSize: 10,
@@ -344,35 +571,35 @@ const styles = StyleSheet.create({
   
   // Composer
   composer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   inputContainer: {
     flex: 1,
-    borderRadius: 20,
+    minHeight: 48,
+    maxHeight: 120,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.card,
     paddingHorizontal: 16,
-    paddingVertical: 4,
+    justifyContent: "center",
   },
   input: {
-    minHeight: 40,
-    maxHeight: 100,
     color: Colors.text,
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
+    paddingVertical: 12,
   },
   sendBtn: {
-    height: 44,
-    width: 44,
-    borderRadius: 22,
+    height: 48,
+    width: 48,
+    borderRadius: 24,
     backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
@@ -381,5 +608,145 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+
+  // Modal
+  modalSafe: { flex: 1, backgroundColor: Colors.bg },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalTitle: {
+    color: Colors.text,
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+  },
+  modalCloseBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContent: {
+    padding: 16,
+    gap: 16,
+  },
+  addMemberBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: Colors.accent,
+    borderRadius: 14,
+    padding: 14,
+  },
+  addMemberBtnText: {
+    color: Colors.bg,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+  },
+  addMemberSection: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  sectionTitle: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 4,
+  },
+  mutedText: {
+    color: Colors.muted,
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  membersSection: {
+    gap: 12,
+  },
+  memberRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    padding: 12,
+  },
+  memberInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  memberAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.card2,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  memberAvatarImg: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+  },
+  memberName: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  memberLevel: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  addBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  removeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  leaveGroupBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.danger,
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 20,
+  },
+  leaveGroupBtnText: {
+    color: Colors.danger,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
   },
 });
