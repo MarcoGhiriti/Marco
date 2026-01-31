@@ -1293,6 +1293,7 @@ async def create_route(payload: RouteCreate, current_user: dict = Depends(get_cu
         "participants_max": payload.participants_max,
         "participants": [uid],  # Creator automatically joins
         "created_by": uid,
+        "start_date": payload.start_date,
         "created_at": now,
     }
 
@@ -1313,6 +1314,7 @@ async def create_route(payload: RouteCreate, current_user: dict = Depends(get_cu
         participants_count=1,
         is_joined=True,
         created_by=uid,
+        start_date=doc.get("start_date"),
         created_at=doc["created_at"],
     )
     return out
@@ -1321,20 +1323,33 @@ async def create_route(payload: RouteCreate, current_user: dict = Depends(get_cu
 @api_router.get("/routes", response_model=list[RouteOut])
 async def list_routes(
     limit: int = Query(default=50, ge=1, le=200),
+    lat: float = Query(default=None, description="User latitude for filtering"),
+    lng: float = Query(default=None, description="User longitude for filtering"),
+    radius_km: float = Query(default=500, ge=10, le=5000, description="Search radius in km"),
     current_user: dict = Depends(get_current_user),
 ):
     uid = current_user["id"]
     cursor = db.routes.find().sort("created_at", -1).limit(limit)
     routes = await cursor.to_list(length=limit)
     result: list[RouteOut] = []
+    
     for r in routes:
         participants = r.get("participants") or []
+        polyline = r.get("polyline", [])
+        
+        # Filter by distance if user location provided
+        if lat is not None and lng is not None and len(polyline) > 0:
+            start_point = polyline[0]
+            distance_to_route = haversine_km([lat, lng], start_point)
+            if distance_to_route > radius_km:
+                continue  # Skip routes too far away
+        
         result.append(
             RouteOut(
                 id=_oid_str(r.get("_id")),
                 title=r.get("title", ""),
                 description=r.get("description", ""),
-                polyline=r.get("polyline", []),
+                polyline=polyline,
                 distance_km=float(r.get("distance_km", 0.0)),
                 duration_min=int(r.get("duration_min", 0)),
                 stops_count=int(r.get("stops_count", 0)),
@@ -1346,6 +1361,7 @@ async def list_routes(
                 participants_count=len(participants),
                 is_joined=uid in participants,
                 created_by=r.get("created_by", ""),
+                start_date=r.get("start_date"),
                 created_at=r.get("created_at") or datetime.utcnow(),
             )
         )
