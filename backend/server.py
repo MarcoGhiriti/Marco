@@ -1464,6 +1464,7 @@ async def list_events(
                 title=e.get("title", ""),
                 description=e.get("description", ""),
                 start_point=e.get("start_point", [0, 0]),
+                location_name=e.get("location_name", ""),
                 start_time=e.get("start_time") or datetime.utcnow(),
                 poster_base64=e.get("poster_base64"),
                 associated_route_id=e.get("associated_route_id"),
