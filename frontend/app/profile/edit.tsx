@@ -16,6 +16,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
 import { apiPost } from "../../src/lib/api";
+import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import { useAuthStore } from "../../src/state/authStore";
 
 export default function EditProfileScreen() {
