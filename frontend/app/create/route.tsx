@@ -296,7 +296,7 @@ export default function CreateRouteScreen() {
       setRouteInfo(data);
     } catch (e) {
       console.error("Route fetch error:", e);
-      setError("Nu am putut calcula traseul. Încearcă din nou.");
+      setError("Could not calculate route. Try again.");
     } finally {
       setLoadingRoute(false);
     }
@@ -361,7 +361,7 @@ export default function CreateRouteScreen() {
             <Ionicons name="close" size={22} color={Colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>
-            {step === 1 ? "Traseu Nou" : "Detalii Traseu"}
+            {step === 1 ? "New Route" : "Route Details"}
           </Text>
           {step === 1 ? (
             <Pressable
