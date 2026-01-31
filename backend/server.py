@@ -1833,6 +1833,9 @@ async def end_ride(payload: RideSessionEnd, current_user: dict = Depends(get_cur
             # Check for badge achievements for each participant
             await check_and_award_badges(participant_id)
     
+    # Delete the route after completion (route is one-time use)
+    await db.routes.delete_one({"_id": _as_object_id(session.get("route_id"))})
+    
     return RideSessionOut(
         id=payload.session_id,
         user_id=uid,
