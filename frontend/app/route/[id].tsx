@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
 import { Colors } from "../../src/theme/colors";
-import { apiGet, apiPost } from "../../src/lib/api";
+import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut } from "../../src/types/api";
 
@@ -46,10 +46,10 @@ export default function RouteDetailScreen() {
       if (found) {
         setRoute(found);
       } else {
-        setError("Traseul nu a fost găsit");
+        setError("Route not found");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Eroare la încărcare");
+      setError(e instanceof Error ? e.message : "Error loading route");
     } finally {
       setLoading(false);
     }
@@ -59,11 +59,11 @@ export default function RouteDetailScreen() {
     if (!route) return;
     try {
       await Share.share({
-        message: `🏍️ Traseu pe Moto GO!\n\n📍 ${route.title}\n📏 ${route.distance_km.toFixed(1)} km\n⏱️ ${route.duration_min} min\n\n${route.description || "Vino cu mine la drum!"}`,
+        message: `🏍️ Route on Moto GO!\n\n📍 ${route.title}\n📏 ${route.distance_km.toFixed(1)} km\n⏱️ ${route.duration_min} min\n\n${route.description || "Join me on this ride!"}`,
         title: route.title,
       });
     } catch (error) {
-      Alert.alert("Eroare", "Nu am putut partaja");
+      Alert.alert("Error", "Could not share");
     }
   };
 
@@ -77,8 +77,31 @@ export default function RouteDetailScreen() {
       }
       await loadRoute();
     } catch (e) {
-      Alert.alert("Eroare", e instanceof Error ? e.message : "Acțiune eșuată");
+      Alert.alert("Error", e instanceof Error ? e.message : "Action failed");
     }
+  };
+
+  const handleDelete = () => {
+    if (!headers || !route) return;
+    Alert.alert(
+      "Delete Route",
+      "Are you sure you want to delete this route? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiDelete(`/api/routes/${route.id}`, headers);
+              router.back();
+            } catch (e) {
+              Alert.alert("Error", e instanceof Error ? e.message : "Could not delete route");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const isCreator = me?.id && route?.created_by === me.id;
