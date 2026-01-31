@@ -641,6 +641,137 @@ class LeaderboardEntry(BaseModel):
     badges_count: int
 
 
+# -----------------
+# Places Autocomplete Endpoints
+# -----------------
+
+@api_router.get("/places/autocomplete", response_model=list[PlaceAutocompleteResult])
+async def places_autocomplete(
+    query: str = Query(..., min_length=2, description="Search query"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Search for places using Google Places Autocomplete API."""
+    if not GOOGLE_MAPS_API_KEY:
+        raise HTTPException(status_code=400, detail="Google Maps API key not configured")
+    
+    url = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+    params = {
+        "input": query,
+        "key": GOOGLE_MAPS_API_KEY,
+        "types": "geocode|establishment",
+        "language": "ro",
+    }
+    
+    async with httpx.AsyncClient(timeout=10) as http:
+        resp = await http.get(url, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+    
+    if data.get("status") not in ["OK", "ZERO_RESULTS"]:
+        logger.error(f"Places API error: {data}")
+        raise HTTPException(status_code=400, detail=f"Google API error: {data.get('status')}")
+    
+    predictions = data.get("predictions", [])
+    results = []
+    for p in predictions:
+        structured = p.get("structured_formatting", {})
+        results.append(PlaceAutocompleteResult(
+            place_id=p.get("place_id", ""),
+            description=p.get("description", ""),
+            main_text=structured.get("main_text", p.get("description", "")),
+            secondary_text=structured.get("secondary_text", ""),
+        ))
+    
+    return results
+
+
+@api_router.get("/places/details", response_model=PlaceDetailsResult)
+async def places_details(
+    place_id: str = Query(..., description="Google Place ID"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Get place details (coordinates) from Google Place ID."""
+    if not GOOGLE_MAPS_API_KEY:
+        raise HTTPException(status_code=400, detail="Google Maps API key not configured")
+    
+    url = "https://maps.googleapis.com/maps/api/place/details/json"
+    params = {
+        "place_id": place_id,
+        "key": GOOGLE_MAPS_API_KEY,
+        "fields": "name,formatted_address,geometry",
+    }
+    
+    async with httpx.AsyncClient(timeout=10) as http:
+        resp = await http.get(url, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+    
+    if data.get("status") != "OK":
+        logger.error(f"Place Details API error: {data}")
+        raise HTTPException(status_code=400, detail=f"Google API error: {data.get('status')}")
+    
+    result = data.get("result", {})
+    geo = result.get("geometry", {}).get("location", {})
+    
+    return PlaceDetailsResult(
+        place_id=place_id,
+        name=result.get("name", ""),
+        address=result.get("formatted_address", ""),
+        lat=geo.get("lat", 0),
+        lng=geo.get("lng", 0),
+    )
+
+
+@api_router.get("/directions/route")
+async def get_directions_route(
+    origin_lat: float = Query(...),
+    origin_lng: float = Query(...),
+    dest_lat: float = Query(...),
+    dest_lng: float = Query(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Get route polyline and info from Google Directions API."""
+    if not GOOGLE_MAPS_API_KEY:
+        raise HTTPException(status_code=400, detail="Google Maps API key not configured")
+    
+    url = "https://maps.googleapis.com/maps/api/directions/json"
+    params = {
+        "origin": f"{origin_lat},{origin_lng}",
+        "destination": f"{dest_lat},{dest_lng}",
+        "key": GOOGLE_MAPS_API_KEY,
+        "mode": "driving",
+    }
+    
+    async with httpx.AsyncClient(timeout=15) as http:
+        resp = await http.get(url, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+    
+    if data.get("status") != "OK":
+        raise HTTPException(status_code=400, detail=f"Google Directions error: {data.get('status')}")
+    
+    route = data.get("routes", [{}])[0]
+    legs = route.get("legs", [{}])
+    
+    # Decode polyline
+    encoded_polyline = route.get("overview_polyline", {}).get("points", "")
+    decoded_points = polyline_lib.decode(encoded_polyline) if encoded_polyline else []
+    
+    # Convert to [[lat, lng], ...] format
+    polyline_coords = [[lat, lng] for lat, lng in decoded_points]
+    
+    total_distance_m = sum(leg.get("distance", {}).get("value", 0) for leg in legs)
+    total_duration_s = sum(leg.get("duration", {}).get("value", 0) for leg in legs)
+    
+    return {
+        "polyline": polyline_coords,
+        "distance_km": round(total_distance_m / 1000, 2),
+        "duration_min": int(round(total_duration_s / 60)),
+        "start_address": legs[0].get("start_address", "") if legs else "",
+        "end_address": legs[0].get("end_address", "") if legs else "",
+    }
+
+
 @api_router.get("/")
 async def root():
     return {"message": "Moto GO API"}
