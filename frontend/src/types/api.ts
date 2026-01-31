@@ -56,3 +56,34 @@ export type StoryOwner = {
   profile_photo?: string | null;
   stories: StoryOut[];
 };
+
+// Badges & Gamification types
+export type BadgeOut = {
+  badge_type: string;
+  name: string;
+  description: string;
+  icon: string;
+  earned_at: string;
+};
+
+export type LeaderboardEntry = {
+  rank: number;
+  user_id: string;
+  username: string;
+  profile_photo?: string | null;
+  km_total: number;
+  level: number;
+  badges_count: number;
+};
+
+// Ride Session types
+export type RideSessionOut = {
+  id: string;
+  user_id: string;
+  route_id: string;
+  status: "active" | "completed" | "cancelled";
+  start_time: string;
+  end_time?: string | null;
+  km_tracked: number;
+  is_validated: boolean;
+};
