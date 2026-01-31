@@ -236,6 +236,17 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "✅ COMPREHENSIVE PROFILE UI TESTING COMPLETE! All 10 test scenarios from review request passed successfully on mobile viewport (390x844): 1) Login with existing user (user1@example.com) works ✅ 2) Profile tab navigation successful ✅ 3) Profile header shows username (user1), motorcycle info (Motorcycle not set), country (Country not set), edit icon present ✅ 4) Stats cards display correctly: Total Distance (0), Monthly Distance (0), Completed Routes (0), Events Joined (1) ✅ 5) Premium section shows 'COMING SOON' badge and Subscribe button ✅ 6) Edit Profile navigation to /profile/edit works ✅ 7) Edit form has all fields (Bio, Model, CC, Country) and save functionality ✅ 8) Legal screens navigation works: Terms & Conditions, Privacy Policy, About MotoGO, Credits & Investors all open with content ✅ 9) All legal screens show proper text content without external links ✅ 10) Logout functionality returns to /auth/login ✅. Minor: Edit icon selector issue and subscribe button disable state detection, but core functionality perfect. Profile UI fully functional on mobile."
+##   - task: "Stories Feature (24h expiring stories with photo/video)"
+##     implemented: true
+##     working: "NA"
+##     file: "backend/server.py, frontend/app/(tabs)/home.tsx, frontend/src/components/StoriesBar.tsx, frontend/src/components/StoryViewer.tsx, frontend/app/story/create.tsx"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Implemented Stories feature: Backend endpoints POST /api/stories (create), GET /api/stories (list grouped by owner), DELETE /api/stories/{id}. TTL index on MongoDB for automatic 24h expiration. Frontend components: StoriesBar (circles at top of Home), StoryViewer (fullscreen modal with progress bars), CreateStory screen with camera/gallery picker. Supports both images and videos (up to 30s). Backend tested manually with curl - all endpoints working."
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
