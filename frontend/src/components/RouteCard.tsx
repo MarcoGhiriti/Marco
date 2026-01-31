@@ -123,7 +123,7 @@ export function RouteCard({
                 style={styles.rideBtn}
               >
                 <Ionicons name="flag" size={16} color="#FFF" />
-                <Text style={styles.rideBtnText}>Termină</Text>
+                <Text style={styles.rideBtnText}>End</Text>
               </Pressable>
             ) : !activeRideRouteId ? (
               <Pressable 
