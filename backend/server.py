@@ -479,6 +479,35 @@ class EventOut(BaseModel):
 
 
 # -----------------
+# Stories Models
+# -----------------
+
+class StoryCreate(BaseModel):
+    media_base64: str = Field(..., description="Base64 encoded image or video")
+    media_type: Literal["image", "video"] = Field(default="image")
+    caption: Optional[str] = Field(default=None, max_length=200)
+
+
+class StoryOut(BaseModel):
+    id: str
+    owner_id: str
+    owner_username: str
+    owner_photo: Optional[str] = None
+    media_base64: str
+    media_type: str
+    caption: Optional[str] = None
+    created_at: datetime
+    expires_at: datetime
+
+
+class StoryOwner(BaseModel):
+    user_id: str
+    username: str
+    profile_photo: Optional[str] = None
+    stories: list[StoryOut]
+
+
+# -----------------
 # Routes
 # -----------------
 
