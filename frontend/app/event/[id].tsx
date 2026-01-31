@@ -150,25 +150,38 @@ export default function EventDetailScreen() {
 
   const handleDelete = () => {
     if (!headers || !event) return;
-    Alert.alert(
-      "Delete Event",
-      "Are you sure you want to delete this event? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await apiDelete(`/api/events/${event.id}`, headers);
-              router.back();
-            } catch (e) {
-              Alert.alert("Error", e instanceof Error ? e.message : "Could not delete event");
-            }
-          },
-        },
-      ]
-    );
+    
+    // Web fallback for Alert
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm("Are you sure you want to delete this event? This action cannot be undone.");
+      if (confirmed) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Event",
+        "Are you sure you want to delete this event? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: performDelete },
+        ]
+      );
+    }
+  };
+
+  const performDelete = async () => {
+    if (!headers || !event) return;
+    try {
+      await apiDelete(`/api/events/${event.id}`, headers);
+      router.back();
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Could not delete event");
+    }
+  };
+
+  const handleEdit = () => {
+    if (!event) return;
+    router.push(`/create/event?edit=${event.id}`);
   };
 
   const openInMaps = () => {
