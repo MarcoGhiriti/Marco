@@ -704,6 +704,65 @@ export default function CreateRouteScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
   container: { flex: 1, backgroundColor: Colors.bg },
+  
+  // Center loading
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  centerText: {
+    color: Colors.muted,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  
+  // Blocked screen
+  blockedContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+    gap: 20,
+  },
+  blockedIcon: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255,193,7,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  blockedTitle: {
+    color: Colors.warning,
+    fontSize: 24,
+    fontFamily: "Inter_900Black",
+  },
+  blockedText: {
+    color: Colors.muted,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  verifyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: Colors.accent,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    marginTop: 12,
+  },
+  verifyBtnText: {
+    color: Colors.bg,
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+  },
+  
   header: {
     flexDirection: "row",
     alignItems: "center",
