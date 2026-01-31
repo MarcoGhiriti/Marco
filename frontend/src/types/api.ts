@@ -36,3 +36,23 @@ export type EventOut = {
   is_joined: boolean;
   created_at: string;
 };
+
+// Stories types
+export type StoryOut = {
+  id: string;
+  owner_id: string;
+  owner_username: string;
+  owner_photo?: string | null;
+  media_base64: string;
+  media_type: "image" | "video";
+  caption?: string | null;
+  created_at: string;
+  expires_at: string;
+};
+
+export type StoryOwner = {
+  user_id: string;
+  username: string;
+  profile_photo?: string | null;
+  stories: StoryOut[];
+};
