@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -21,6 +22,44 @@ type Stats = {
   events_joined: number;
   completed_routes: number;
 };
+
+type Friend = {
+  id: string;
+  username: string;
+  profile_photo_base64?: string | null;
+};
+
+// Calculate level based on kilometers
+function calculateLevel(kmTotal: number): { level: number; title: string; nextKm: number; progress: number } {
+  const levels = [
+    { level: 1, title: "Rookie", minKm: 0, maxKm: 100 },
+    { level: 2, title: "Explorer", minKm: 100, maxKm: 500 },
+    { level: 3, title: "Adventurer", minKm: 500, maxKm: 1000 },
+    { level: 4, title: "Road Warrior", minKm: 1000, maxKm: 2500 },
+    { level: 5, title: "Highway King", minKm: 2500, maxKm: 5000 },
+    { level: 6, title: "Moto Master", minKm: 5000, maxKm: 10000 },
+    { level: 7, title: "Legend", minKm: 10000, maxKm: 25000 },
+    { level: 8, title: "Immortal", minKm: 25000, maxKm: 50000 },
+    { level: 9, title: "God of Roads", minKm: 50000, maxKm: 100000 },
+    { level: 10, title: "Mythical", minKm: 100000, maxKm: Infinity },
+  ];
+
+  for (let i = levels.length - 1; i >= 0; i--) {
+    if (kmTotal >= levels[i].minKm) {
+      const current = levels[i];
+      const progress = current.maxKm === Infinity 
+        ? 100 
+        : Math.min(100, ((kmTotal - current.minKm) / (current.maxKm - current.minKm)) * 100);
+      return {
+        level: current.level,
+        title: current.title,
+        nextKm: current.maxKm === Infinity ? 0 : current.maxKm,
+        progress,
+      };
+    }
+  }
+  return { level: 1, title: "Rookie", nextKm: 100, progress: 0 };
+}
 
 function Row({
   title,
@@ -56,6 +95,7 @@ export default function ProfileScreen() {
   const { accessToken, me, logout, refreshMe } = useAuthStore();
 
   const [stats, setStats] = useState<Stats | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,8 +110,12 @@ export default function ProfileScreen() {
     setLoading(true);
     try {
       await refreshMe();
-      const s = await apiGet<Stats>("/api/stats", headers);
-      setStats(s);
+      const [statsData, friendsData] = await Promise.all([
+        apiGet<Stats>("/api/stats", headers),
+        apiGet<Friend[]>("/api/friends", headers),
+      ]);
+      setStats(statsData);
+      setFriends(friendsData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load profile");
     } finally {
@@ -83,8 +127,12 @@ export default function ProfileScreen() {
     load();
   }, [load]);
 
-  const motoLine = me?.bike?.model ? `${me.bike.model}${me.bike?.cc ? ` · ${me.bike.cc}cc` : ""}` : "Motorcycle not set";
+  const motoLine = me?.bike?.model 
+    ? `${me.bike.model}${me.bike?.cc ? ` · ${me.bike.cc}cc` : ""}` 
+    : "Motorcycle not set";
   const country = me?.country ? me.country : "Country not set";
+
+  const levelInfo = calculateLevel(stats?.km_total ?? 0);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -96,11 +144,25 @@ export default function ProfileScreen() {
 
         {/* PROFILE HEADER */}
         <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={22} color={Colors.text} />
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              {me?.profile_photo_base64 ? (
+                <Image
+                  source={{ uri: me.profile_photo_base64 }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <Ionicons name="person" size={22} color={Colors.text} />
+              )}
+            </View>
+            {/* Level Badge */}
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelBadgeText}>{levelInfo.level}</Text>
+            </View>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.username}>{me?.username ?? ""}</Text>
+            <Text style={styles.levelTitle}>{levelInfo.title}</Text>
             <Text style={styles.meta}>{motoLine}</Text>
             <Text style={styles.meta}>{country}</Text>
           </View>
@@ -108,6 +170,65 @@ export default function ProfileScreen() {
             <Ionicons name="create-outline" size={18} color={Colors.text} />
           </Pressable>
         </View>
+
+        {/* LEVEL PROGRESS */}
+        <View style={styles.levelCard}>
+          <View style={styles.levelHeader}>
+            <View style={styles.levelIconBox}>
+              <Ionicons name="trophy" size={18} color={Colors.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.levelCardTitle}>Level {levelInfo.level} · {levelInfo.title}</Text>
+              <Text style={styles.levelCardSub}>
+                {levelInfo.nextKm > 0 
+                  ? `${Math.round(stats?.km_total ?? 0)} / ${levelInfo.nextKm} km to next level`
+                  : "Maximum level reached!"}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressBar, { width: `${levelInfo.progress}%` }]} />
+          </View>
+        </View>
+
+        {/* FRIENDS COUNTER */}
+        <Pressable 
+          onPress={() => router.push("/profile/friends")} 
+          style={styles.friendsCard}
+        >
+          <View style={styles.friendsLeft}>
+            <View style={styles.friendsIconBox}>
+              <Ionicons name="people" size={20} color={Colors.accent} />
+            </View>
+            <View>
+              <Text style={styles.friendsCount}>{friends.length}</Text>
+              <Text style={styles.friendsLabel}>Friends</Text>
+            </View>
+          </View>
+          <View style={styles.friendsPreview}>
+            {friends.slice(0, 3).map((f, i) => (
+              <View 
+                key={f.id} 
+                style={[
+                  styles.friendMiniAvatar, 
+                  { marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i }
+                ]}
+              >
+                {f.profile_photo_base64 ? (
+                  <Image source={{ uri: f.profile_photo_base64 }} style={styles.friendMiniImage} />
+                ) : (
+                  <Ionicons name="person" size={12} color={Colors.muted} />
+                )}
+              </View>
+            ))}
+            {friends.length > 3 && (
+              <View style={[styles.friendMiniAvatar, styles.friendMoreBadge, { marginLeft: -10 }]}>
+                <Text style={styles.friendMoreText}>+{friends.length - 3}</Text>
+              </View>
+            )}
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
+        </Pressable>
 
         {/* PERSONAL STATS */}
         <View style={styles.section}>
@@ -123,29 +244,29 @@ export default function ProfileScreen() {
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <Ionicons name="navigate-outline" size={18} color={Colors.accent} />
-                <Text style={styles.statValue}>{stats?.km_total ?? 0}</Text>
-                <Text style={styles.statLabel}>Total Distance</Text>
+                <Text style={styles.statValue}>{Math.round(stats?.km_total ?? 0)}</Text>
+                <Text style={styles.statLabel}>Total km</Text>
               </View>
               <View style={styles.statCard}>
                 <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
-                <Text style={styles.statValue}>{stats?.km_month ?? 0}</Text>
-                <Text style={styles.statLabel}>Monthly Distance</Text>
+                <Text style={styles.statValue}>{Math.round(stats?.km_month ?? 0)}</Text>
+                <Text style={styles.statLabel}>This month</Text>
               </View>
               <View style={styles.statCard}>
                 <Ionicons name="trail-sign-outline" size={18} color={Colors.accent} />
                 <Text style={styles.statValue}>{stats?.completed_routes ?? 0}</Text>
-                <Text style={styles.statLabel}>Completed Routes</Text>
+                <Text style={styles.statLabel}>Routes</Text>
               </View>
               <View style={styles.statCard}>
                 <Ionicons name="ticket-outline" size={18} color={Colors.accent} />
                 <Text style={styles.statValue}>{stats?.events_joined ?? 0}</Text>
-                <Text style={styles.statLabel}>Events Joined</Text>
+                <Text style={styles.statLabel}>Events</Text>
               </View>
             </View>
           )}
 
           <Text style={styles.statsNote}>
-            Kilometers are calculated automatically from completed routes only.
+            Kilometers are calculated from completed routes only.
           </Text>
         </View>
 
@@ -164,14 +285,10 @@ export default function ProfileScreen() {
             <Text style={styles.premiumSub}>Premium Features:</Text>
             {[
               "Personal Routes History (saved permanently)",
-              "Advanced Riding Statistics (monthly & yearly)",
-              "Detailed Ride Timeline",
-              "Smart Motorcycle Notifications: service/insurance/ITP",
-              "Country-based regulations",
+              "Advanced Riding Statistics",
+              "Smart Motorcycle Notifications",
               "Ride Data Export (PDF / CSV)",
-              "Priority Support",
               "Exclusive Premium Badges",
-              "Early Access to new features",
             ].map((t) => (
               <View key={t} style={styles.bulletRow}>
                 <View style={styles.bullet} />
@@ -193,6 +310,12 @@ export default function ProfileScreen() {
             subtitle="Bio, motorcycle, country"
             leftIcon="person-outline"
             onPress={() => router.push("/profile/edit")}
+          />
+          <Row
+            title="Friends"
+            subtitle={`${friends.length} friends · Add or message`}
+            leftIcon="people-outline"
+            onPress={() => router.push("/profile/friends")}
           />
           <Row
             title="Privacy Settings"
@@ -223,7 +346,6 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Support</Text>
           <Row title="Help Center" leftIcon="help-circle-outline" onPress={() => {}} right={<Text style={styles.lockedText}>Coming soon</Text>} />
           <Row title="Contact Support" leftIcon="mail-outline" onPress={() => {}} right={<Text style={styles.lockedText}>Coming soon</Text>} />
-          <Row title="FAQ" leftIcon="chatbubble-ellipses-outline" onPress={() => {}} right={<Text style={styles.lockedText}>Coming soon</Text>} />
         </View>
 
         {/* ACCOUNT */}
@@ -263,17 +385,44 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
+  avatarContainer: {
+    position: "relative",
+  },
   avatar: {
-    height: 48,
-    width: 48,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    height: 56,
+    width: 56,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: Colors.accent,
     backgroundColor: Colors.card2,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+  },
+  levelBadge: {
+    position: "absolute",
+    bottom: -4,
+    right: -4,
+    width: 22,
+    height: 22,
+    borderRadius: 8,
+    backgroundColor: Colors.accent,
+    borderWidth: 2,
+    borderColor: Colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  levelBadgeText: {
+    color: Colors.bg,
+    fontSize: 11,
+    fontFamily: "Inter_900Black",
   },
   username: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
+  levelTitle: { color: Colors.accent, fontSize: 12, fontFamily: "Inter_700Bold", marginTop: 2 },
   meta: { marginTop: 4, color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
   editBtn: {
     height: 44,
@@ -284,6 +433,118 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card2,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  levelCard: {
+    marginTop: 12,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 14,
+    gap: 10,
+  },
+  levelHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  levelIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  levelCardTitle: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  levelCardSub: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 2,
+  },
+  progressTrack: {
+    height: 6,
+    backgroundColor: Colors.card2,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: Colors.accent,
+    borderRadius: 3,
+  },
+
+  friendsCard: {
+    marginTop: 12,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  friendsLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  friendsIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  friendsCount: {
+    color: Colors.text,
+    fontSize: 18,
+    fontFamily: "Inter_900Black",
+  },
+  friendsLabel: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  friendsPreview: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  friendMiniAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: Colors.card2,
+    borderWidth: 2,
+    borderColor: Colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  friendMiniImage: {
+    width: "100%",
+    height: "100%",
+  },
+  friendMoreBadge: {
+    backgroundColor: Colors.accent,
+  },
+  friendMoreText: {
+    color: Colors.bg,
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
   },
 
   section: { marginTop: 18, gap: 10 },
@@ -372,5 +633,3 @@ const styles = StyleSheet.create({
   rowSubtitle: { marginTop: 2, color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
   lockedText: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
 });
-
-// (legacy styles removed)
