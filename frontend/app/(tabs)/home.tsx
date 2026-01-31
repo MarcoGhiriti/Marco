@@ -265,6 +265,27 @@ export default function HomeScreen() {
             onViewStory={handleViewStory}
           />
 
+          {/* License Required Banner */}
+          {!isLicenseVerified && (
+            <Pressable 
+              onPress={() => router.push("/(tabs)/profile")}
+              style={styles.licenseRequiredBanner}
+            >
+              <View style={styles.licenseRequiredIcon}>
+                <Ionicons name="shield-checkmark" size={24} color={Colors.warning} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.licenseRequiredTitle}>License Verification Required</Text>
+                <Text style={styles.licenseRequiredText}>
+                  Verify your motorcycle license to access routes and track kilometers.
+                </Text>
+              </View>
+              <View style={styles.licenseRequiredArrow}>
+                <Ionicons name="chevron-forward" size={20} color={Colors.warning} />
+              </View>
+            </Pressable>
+          )}
+
           {loading ? (
             <View style={styles.center}>
               <ActivityIndicator color={Colors.accent} />
