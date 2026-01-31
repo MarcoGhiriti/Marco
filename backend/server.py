@@ -410,6 +410,9 @@ class RouteCreate(BaseModel):
     currency: str = Field(default="RON", min_length=3, max_length=3)
 
     stops_count: int = Field(default=0, ge=0, le=50)
+    
+    # Start date for the route (when riders will meet)
+    start_date: Optional[datetime] = None
 
     # Optional: if true, compute using Google Directions (roads)
     use_google_directions: bool = False
