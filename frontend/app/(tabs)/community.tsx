@@ -179,7 +179,7 @@ function ChatsTab() {
 
 function GroupsTab() {
   const router = useRouter();
-  const { accessToken } = useAuthStore();
+  const { accessToken, me } = useAuthStore();
 
   const [groups, setGroups] = useState<GroupOut[]>([]);
   const [name, setName] = useState("");
