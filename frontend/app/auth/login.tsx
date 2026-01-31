@@ -147,6 +147,15 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
   error: { marginTop: 10, color: Colors.danger, fontSize: 12, fontWeight: "700" },
+  forgotPasswordRow: {
+    marginTop: 12,
+    alignSelf: "flex-end",
+  },
+  forgotPasswordText: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
   primaryBtn: {
     marginTop: 16,
     height: 48,
