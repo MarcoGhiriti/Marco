@@ -47,3 +47,38 @@ export async function apiPost<T>(
   }
   return (await res.json()) as T;
 }
+
+export async function apiPatch<T>(
+  path: string,
+  body: unknown,
+  headers?: Record<string, string>
+): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(headers ?? {}),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`PATCH ${path} failed: ${res.status} ${text}`);
+  }
+  return (await res.json()) as T;
+}
+
+export async function apiDelete<T>(
+  path: string,
+  headers?: Record<string, string>
+): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`DELETE ${path} failed: ${res.status} ${text}`);
+  }
+  return (await res.json()) as T;
+}
