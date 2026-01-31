@@ -480,6 +480,73 @@ const styles = StyleSheet.create({
   section: { marginTop: 16, gap: 10 },
   sectionTitle: { color: Colors.text, fontSize: 13, fontWeight: "900" },
   mutedText: { color: Colors.muted, fontSize: 12, fontWeight: "700" },
+  
+  // Friend Request Card
+  requestCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    borderRadius: 16,
+    padding: 12,
+  },
+  requestUser: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  requestAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.card2,
+    borderWidth: 2,
+    borderColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  requestAvatarImg: {
+    width: "100%",
+    height: "100%",
+  },
+  requestUsername: {
+    color: Colors.text,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+  },
+  requestActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  rejectBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  acceptBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: Colors.success,
+  },
+  acceptBtnText: {
+    color: Colors.bg,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+  
   rowCard: {
     minHeight: 48,
     backgroundColor: Colors.card,
