@@ -108,7 +108,7 @@ export function RouteCard({
               color={item.is_joined ? Colors.text : Colors.bg}
             />
             <Text style={[styles.joinBtnText, item.is_joined && styles.joinBtnTextJoined]}>
-              {item.is_joined ? "Alăturat" : "Alătură-te"}
+              {item.is_joined ? "Joined" : "Join"}
             </Text>
           </Pressable>
 
