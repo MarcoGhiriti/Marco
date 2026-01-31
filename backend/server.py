@@ -18,6 +18,7 @@ from src_chat_models import (
 )
 
 import httpx
+import polyline as polyline_lib
 import socketio
 from bson import ObjectId
 from dotenv import load_dotenv
