@@ -183,14 +183,35 @@ function ChatsTab() {
         ) : null}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Chats</Text>
+          <Text style={styles.sectionTitle}>Friends</Text>
           {friends.length === 0 ? (
             <Text style={styles.mutedText}>No friends yet.</Text>
           ) : (
             friends.map((f) => (
-              <Pressable key={f.id} onPress={() => openChat(f.id)} style={styles.rowCard}>
-                <Text style={styles.rowTitle}>{f.username}</Text>
-                <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
+              <Pressable 
+                key={f.id} 
+                onPress={() => router.push(`/profile/${f.id}`)} 
+                style={styles.rowCard}
+              >
+                <View style={styles.friendInfo}>
+                  <View style={styles.friendAvatar}>
+                    {f.avatar ? (
+                      <Image
+                        source={{ uri: f.avatar.startsWith('data:') ? f.avatar : `data:image/jpeg;base64,${f.avatar}` }}
+                        style={styles.friendAvatarImage}
+                      />
+                    ) : (
+                      <Ionicons name="person" size={18} color={Colors.muted} />
+                    )}
+                  </View>
+                  <Text style={styles.rowTitle}>{f.username}</Text>
+                </View>
+                <Pressable 
+                  onPress={(e) => { e.stopPropagation(); openChat(f.id); }} 
+                  style={styles.chatIconBtn}
+                >
+                  <Ionicons name="chatbubble-outline" size={18} color={Colors.accent} />
+                </Pressable>
               </Pressable>
             ))
           )}
