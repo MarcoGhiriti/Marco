@@ -278,8 +278,8 @@ export default function CreateEventScreen() {
             {/* Search Input */}
             <View style={styles.searchSection}>
               <PlaceSearchInput
-                label="PUNCT DE ÎNTÂLNIRE"
-                placeholder="Caută locația evenimentului..."
+                label="MEETING POINT"
+                placeholder="Search event location..."
                 icon="location"
                 iconColor={Colors.accent}
                 onPlaceSelected={(place) => setMeetingLocation(place)}
@@ -292,7 +292,7 @@ export default function CreateEventScreen() {
               <View style={styles.selectedCard}>
                 <Ionicons name="checkmark-circle" size={24} color={Colors.success} />
                 <View style={styles.selectedCardText}>
-                  <Text style={styles.selectedCardTitle}>Locație selectată</Text>
+                  <Text style={styles.selectedCardTitle}>Location selected</Text>
                   <Text style={styles.selectedCardAddress} numberOfLines={2}>
                     {meetingLocation.address}
                   </Text>
