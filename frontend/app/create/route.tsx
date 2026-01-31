@@ -35,6 +35,11 @@ interface RouteInfo {
   end_address: string;
 }
 
+type LicenseStatus = {
+  license_type: string | null;
+  license_verified: boolean;
+};
+
 const DIFFICULTY_OPTIONS = ["easy", "medium", "hard"] as const;
 
 // SVG Map Preview Component
