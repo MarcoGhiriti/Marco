@@ -376,6 +376,7 @@ class UserPublic(BaseModel):
     profile_photo_base64: Optional[str] = None
     bio: str = ""
     bike: Optional[BikeInfo] = None
+    country: Optional[str] = None
     privacy: PrivacySettings
     level: int = 1
     km_total: float = 0
