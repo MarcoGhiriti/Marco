@@ -401,6 +401,48 @@ const styles = StyleSheet.create({
   },
   activeRideTitle: { color: "#FFF", fontSize: 14, fontWeight: "700" },
   activeRideSub: { color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "600" },
+  
+  // License required banner
+  licenseRequiredBanner: {
+    marginHorizontal: 16,
+    marginVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.warning,
+    borderRadius: 16,
+    padding: 14,
+  },
+  licenseRequiredIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,193,7,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  licenseRequiredTitle: { 
+    color: Colors.warning, 
+    fontSize: 14, 
+    fontWeight: "700",
+  },
+  licenseRequiredText: { 
+    color: Colors.muted, 
+    fontSize: 12, 
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  licenseRequiredArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,193,7,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  
   content: { paddingBottom: 20 },
   routesList: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
   center: { paddingTop: 80, alignItems: "center", gap: 10, paddingHorizontal: 16 },
