@@ -1048,6 +1048,7 @@ async def groups_create(payload: GroupCreate, current_user: dict = Depends(get_c
         "name": payload.name.strip(),
         "description": payload.description.strip(),
         "is_private": payload.is_private,
+        "photo_base64": payload.photo_base64,
         "owner_id": owner_id,
         "admins": [owner_id],
         "members": [owner_id],
@@ -1063,6 +1064,7 @@ async def groups_create(payload: GroupCreate, current_user: dict = Depends(get_c
         admins=doc["admins"],
         members_count=len(doc["members"]),
         members=doc["members"],
+        photo_base64=doc.get("photo_base64"),
         created_at=doc["created_at"],
     )
 
@@ -1084,6 +1086,7 @@ async def groups_list(current_user: dict = Depends(get_current_user)):
                 admins=g.get("admins") or [],
                 members_count=len(g.get("members") or []),
                 members=g.get("members") or [],
+                photo_base64=g.get("photo_base64"),
                 created_at=g.get("created_at") or datetime.utcnow(),
             )
         )
