@@ -1148,6 +1148,7 @@ async def create_route(payload: RouteCreate):
         participants_max=doc["participants_max"],
         participants_count=0,
         is_joined=False,
+        created_by=doc.get("created_by", ""),
         created_at=doc["created_at"],
     )
     return out
