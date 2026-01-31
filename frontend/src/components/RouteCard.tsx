@@ -58,7 +58,7 @@ export function RouteCard({
           </Text>
           <View style={[styles.diffBadge, { backgroundColor: diffColor }]}>
             <Text style={styles.diffText}>
-              {item.difficulty === "easy" ? "Ușor" : item.difficulty === "medium" ? "Mediu" : "Greu"}
+              {item.difficulty === "easy" ? "Easy" : item.difficulty === "medium" ? "Medium" : "Hard"}
             </Text>
           </View>
         </View>
