@@ -482,6 +482,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
   },
+  creatorSection: {
+    gap: 12,
+  },
   creatorCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -494,6 +497,22 @@ const styles = StyleSheet.create({
   },
   creatorText: {
     color: Colors.accent,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.danger,
+    borderRadius: 14,
+    padding: 14,
+  },
+  deleteBtnText: {
+    color: Colors.danger,
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
   },
