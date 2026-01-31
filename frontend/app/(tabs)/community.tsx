@@ -99,6 +99,12 @@ function ChatsTab() {
     await Promise.all([loadFriends(), loadRequests()]);
   }, [headers, loadFriends, loadRequests]);
 
+  const rejectRequest = useCallback(async (fromUserId: string) => {
+    if (!headers) return;
+    await apiPost("/api/friends/reject", { from_user_id: fromUserId }, headers);
+    await loadRequests();
+  }, [headers, loadRequests]);
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <Pressable style={styles.inner} onPress={() => {}}>
