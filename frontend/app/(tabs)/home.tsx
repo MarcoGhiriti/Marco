@@ -234,6 +234,7 @@ export default function HomeScreen() {
                   item={r}
                   currentUserId={me?.id}
                   activeRideRouteId={activeRide?.route_id}
+                  onPress={() => router.push(`/route/${r.id}`)}
                   onToggleJoin={async () => {
                     if (!authHeader) return;
                     try {
