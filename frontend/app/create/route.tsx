@@ -483,7 +483,7 @@ export default function CreateRouteScreen() {
             {loadingRoute && (
               <View style={styles.infoCard}>
                 <ActivityIndicator size="small" color={Colors.accent} />
-                <Text style={styles.infoText}>Se calculează traseul...</Text>
+                <Text style={styles.infoText}>Calculating route...</Text>
               </View>
             )}
 
@@ -491,14 +491,14 @@ export default function CreateRouteScreen() {
               <View style={styles.routeInfoCard}>
                 <View style={styles.routeInfoHeader}>
                   <Ionicons name="checkmark-circle" size={24} color={Colors.success} />
-                  <Text style={styles.routeInfoTitle}>Traseu calculat!</Text>
+                  <Text style={styles.routeInfoTitle}>Route calculated!</Text>
                 </View>
                 
                 <View style={styles.routeStats}>
                   <View style={styles.routeStat}>
                     <Ionicons name="navigate" size={20} color={Colors.accent} />
                     <Text style={styles.routeStatValue}>{routeInfo.distance_km} km</Text>
-                    <Text style={styles.routeStatLabel}>Distanță</Text>
+                    <Text style={styles.routeStatLabel}>Distance</Text>
                   </View>
                   
                   <View style={styles.routeStatDivider} />
@@ -506,7 +506,7 @@ export default function CreateRouteScreen() {
                   <View style={styles.routeStat}>
                     <Ionicons name="time" size={20} color={Colors.accent} />
                     <Text style={styles.routeStatValue}>{routeInfo.duration_min} min</Text>
-                    <Text style={styles.routeStatLabel}>Durată</Text>
+                    <Text style={styles.routeStatLabel}>Duration</Text>
                   </View>
 
                   {waypoints.length > 0 && (
@@ -515,7 +515,7 @@ export default function CreateRouteScreen() {
                       <View style={styles.routeStat}>
                         <Ionicons name="flag" size={20} color={Colors.accent} />
                         <Text style={styles.routeStatValue}>{waypoints.length}</Text>
-                        <Text style={styles.routeStatLabel}>Opriri</Text>
+                        <Text style={styles.routeStatLabel}>Stops</Text>
                       </View>
                     </>
                   )}
@@ -543,7 +543,7 @@ export default function CreateRouteScreen() {
                   {waypoints.length > 0 && (
                     <>
                       <Ionicons name="flag-outline" size={18} color={Colors.accent} style={{ marginLeft: 16 }} />
-                      <Text style={styles.summaryText}>{waypoints.length} opriri</Text>
+                      <Text style={styles.summaryText}>{waypoints.length} stops</Text>
                     </>
                   )}
                 </View>
@@ -551,11 +551,11 @@ export default function CreateRouteScreen() {
             )}
 
             <View style={styles.formCard}>
-              <Text style={styles.formLabel}>Titlu *</Text>
+              <Text style={styles.formLabel}>Title *</Text>
               <TextInput
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Ex: Transalpina Weekend"
+                placeholder="E.g.: Transalpina Weekend"
                 placeholderTextColor={Colors.muted}
                 style={styles.formInput}
                 maxLength={80}
