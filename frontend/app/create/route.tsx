@@ -258,6 +258,10 @@ export default function CreateRouteScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // License verification
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
+  const [checkingLicense, setCheckingLicense] = useState(true);
+
   // For adding new waypoint
   const [showWaypointInput, setShowWaypointInput] = useState(false);
 
@@ -265,6 +269,27 @@ export default function CreateRouteScreen() {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
+
+  const isLicenseVerified = licenseStatus?.license_verified === true;
+
+  // Check license on mount
+  useEffect(() => {
+    const checkLicense = async () => {
+      if (!headers) {
+        setCheckingLicense(false);
+        return;
+      }
+      try {
+        const data = await apiGet<LicenseStatus>("/api/me/license-status", headers);
+        setLicenseStatus(data);
+      } catch (e) {
+        console.error("Failed to check license:", e);
+      } finally {
+        setCheckingLicense(false);
+      }
+    };
+    checkLicense();
+  }, [headers]);
 
   // Set default date
   useEffect(() => {
