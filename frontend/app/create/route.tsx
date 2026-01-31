@@ -379,6 +379,50 @@ export default function CreateRouteScreen() {
     }
   };
 
+  // Show loading while checking license
+  if (checkingLicense) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+          <Text style={styles.centerText}>Checking license...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show blocked screen if license not verified
+  if (!isLicenseVerified) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.headerBtn}>
+            <Ionicons name="close" size={22} color={Colors.text} />
+          </Pressable>
+          <Text style={styles.headerTitle}>New Route</Text>
+          <View style={{ width: 44 }} />
+        </View>
+        
+        <View style={styles.blockedContainer}>
+          <View style={styles.blockedIcon}>
+            <Ionicons name="shield-checkmark" size={64} color={Colors.warning} />
+          </View>
+          <Text style={styles.blockedTitle}>License Required</Text>
+          <Text style={styles.blockedText}>
+            To create routes and track kilometers, you need to verify your motorcycle license (A1, A2, or A).
+          </Text>
+          <Pressable 
+            onPress={() => router.push("/(tabs)/profile")}
+            style={styles.verifyBtn}
+          >
+            <Ionicons name="card" size={20} color={Colors.bg} />
+            <Text style={styles.verifyBtnText}>Verify License</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
