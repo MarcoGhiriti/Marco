@@ -334,6 +334,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  shopBtn: {
+    height: 44,
+    width: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   activeRideBanner: {
     marginHorizontal: 16,
     marginTop: 8,
