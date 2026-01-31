@@ -275,7 +275,7 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "🎉 RIDE SESSIONS API TESTING COMPLETE! All 4 test scenarios from review request passed with 100% success rate: 1) GET /api/rides/active initially returns null (no active ride) ✅ 2) POST /api/rides/start with valid route_id creates active ride session with status='active' and session_id ✅ 3) GET /api/rides/active after start returns the active ride session ✅ 4) POST /api/rides/end with session_id and end_location completes ride with status='completed' and km_tracked=0.0 (validation logic working) ✅. Anti-fraud km tracking system fully functional with proper session management and validation."
-##   - task: "Gamification API (Badges & Leaderboard)"
+##   - task: "Places Autocomplete and Directions API (Google Maps integration)"
 ##     implemented: true
 ##     working: true
 ##     file: "backend/server.py"
@@ -283,9 +283,12 @@
 ##     priority: "high"
 ##     needs_retesting: false
 ##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Implemented Google Places Autocomplete and Directions API integration. Added GET /api/places/autocomplete, GET /api/places/details, GET /api/directions/route endpoints. All require Bearer token authentication. Fixed EventOut model to include created_by field."
 ##       - working: true
 ##         agent: "testing"
-##         comment: "🎉 GAMIFICATION API TESTING COMPLETE! All 3 test scenarios from review request passed with 100% success rate: 1) GET /api/badges returns user's earned badges (0 badges initially as expected) ✅ 2) GET /api/badges/all returns all 13 available badge types with name, description, icon (First Ride, Explorer, Adventurer, etc.) ✅ 3) GET /api/leaderboard?limit=10 returns leaderboard array with rank, username, km_total, level, badges_count structure (0 entries initially as expected) ✅. Badge system and leaderboard fully functional and ready for production use."
+##         comment: "🎉 PLACES AUTOCOMPLETE & DIRECTIONS API TESTING COMPLETE! All 6 test scenarios from review request passed with 100% success rate: ✅ Authentication with user1@example.com/Password123 successful ✅ GET /api/places/autocomplete?query=Bucuresti returns 5 autocomplete results with required fields (place_id, description, main_text, secondary_text) ✅ GET /api/places/details returns coordinates (lat=44.4267674, lng=26.1025384) and place info for Bucharest ✅ GET /api/directions/route returns route polyline with 229 points, 553.39km distance, 413min duration ✅ POST /api/routes creates route with created_by field populated correctly ✅ POST /api/events creates event with created_by field populated correctly (fixed EventOut model) ✅. Google Maps API integration fully functional. Minor fix applied: Added missing created_by field to EventOut model and updated create_event and list_events endpoints. Places and Directions APIs production-ready."
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
