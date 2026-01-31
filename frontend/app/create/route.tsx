@@ -380,7 +380,7 @@ export default function CreateRouteScreen() {
               {loading ? (
                 <ActivityIndicator size="small" color={Colors.bg} />
               ) : (
-                <Text style={styles.nextBtnText}>Creează</Text>
+                <Text style={styles.nextBtnText}>Create</Text>
               )}
             </Pressable>
           )}
@@ -404,8 +404,8 @@ export default function CreateRouteScreen() {
               {/* Start Point */}
               <View style={styles.searchInputWrapper}>
                 <PlaceSearchInput
-                  label="PUNCT DE START"
-                  placeholder="Caută locația de start..."
+                  label="START POINT"
+                  placeholder="Search for start location..."
                   icon="flag"
                   iconColor={Colors.success}
                   onPlaceSelected={(place) => {
@@ -439,8 +439,8 @@ export default function CreateRouteScreen() {
               {showWaypointInput ? (
                 <View style={styles.searchInputWrapper}>
                   <PlaceSearchInput
-                    label={`OPRIRE ${waypoints.length + 1}`}
-                    placeholder="Caută oraș sau locație..."
+                    label={`STOP ${waypoints.length + 1}`}
+                    placeholder="Search city or location..."
                     icon="location"
                     iconColor={Colors.accent}
                     onPlaceSelected={addWaypoint}
@@ -450,7 +450,7 @@ export default function CreateRouteScreen() {
                     onPress={() => setShowWaypointInput(false)} 
                     style={styles.cancelWaypointBtn}
                   >
-                    <Text style={styles.cancelWaypointText}>Anulează</Text>
+                    <Text style={styles.cancelWaypointText}>Cancel</Text>
                   </Pressable>
                 </View>
               ) : (
@@ -459,15 +459,15 @@ export default function CreateRouteScreen() {
                   style={styles.addWaypointBtn}
                 >
                   <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
-                  <Text style={styles.addWaypointText}>Adaugă oprire intermediară</Text>
+                  <Text style={styles.addWaypointText}>Add intermediate stop</Text>
                 </Pressable>
               )}
 
               {/* End Point */}
               <View style={styles.searchInputWrapper}>
                 <PlaceSearchInput
-                  label="PUNCT DE FINAL"
-                  placeholder="Caută destinația..."
+                  label="END POINT"
+                  placeholder="Search for destination..."
                   icon="flag"
                   iconColor={Colors.danger}
                   onPlaceSelected={(place) => {
