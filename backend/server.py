@@ -460,6 +460,7 @@ class EventCreate(BaseModel):
     title: str = Field(min_length=2, max_length=80)
     description: str = Field(default="", max_length=800)
     start_point: list[float] = Field(min_length=2, max_length=2, description="[lat,lng]")
+    location_name: str = Field(default="", max_length=200, description="Name/address of the location")
 
     start_time: datetime
 
@@ -472,6 +473,7 @@ class EventOut(BaseModel):
     title: str
     description: str
     start_point: list[float]
+    location_name: str = ""
     start_time: datetime
 
     poster_base64: Optional[str] = None
