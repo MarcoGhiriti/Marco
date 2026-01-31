@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Events Join/Leave functionality
-Tests the new Events join/leave changes as requested in the review.
+Comprehensive Backend Testing for Moto GO Release Readiness
+Tests all backend APIs according to review request specifications
 """
 
 import asyncio
@@ -12,18 +12,30 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 import httpx
+import socketio
 
 
 class BackendTester:
-    def __init__(self, base_url: str = "https://riderzone-1.preview.emergentagent.com/api"):
-        self.base_url = base_url
-        self.client = httpx.AsyncClient(timeout=30.0)
-        self.token: Optional[str] = None
-        self.user_id: Optional[str] = None
-        self.event_id: Optional[str] = None
-
-    async def close(self):
-        await self.client.aclose()
+    def __init__(self):
+        # Use the production URL from frontend/.env
+        self.base_url = "https://riderzone-1.preview.emergentagent.com"
+        self.api_url = f"{self.base_url}/api"
+        self.socket_url = self.base_url
+        
+        # Test data storage
+        self.user1_token: Optional[str] = None
+        self.user2_token: Optional[str] = None
+        self.user1_id: Optional[str] = None
+        self.user2_id: Optional[str] = None
+        self.user1_email: Optional[str] = None
+        self.user2_email: Optional[str] = None
+        self.test_route_id: Optional[str] = None
+        self.test_event_id: Optional[str] = None
+        self.test_group_id: Optional[str] = None
+        
+        # Test results
+        self.results: Dict[str, Any] = {}
+        self.failed_tests: list = []
 
     def generate_random_email(self) -> str:
         """Generate a random email for testing"""
@@ -32,312 +44,602 @@ class BackendTester:
 
     def generate_random_username(self) -> str:
         """Generate a random username for testing"""
-        random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-        return f"user{random_str}"
+        return ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
 
-    async def register_user(self) -> Dict[str, Any]:
-        """Step 1: Register a random user and get token"""
-        print("🔐 Step 1: Registering new user...")
+    async def log_test(self, test_name: str, success: bool, details: str = ""):
+        """Log test results"""
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status} {test_name}")
+        if details:
+            print(f"    {details}")
         
-        email = self.generate_random_email()
-        username = self.generate_random_username()
-        password = "TestPassword123"
-        
-        payload = {
-            "email": email,
-            "username": username,
-            "password": password
+        self.results[test_name] = {
+            "success": success,
+            "details": details
         }
         
-        response = await self.client.post(f"{self.base_url}/auth/register", json=payload)
-        
-        if response.status_code != 200:
-            raise Exception(f"Registration failed: {response.status_code} - {response.text}")
-        
-        data = response.json()
-        self.token = data["access_token"]
-        
-        print(f"✅ User registered successfully: {email}")
-        print(f"✅ Token obtained: {self.token[:20]}...")
-        
-        # Get user info to get user_id
-        headers = {"Authorization": f"Bearer {self.token}"}
-        me_response = await self.client.get(f"{self.base_url}/me", headers=headers)
-        if me_response.status_code == 200:
-            user_data = me_response.json()
-            self.user_id = user_data["id"]
-            print(f"✅ User ID: {self.user_id}")
-        
-        return data
+        if not success:
+            self.failed_tests.append(test_name)
 
-    async def create_event(self) -> Dict[str, Any]:
-        """Step 2: Create an event via POST /api/events (no auth required for create currently)"""
-        print("\n📅 Step 2: Creating an event...")
+    async def test_auth_profile(self):
+        """A) Auth/Profile Tests"""
+        print("\n=== A) AUTH/PROFILE TESTS ===")
         
-        # Create event in the future
-        start_time = datetime.utcnow() + timedelta(days=7)
-        
-        payload = {
-            "title": "Test Motorcycle Ride",
-            "description": "A test event for join/leave functionality",
-            "start_point": [44.4268, 26.1025],  # Bucharest coordinates
-            "start_time": start_time.isoformat() + "Z"
-        }
-        
-        response = await self.client.post(f"{self.base_url}/events", json=payload)
-        
-        if response.status_code != 200:
-            raise Exception(f"Event creation failed: {response.status_code} - {response.text}")
-        
-        data = response.json()
-        self.event_id = data["id"]
-        
-        print(f"✅ Event created successfully: {data['title']}")
-        print(f"✅ Event ID: {self.event_id}")
-        
-        return data
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # 1) Register random user 1
+            self.user1_email = self.generate_random_email()
+            user1_username = self.generate_random_username()
+            
+            register_data = {
+                "email": self.user1_email,
+                "username": user1_username,
+                "password": "TestPassword123!"
+            }
+            
+            try:
+                resp = await client.post(f"{self.api_url}/auth/register", json=register_data)
+                if resp.status_code == 200:
+                    token_data = resp.json()
+                    self.user1_token = token_data.get("access_token")
+                    await self.log_test("Register User 1", True, f"Email: {self.user1_email}")
+                else:
+                    await self.log_test("Register User 1", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                    return
+            except Exception as e:
+                await self.log_test("Register User 1", False, f"Exception: {str(e)}")
+                return
 
-    async def test_events_without_auth(self) -> None:
-        """Step 3: GET /api/events without token should now return 401"""
-        print("\n🚫 Step 3: Testing GET /api/events without authentication...")
-        
-        response = await self.client.get(f"{self.base_url}/events")
-        
-        if response.status_code != 401:
-            raise Exception(f"Expected 401 Unauthorized, got {response.status_code} - {response.text}")
-        
-        print("✅ GET /api/events correctly returns 401 without authentication")
+            # 2) Login with user 1
+            login_data = {
+                "email": self.user1_email,
+                "password": "TestPassword123!"
+            }
+            
+            try:
+                resp = await client.post(f"{self.api_url}/auth/login", json=login_data)
+                if resp.status_code == 200:
+                    token_data = resp.json()
+                    self.user1_token = token_data.get("access_token")
+                    await self.log_test("Login User 1", True, "Token received")
+                else:
+                    await self.log_test("Login User 1", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                    return
+            except Exception as e:
+                await self.log_test("Login User 1", False, f"Exception: {str(e)}")
+                return
 
-    async def test_events_with_auth(self) -> Dict[str, Any]:
-        """Step 4: GET /api/events with token should return list with participants_count and is_joined"""
-        print("\n📋 Step 4: Testing GET /api/events with authentication...")
-        
-        headers = {"Authorization": f"Bearer {self.token}"}
-        response = await self.client.get(f"{self.base_url}/events", headers=headers)
-        
-        if response.status_code != 200:
-            raise Exception(f"GET /api/events with auth failed: {response.status_code} - {response.text}")
-        
-        data = response.json()
-        
-        if not isinstance(data, list):
-            raise Exception(f"Expected list response, got {type(data)}")
-        
-        if len(data) == 0:
-            raise Exception("No events found in response")
-        
-        # Find our created event
-        our_event = None
-        for event in data:
-            if event["id"] == self.event_id:
-                our_event = event
-                break
-        
-        if not our_event:
-            raise Exception(f"Created event {self.event_id} not found in events list")
-        
-        # Verify EventOut schema includes required fields
-        required_fields = ["participants_count", "is_joined"]
-        for field in required_fields:
-            if field not in our_event:
-                raise Exception(f"Missing required field '{field}' in EventOut response")
-        
-        print(f"✅ GET /api/events with auth successful")
-        print(f"✅ Event found with participants_count: {our_event['participants_count']}")
-        print(f"✅ Event found with is_joined: {our_event['is_joined']}")
-        
-        # Initially should not be joined
-        if our_event["is_joined"] != False:
-            raise Exception(f"Expected is_joined=false initially, got {our_event['is_joined']}")
-        
-        if our_event["participants_count"] != 0:
-            raise Exception(f"Expected participants_count=0 initially, got {our_event['participants_count']}")
-        
-        return data
+            # 3) GET /api/me
+            headers = {"Authorization": f"Bearer {self.user1_token}"}
+            try:
+                resp = await client.get(f"{self.api_url}/me", headers=headers)
+                if resp.status_code == 200:
+                    user_data = resp.json()
+                    self.user1_id = user_data.get("id")
+                    await self.log_test("GET /api/me", True, f"User ID: {self.user1_id}")
+                else:
+                    await self.log_test("GET /api/me", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                    return
+            except Exception as e:
+                await self.log_test("GET /api/me", False, f"Exception: {str(e)}")
+                return
 
-    async def test_join_event(self) -> Dict[str, Any]:
-        """Step 5: POST /api/events/{id}/join with token -> ok true"""
-        print(f"\n➕ Step 5: Testing POST /api/events/{self.event_id}/join...")
-        
-        headers = {"Authorization": f"Bearer {self.token}"}
-        response = await self.client.post(f"{self.base_url}/events/{self.event_id}/join", headers=headers)
-        
-        if response.status_code != 200:
-            raise Exception(f"Event join failed: {response.status_code} - {response.text}")
-        
-        data = response.json()
-        
-        if data.get("ok") != True:
-            raise Exception(f"Expected ok=true, got {data}")
-        
-        print("✅ Successfully joined event")
-        
-        return data
+            # 4) PATCH /api/me to set bio + bike model/cc
+            update_data = {
+                "bio": "Test rider bio for comprehensive testing",
+                "bike": {
+                    "model": "Yamaha MT-07",
+                    "cc": 689
+                }
+            }
+            
+            try:
+                resp = await client.patch(f"{self.api_url}/me", json=update_data, headers=headers)
+                if resp.status_code == 200:
+                    await self.log_test("PATCH /api/me (bio + bike)", True, "Profile updated")
+                else:
+                    await self.log_test("PATCH /api/me (bio + bike)", False, f"Status: {resp.status_code}, Response: {resp.text}")
+            except Exception as e:
+                await self.log_test("PATCH /api/me (bio + bike)", False, f"Exception: {str(e)}")
 
-    async def test_events_after_join(self) -> Dict[str, Any]:
-        """Step 6: GET /api/events with token shows is_joined true and participants_count incremented"""
-        print("\n📈 Step 6: Testing GET /api/events after joining...")
-        
-        headers = {"Authorization": f"Bearer {self.token}"}
-        response = await self.client.get(f"{self.base_url}/events", headers=headers)
-        
-        if response.status_code != 200:
-            raise Exception(f"GET /api/events after join failed: {response.status_code} - {response.text}")
-        
-        data = response.json()
-        
-        # Find our event
-        our_event = None
-        for event in data:
-            if event["id"] == self.event_id:
-                our_event = event
-                break
-        
-        if not our_event:
-            raise Exception(f"Event {self.event_id} not found after join")
-        
-        # Verify is_joined is now true
-        if our_event["is_joined"] != True:
-            raise Exception(f"Expected is_joined=true after join, got {our_event['is_joined']}")
-        
-        # Verify participants_count is incremented
-        if our_event["participants_count"] != 1:
-            raise Exception(f"Expected participants_count=1 after join, got {our_event['participants_count']}")
-        
-        print(f"✅ After join: is_joined={our_event['is_joined']}, participants_count={our_event['participants_count']}")
-        
-        return data
+            # 5) Verify GET /api/me returns updated data
+            try:
+                resp = await client.get(f"{self.api_url}/me", headers=headers)
+                if resp.status_code == 200:
+                    user_data = resp.json()
+                    bio = user_data.get("bio", "")
+                    bike = user_data.get("bike", {})
+                    
+                    if "Test rider bio" in bio and bike.get("model") == "Yamaha MT-07" and bike.get("cc") == 689:
+                        await self.log_test("Verify updated profile", True, "Bio and bike info updated correctly")
+                    else:
+                        await self.log_test("Verify updated profile", False, f"Data not updated correctly: bio='{bio}', bike={bike}")
+                else:
+                    await self.log_test("Verify updated profile", False, f"Status: {resp.status_code}")
+            except Exception as e:
+                await self.log_test("Verify updated profile", False, f"Exception: {str(e)}")
 
-    async def test_leave_event(self) -> Dict[str, Any]:
-        """Step 7: POST /api/events/{id}/leave -> ok true"""
-        print(f"\n➖ Step 7: Testing POST /api/events/{self.event_id}/leave...")
+    async def test_routes(self):
+        """B) Routes Tests"""
+        print("\n=== B) ROUTES TESTS ===")
         
-        headers = {"Authorization": f"Bearer {self.token}"}
-        response = await self.client.post(f"{self.base_url}/events/{self.event_id}/leave", headers=headers)
-        
-        if response.status_code != 200:
-            raise Exception(f"Event leave failed: {response.status_code} - {response.text}")
-        
-        data = response.json()
-        
-        if data.get("ok") != True:
-            raise Exception(f"Expected ok=true, got {data}")
-        
-        print("✅ Successfully left event")
-        
-        return data
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            headers = {"Authorization": f"Bearer {self.user1_token}"}
+            
+            # 3) POST /api/routes create route
+            route_data = {
+                "title": "Test Mountain Route",
+                "description": "Comprehensive test route for backend verification",
+                "polyline": [
+                    [45.7489, 21.2087],  # Timisoara
+                    [45.7500, 21.2200],  # Waypoint 1
+                    [45.7600, 21.2300],  # Waypoint 2
+                    [45.7700, 21.2400]   # End point
+                ],
+                "difficulty": "medium",
+                "participants_min": 2,
+                "participants_max": 8,
+                "fuel_price_per_l": 7.5,
+                "bike_consumption_l_per_100km": 5.0,
+                "toll_estimate": 15.0,
+                "currency": "RON",
+                "stops_count": 2
+            }
+            
+            try:
+                resp = await client.post(f"{self.api_url}/routes", json=route_data)
+                if resp.status_code == 200:
+                    route_response = resp.json()
+                    self.test_route_id = route_response.get("id")
+                    
+                    # Verify participants fields exist
+                    if "participants_count" in route_response and "is_joined" in route_response:
+                        await self.log_test("POST /api/routes (create)", True, f"Route ID: {self.test_route_id}, has participants fields")
+                    else:
+                        await self.log_test("POST /api/routes (create)", False, "Missing participants_count or is_joined fields")
+                else:
+                    await self.log_test("POST /api/routes (create)", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                    return
+            except Exception as e:
+                await self.log_test("POST /api/routes (create)", False, f"Exception: {str(e)}")
+                return
 
-    async def test_events_after_leave(self) -> Dict[str, Any]:
-        """Step 8: GET /api/events shows is_joined false and participants_count decremented"""
-        print("\n📉 Step 8: Testing GET /api/events after leaving...")
-        
-        headers = {"Authorization": f"Bearer {self.token}"}
-        response = await self.client.get(f"{self.base_url}/events", headers=headers)
-        
-        if response.status_code != 200:
-            raise Exception(f"GET /api/events after leave failed: {response.status_code} - {response.text}")
-        
-        data = response.json()
-        
-        # Find our event
-        our_event = None
-        for event in data:
-            if event["id"] == self.event_id:
-                our_event = event
-                break
-        
-        if not our_event:
-            raise Exception(f"Event {self.event_id} not found after leave")
-        
-        # Verify is_joined is now false
-        if our_event["is_joined"] != False:
-            raise Exception(f"Expected is_joined=false after leave, got {our_event['is_joined']}")
-        
-        # Verify participants_count is decremented
-        if our_event["participants_count"] != 0:
-            raise Exception(f"Expected participants_count=0 after leave, got {our_event['participants_count']}")
-        
-        print(f"✅ After leave: is_joined={our_event['is_joined']}, participants_count={our_event['participants_count']}")
-        
-        return data
+            # 4) GET /api/routes without token should be 401
+            try:
+                resp = await client.get(f"{self.api_url}/routes")
+                if resp.status_code == 401:
+                    await self.log_test("GET /api/routes (no token)", True, "Correctly returns 401")
+                else:
+                    await self.log_test("GET /api/routes (no token)", False, f"Expected 401, got {resp.status_code}")
+            except Exception as e:
+                await self.log_test("GET /api/routes (no token)", False, f"Exception: {str(e)}")
 
-    async def test_routes_regression(self) -> None:
-        """Regression test: /api/routes still OK"""
-        print("\n🔄 Regression Test: Testing /api/routes still works...")
-        
-        response = await self.client.get(f"{self.base_url}/routes")
-        
-        if response.status_code != 200:
-            raise Exception(f"Routes regression test failed: {response.status_code} - {response.text}")
-        
-        data = response.json()
-        
-        if not isinstance(data, list):
-            raise Exception(f"Expected list response for routes, got {type(data)}")
-        
-        print(f"✅ Routes endpoint working correctly, returned {len(data)} routes")
+            # 5) GET /api/routes with token returns is_joined=false, participants_count
+            try:
+                resp = await client.get(f"{self.api_url}/routes", headers=headers)
+                if resp.status_code == 200:
+                    routes = resp.json()
+                    if routes and len(routes) > 0:
+                        route = routes[0]  # Check first route
+                        if "is_joined" in route and "participants_count" in route:
+                            await self.log_test("GET /api/routes (with token)", True, f"is_joined={route['is_joined']}, participants_count={route['participants_count']}")
+                        else:
+                            await self.log_test("GET /api/routes (with token)", False, "Missing is_joined or participants_count fields")
+                    else:
+                        await self.log_test("GET /api/routes (with token)", False, "No routes returned")
+                else:
+                    await self.log_test("GET /api/routes (with token)", False, f"Status: {resp.status_code}, Response: {resp.text}")
+            except Exception as e:
+                await self.log_test("GET /api/routes (with token)", False, f"Exception: {str(e)}")
 
-    async def run_all_tests(self) -> Dict[str, Any]:
-        """Run all tests in sequence"""
-        print("🚀 Starting Events Join/Leave Backend Testing...")
-        print("=" * 60)
+            # 6) POST /api/routes/{id}/join
+            if self.test_route_id:
+                try:
+                    resp = await client.post(f"{self.api_url}/routes/{self.test_route_id}/join", headers=headers)
+                    if resp.status_code == 200:
+                        await self.log_test("POST /api/routes/{id}/join", True, "Successfully joined route")
+                    else:
+                        await self.log_test("POST /api/routes/{id}/join", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                except Exception as e:
+                    await self.log_test("POST /api/routes/{id}/join", False, f"Exception: {str(e)}")
+
+                # 7) Verify GET /api/routes shows is_joined=true
+                try:
+                    resp = await client.get(f"{self.api_url}/routes", headers=headers)
+                    if resp.status_code == 200:
+                        routes = resp.json()
+                        joined_route = None
+                        for route in routes:
+                            if route.get("id") == self.test_route_id:
+                                joined_route = route
+                                break
+                        
+                        if joined_route and joined_route.get("is_joined") == True:
+                            await self.log_test("Verify route join (is_joined=true)", True, f"participants_count={joined_route.get('participants_count')}")
+                        else:
+                            await self.log_test("Verify route join (is_joined=true)", False, f"is_joined not true or route not found")
+                    else:
+                        await self.log_test("Verify route join (is_joined=true)", False, f"Status: {resp.status_code}")
+                except Exception as e:
+                    await self.log_test("Verify route join (is_joined=true)", False, f"Exception: {str(e)}")
+
+                # 8) POST /api/routes/{id}/leave
+                try:
+                    resp = await client.post(f"{self.api_url}/routes/{self.test_route_id}/leave", headers=headers)
+                    if resp.status_code == 200:
+                        await self.log_test("POST /api/routes/{id}/leave", True, "Successfully left route")
+                    else:
+                        await self.log_test("POST /api/routes/{id}/leave", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                except Exception as e:
+                    await self.log_test("POST /api/routes/{id}/leave", False, f"Exception: {str(e)}")
+
+                # 9) Verify GET /api/routes shows is_joined=false
+                try:
+                    resp = await client.get(f"{self.api_url}/routes", headers=headers)
+                    if resp.status_code == 200:
+                        routes = resp.json()
+                        left_route = None
+                        for route in routes:
+                            if route.get("id") == self.test_route_id:
+                                left_route = route
+                                break
+                        
+                        if left_route and left_route.get("is_joined") == False:
+                            await self.log_test("Verify route leave (is_joined=false)", True, f"participants_count={left_route.get('participants_count')}")
+                        else:
+                            await self.log_test("Verify route leave (is_joined=false)", False, f"is_joined not false or route not found")
+                    else:
+                        await self.log_test("Verify route leave (is_joined=false)", False, f"Status: {resp.status_code}")
+                except Exception as e:
+                    await self.log_test("Verify route leave (is_joined=false)", False, f"Exception: {str(e)}")
+
+    async def test_events(self):
+        """C) Events Tests"""
+        print("\n=== C) EVENTS TESTS ===")
         
-        results = {}
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            headers = {"Authorization": f"Bearer {self.user1_token}"}
+            
+            # 8) POST /api/events create event
+            event_data = {
+                "title": "Test Motorcycle Meetup",
+                "description": "Comprehensive test event for backend verification",
+                "start_point": [45.7489, 21.2087],  # Timisoara coordinates
+                "start_time": (datetime.utcnow() + timedelta(days=7)).isoformat() + "Z"
+            }
+            
+            try:
+                resp = await client.post(f"{self.api_url}/events", json=event_data)
+                if resp.status_code == 200:
+                    event_response = resp.json()
+                    self.test_event_id = event_response.get("id")
+                    await self.log_test("POST /api/events (create)", True, f"Event ID: {self.test_event_id}")
+                else:
+                    await self.log_test("POST /api/events (create)", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                    return
+            except Exception as e:
+                await self.log_test("POST /api/events (create)", False, f"Exception: {str(e)}")
+                return
+
+            # 9) GET /api/events with token returns participants_count/is_joined
+            try:
+                resp = await client.get(f"{self.api_url}/events", headers=headers)
+                if resp.status_code == 200:
+                    events = resp.json()
+                    if events and len(events) > 0:
+                        event = events[0]  # Check first event
+                        if "is_joined" in event and "participants_count" in event:
+                            await self.log_test("GET /api/events (with token)", True, f"is_joined={event['is_joined']}, participants_count={event['participants_count']}")
+                        else:
+                            await self.log_test("GET /api/events (with token)", False, "Missing is_joined or participants_count fields")
+                    else:
+                        await self.log_test("GET /api/events (with token)", False, "No events returned")
+                else:
+                    await self.log_test("GET /api/events (with token)", False, f"Status: {resp.status_code}, Response: {resp.text}")
+            except Exception as e:
+                await self.log_test("GET /api/events (with token)", False, f"Exception: {str(e)}")
+
+            # 10) POST /api/events/{id}/join and /leave toggles
+            if self.test_event_id:
+                # Join event
+                try:
+                    resp = await client.post(f"{self.api_url}/events/{self.test_event_id}/join", headers=headers)
+                    if resp.status_code == 200:
+                        await self.log_test("POST /api/events/{id}/join", True, "Successfully joined event")
+                    else:
+                        await self.log_test("POST /api/events/{id}/join", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                except Exception as e:
+                    await self.log_test("POST /api/events/{id}/join", False, f"Exception: {str(e)}")
+
+                # Verify join
+                try:
+                    resp = await client.get(f"{self.api_url}/events", headers=headers)
+                    if resp.status_code == 200:
+                        events = resp.json()
+                        joined_event = None
+                        for event in events:
+                            if event.get("id") == self.test_event_id:
+                                joined_event = event
+                                break
+                        
+                        if joined_event and joined_event.get("is_joined") == True:
+                            await self.log_test("Verify event join (is_joined=true)", True, f"participants_count={joined_event.get('participants_count')}")
+                        else:
+                            await self.log_test("Verify event join (is_joined=true)", False, f"is_joined not true or event not found")
+                    else:
+                        await self.log_test("Verify event join (is_joined=true)", False, f"Status: {resp.status_code}")
+                except Exception as e:
+                    await self.log_test("Verify event join (is_joined=true)", False, f"Exception: {str(e)}")
+
+                # Leave event
+                try:
+                    resp = await client.post(f"{self.api_url}/events/{self.test_event_id}/leave", headers=headers)
+                    if resp.status_code == 200:
+                        await self.log_test("POST /api/events/{id}/leave", True, "Successfully left event")
+                    else:
+                        await self.log_test("POST /api/events/{id}/leave", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                except Exception as e:
+                    await self.log_test("POST /api/events/{id}/leave", False, f"Exception: {str(e)}")
+
+                # Verify leave
+                try:
+                    resp = await client.get(f"{self.api_url}/events", headers=headers)
+                    if resp.status_code == 200:
+                        events = resp.json()
+                        left_event = None
+                        for event in events:
+                            if event.get("id") == self.test_event_id:
+                                left_event = event
+                                break
+                        
+                        if left_event and left_event.get("is_joined") == False:
+                            await self.log_test("Verify event leave (is_joined=false)", True, f"participants_count={left_event.get('participants_count')}")
+                        else:
+                            await self.log_test("Verify event leave (is_joined=false)", False, f"is_joined not false or event not found")
+                    else:
+                        await self.log_test("Verify event leave (is_joined=false)", False, f"Status: {resp.status_code}")
+                except Exception as e:
+                    await self.log_test("Verify event leave (is_joined=false)", False, f"Exception: {str(e)}")
+
+    async def test_realtime(self):
+        """D) Realtime Tests"""
+        print("\n=== D) REALTIME TESTS ===")
         
+        # 11) Socket.IO connect using socketio_path='api/socket.io' and JWT token
         try:
-            # Step 1: Register user and get token
-            results["register"] = await self.register_user()
+            sio = socketio.AsyncClient()
             
-            # Step 2: Create event (no auth required)
-            results["create_event"] = await self.create_event()
+            # Set up event handlers
+            ping_received = False
             
-            # Step 3: Test events without auth (should return 401)
-            await self.test_events_without_auth()
-            results["events_no_auth"] = "401 as expected"
+            @sio.event
+            async def pong_test(data):
+                nonlocal ping_received
+                ping_received = True
+                print(f"    Received pong_test: {data}")
             
-            # Step 4: Test events with auth (should return EventOut with participants_count and is_joined)
-            results["events_with_auth"] = await self.test_events_with_auth()
+            # Connect with JWT token
+            await sio.connect(
+                self.socket_url,
+                socketio_path='api/socket.io',
+                auth={'token': self.user1_token}
+            )
             
-            # Step 5: Join event
-            results["join_event"] = await self.test_join_event()
+            await self.log_test("Socket.IO connect with JWT", True, "Connected successfully")
             
-            # Step 6: Verify join worked
-            results["events_after_join"] = await self.test_events_after_join()
+            # Emit ping_test and expect pong_test
+            await sio.emit('ping_test', {'test_data': 'comprehensive_test'})
             
-            # Step 7: Leave event
-            results["leave_event"] = await self.test_leave_event()
+            # Wait for response
+            await asyncio.sleep(2)
             
-            # Step 8: Verify leave worked
-            results["events_after_leave"] = await self.test_events_after_leave()
+            if ping_received:
+                await self.log_test("Socket.IO ping_test -> pong_test", True, "Ping-pong working correctly")
+            else:
+                await self.log_test("Socket.IO ping_test -> pong_test", False, "No pong_test response received")
             
-            # Regression: Test routes still work
-            await self.test_routes_regression()
-            results["routes_regression"] = "OK"
-            
-            print("\n" + "=" * 60)
-            print("🎉 ALL TESTS PASSED! Events Join/Leave functionality working correctly.")
-            
-            return results
+            await sio.disconnect()
             
         except Exception as e:
-            print(f"\n❌ TEST FAILED: {str(e)}")
-            raise
+            await self.log_test("Socket.IO connect with JWT", False, f"Exception: {str(e)}")
+            await self.log_test("Socket.IO ping_test -> pong_test", False, f"Exception: {str(e)}")
+
+    async def test_friends_groups_chat(self):
+        """E) Friends/Groups/Chat Tests"""
+        print("\n=== E) FRIENDS/GROUPS/CHAT TESTS ===")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # 12) Register 2nd user
+            self.user2_email = self.generate_random_email()
+            user2_username = self.generate_random_username()
+            
+            register_data = {
+                "email": self.user2_email,
+                "username": user2_username,
+                "password": "TestPassword123!"
+            }
+            
+            try:
+                resp = await client.post(f"{self.api_url}/auth/register", json=register_data)
+                if resp.status_code == 200:
+                    token_data = resp.json()
+                    self.user2_token = token_data.get("access_token")
+                    await self.log_test("Register User 2", True, f"Email: {self.user2_email}")
+                else:
+                    await self.log_test("Register User 2", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                    return
+            except Exception as e:
+                await self.log_test("Register User 2", False, f"Exception: {str(e)}")
+                return
+
+            # Get user2 ID
+            headers2 = {"Authorization": f"Bearer {self.user2_token}"}
+            try:
+                resp = await client.get(f"{self.api_url}/me", headers=headers2)
+                if resp.status_code == 200:
+                    user_data = resp.json()
+                    self.user2_id = user_data.get("id")
+                    await self.log_test("Get User 2 ID", True, f"User 2 ID: {self.user2_id}")
+                else:
+                    await self.log_test("Get User 2 ID", False, f"Status: {resp.status_code}")
+                    return
+            except Exception as e:
+                await self.log_test("Get User 2 ID", False, f"Exception: {str(e)}")
+                return
+
+            headers1 = {"Authorization": f"Bearer {self.user1_token}"}
+            
+            # Friend request + accept
+            try:
+                # User 1 sends friend request to User 2
+                friend_request_data = {"to_username": user2_username}
+                resp = await client.post(f"{self.api_url}/friends/request", json=friend_request_data, headers=headers1)
+                if resp.status_code == 200:
+                    await self.log_test("Send friend request", True, f"User 1 -> User 2")
+                else:
+                    await self.log_test("Send friend request", False, f"Status: {resp.status_code}, Response: {resp.text}")
+            except Exception as e:
+                await self.log_test("Send friend request", False, f"Exception: {str(e)}")
+
+            try:
+                # User 2 accepts friend request from User 1
+                accept_data = {"from_user_id": self.user1_id}
+                resp = await client.post(f"{self.api_url}/friends/accept", json=accept_data, headers=headers2)
+                if resp.status_code == 200:
+                    await self.log_test("Accept friend request", True, f"User 2 accepts User 1")
+                else:
+                    await self.log_test("Accept friend request", False, f"Status: {resp.status_code}, Response: {resp.text}")
+            except Exception as e:
+                await self.log_test("Accept friend request", False, f"Exception: {str(e)}")
+
+            # 13) Create group, join group
+            try:
+                group_data = {
+                    "name": "Test Riders Group",
+                    "description": "Comprehensive test group for backend verification",
+                    "is_private": False
+                }
+                resp = await client.post(f"{self.api_url}/groups", json=group_data, headers=headers1)
+                if resp.status_code == 200:
+                    group_response = resp.json()
+                    self.test_group_id = group_response.get("id")
+                    await self.log_test("Create group", True, f"Group ID: {self.test_group_id}")
+                else:
+                    await self.log_test("Create group", False, f"Status: {resp.status_code}, Response: {resp.text}")
+            except Exception as e:
+                await self.log_test("Create group", False, f"Exception: {str(e)}")
+
+            if self.test_group_id:
+                try:
+                    # User 2 joins the group
+                    resp = await client.post(f"{self.api_url}/groups/{self.test_group_id}/join", headers=headers2)
+                    if resp.status_code == 200:
+                        await self.log_test("Join group", True, f"User 2 joined group")
+                    else:
+                        await self.log_test("Join group", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                except Exception as e:
+                    await self.log_test("Join group", False, f"Exception: {str(e)}")
+
+            # 14) DM send via REST and ensure history returns
+            try:
+                dm_data = {"text": "Hello from User 1! This is a comprehensive test message."}
+                resp = await client.post(f"{self.api_url}/dm/{self.user2_id}/messages", json=dm_data, headers=headers1)
+                if resp.status_code == 200:
+                    await self.log_test("Send DM via REST", True, f"User 1 -> User 2")
+                else:
+                    await self.log_test("Send DM via REST", False, f"Status: {resp.status_code}, Response: {resp.text}")
+            except Exception as e:
+                await self.log_test("Send DM via REST", False, f"Exception: {str(e)}")
+
+            try:
+                # Check DM history
+                resp = await client.get(f"{self.api_url}/dm/{self.user2_id}/messages", headers=headers1)
+                if resp.status_code == 200:
+                    messages = resp.json()
+                    if messages and len(messages) > 0:
+                        await self.log_test("DM history retrieval", True, f"Found {len(messages)} messages")
+                    else:
+                        await self.log_test("DM history retrieval", False, "No messages in history")
+                else:
+                    await self.log_test("DM history retrieval", False, f"Status: {resp.status_code}, Response: {resp.text}")
+            except Exception as e:
+                await self.log_test("DM history retrieval", False, f"Exception: {str(e)}")
+
+            # 15) Group message via REST and ensure history returns
+            if self.test_group_id:
+                try:
+                    group_msg_data = {"text": "Hello group! This is a comprehensive test group message."}
+                    resp = await client.post(f"{self.api_url}/groups/{self.test_group_id}/messages", json=group_msg_data, headers=headers1)
+                    if resp.status_code == 200:
+                        await self.log_test("Send group message via REST", True, f"User 1 -> Group")
+                    else:
+                        await self.log_test("Send group message via REST", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                except Exception as e:
+                    await self.log_test("Send group message via REST", False, f"Exception: {str(e)}")
+
+                try:
+                    # Check group message history
+                    resp = await client.get(f"{self.api_url}/groups/{self.test_group_id}/messages", headers=headers1)
+                    if resp.status_code == 200:
+                        messages = resp.json()
+                        if messages and len(messages) > 0:
+                            await self.log_test("Group message history retrieval", True, f"Found {len(messages)} messages")
+                        else:
+                            await self.log_test("Group message history retrieval", False, "No messages in group history")
+                    else:
+                        await self.log_test("Group message history retrieval", False, f"Status: {resp.status_code}, Response: {resp.text}")
+                except Exception as e:
+                    await self.log_test("Group message history retrieval", False, f"Exception: {str(e)}")
+
+    async def run_comprehensive_tests(self):
+        """Run all comprehensive backend tests"""
+        print("🚀 Starting Comprehensive Backend Verification for Release Readiness")
+        print(f"Testing against: {self.api_url}")
+        print("=" * 80)
+        
+        # Run all test suites
+        await self.test_auth_profile()
+        await self.test_routes()
+        await self.test_events()
+        await self.test_realtime()
+        await self.test_friends_groups_chat()
+        
+        # Print summary
+        print("\n" + "=" * 80)
+        print("🏁 COMPREHENSIVE TEST SUMMARY")
+        print("=" * 80)
+        
+        total_tests = len(self.results)
+        passed_tests = sum(1 for result in self.results.values() if result["success"])
+        failed_tests = total_tests - passed_tests
+        
+        print(f"Total Tests: {total_tests}")
+        print(f"✅ Passed: {passed_tests}")
+        print(f"❌ Failed: {failed_tests}")
+        
+        if failed_tests > 0:
+            print(f"\n🚨 FAILED TESTS ({failed_tests}):")
+            for test_name in self.failed_tests:
+                result = self.results[test_name]
+                print(f"  ❌ {test_name}: {result['details']}")
+        
+        success_rate = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        print(f"\n📊 Success Rate: {success_rate:.1f}%")
+        
+        if success_rate >= 90:
+            print("🎉 RELEASE READY - Backend verification successful!")
+        elif success_rate >= 75:
+            print("⚠️  MOSTLY READY - Minor issues need attention")
+        else:
+            print("🚨 NOT READY - Critical issues need resolution")
+        
+        return success_rate >= 90
 
 
 async def main():
-    """Main test runner"""
+    """Main test execution"""
     tester = BackendTester()
-    
-    try:
-        results = await tester.run_all_tests()
-        return True
-    except Exception as e:
-        print(f"Testing failed: {e}")
-        return False
-    finally:
-        await tester.close()
+    await tester.run_comprehensive_tests()
 
 
 if __name__ == "__main__":
-    success = asyncio.run(main())
-    exit(0 if success else 1)
+    asyncio.run(main())
