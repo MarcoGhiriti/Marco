@@ -231,7 +231,7 @@ export default function CreateEventScreen() {
             <Ionicons name="close" size={22} color={Colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>
-            {step === 1 ? "Eveniment Nou" : "Detalii Eveniment"}
+            {step === 1 ? "New Event" : "Event Details"}
           </Text>
           {step === 1 ? (
             <Pressable
