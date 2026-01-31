@@ -648,7 +648,7 @@ async def test_profile_settings_readiness():
         # Generate random credentials
         random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
         email = f"testuser_{random_str}@example.com"
-        username = f"user_{random.randint(1000, 9999)}"
+        username = f"user{random.randint(1000, 9999)}"
         password = "TestPassword123"
         
         print(f"   📧 Email: {email}")
