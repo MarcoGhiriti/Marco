@@ -148,17 +148,18 @@ export default function DmChatScreen() {
           </Pressable>
           <View style={styles.headerInfo}>
             <View style={styles.headerAvatar}>
-              <Ionicons name="person" size={20} color={Colors.accent} />
+              {otherUser.photo ? (
+                <Image source={{ uri: otherUser.photo }} style={styles.headerAvatarImage} />
+              ) : (
+                <Ionicons name="person" size={20} color={Colors.accent} />
+              )}
             </View>
             <View>
               <Text style={styles.headerTitle} numberOfLines={1}>
-                {otherUsername || "Chat"}
+                {otherUser.username || "Loading..."}
               </Text>
               <Text style={styles.headerSub}>Direct Message</Text>
             </View>
-          </View>
-          <View style={styles.headerBtn}>
-            <Ionicons name="ellipsis-vertical" size={18} color={Colors.text} />
           </View>
         </View>
 
