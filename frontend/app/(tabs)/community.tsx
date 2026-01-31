@@ -259,15 +259,24 @@ function GroupsTab() {
         {groups.length === 0 ? (
           <Text style={styles.mutedText}>No groups yet.</Text>
         ) : (
-          groups.map((g) => (
-            <Pressable key={g.id} onPress={() => openGroup(g.id)} style={styles.rowCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{g.name}</Text>
-                {g.description ? <Text style={styles.mutedText}>{g.description}</Text> : null}
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
-            </Pressable>
-          ))
+          groups.map((g) => {
+            const isAdmin = !!me?.id && (g.admins ?? []).includes(me.id);
+            const membersCount = g.members_count ?? (g.members ? g.members.length : 0);
+            return (
+              <Pressable key={g.id} onPress={() => openGroup(g.id)} style={styles.rowCard}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowTitle}>{g.name}</Text>
+                  <Text style={styles.mutedText}>{membersCount} members</Text>
+                  {isAdmin && g.members?.length ? (
+                    <Text style={styles.mutedText} numberOfLines={1}>
+                      Members: {g.members.join(", ")}
+                    </Text>
+                  ) : null}
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
+              </Pressable>
+            );
+          })
         )}
       </View>
     </View>
