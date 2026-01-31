@@ -602,6 +602,39 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   smallGhostText: { color: Colors.text, fontSize: 12, fontWeight: "900" },
+  
+  // Friends list styles
+  friendInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  friendAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: Colors.card2,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  friendAvatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+  },
+  chatIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  
   createRow: { flexDirection: "row", gap: 10, alignItems: "center" },
   createInput: {
     flex: 1,
