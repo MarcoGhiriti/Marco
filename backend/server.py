@@ -608,6 +608,25 @@ async def users_search(
     # prefix search, case-insensitive
     q = {"username": {"$regex": f"^{username}", "$options": "i"}}
     cursor = db.users.find(q, {"username": 1, "profile_photo_base64": 1}).limit(20)
+
+
+@api_router.get("/stats")
+async def stats(current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+
+    # NOTE: Completed routes tracking (anti-fraud) will be implemented via ride sessions.
+    # For now we expose joined routes and joined events.
+    joined_routes = await db.routes.count_documents({"participants": uid})
+    joined_events = await db.events.count_documents({"participants": uid})
+
+    return {
+        "km_total": float(current_user.get("km_total", 0.0)),
+        "km_month": float(current_user.get("km_month", 0.0)),
+        "joined_routes": int(joined_routes),
+        "events_joined": int(joined_events),
+        "completed_routes": 0,
+    }
+
     docs = await cursor.to_list(length=20)
 
     results: list[UserSearchOut] = []
