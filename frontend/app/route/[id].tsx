@@ -295,11 +295,17 @@ export default function RouteDetailScreen() {
           </View>
         )}
 
-        {/* Creator Badge */}
+        {/* Creator Badge with Delete Button */}
         {isCreator && (
-          <View style={styles.creatorCard}>
-            <Ionicons name="star" size={20} color={Colors.accent} />
-            <Text style={styles.creatorText}>Tu ai creat acest traseu</Text>
+          <View style={styles.creatorSection}>
+            <View style={styles.creatorCard}>
+              <Ionicons name="star" size={20} color={Colors.accent} />
+              <Text style={styles.creatorText}>You created this route</Text>
+            </View>
+            <Pressable onPress={handleDelete} style={styles.deleteBtn}>
+              <Ionicons name="trash-outline" size={18} color={Colors.danger} />
+              <Text style={styles.deleteBtnText}>Delete Route</Text>
+            </Pressable>
           </View>
         )}
 
@@ -318,7 +324,7 @@ export default function RouteDetailScreen() {
             color={route.is_joined ? Colors.text : Colors.bg}
           />
           <Text style={[styles.joinButtonText, route.is_joined && styles.joinButtonTextJoined]}>
-            {route.is_joined ? "Te-ai alăturat" : "Alătură-te traseului"}
+            {route.is_joined ? "You joined" : "Join Route"}
           </Text>
         </Pressable>
       </View>
