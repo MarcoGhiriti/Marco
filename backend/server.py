@@ -381,8 +381,11 @@ class UserPublic(BaseModel):
     level: int = 1
     km_total: float = 0
     km_month: float = 0
+    # License verification fields
+    license_type: Optional[str] = None  # A1, A2, A, or None
+    license_verified: bool = False
+    license_photo_base64: Optional[str] = None
     created_at: datetime
-
 
 
 class MeUpdate(BaseModel):
@@ -392,6 +395,11 @@ class MeUpdate(BaseModel):
     bike: Optional[BikeInfo] = None
     privacy: Optional[PrivacySettings] = None
     profile_photo_base64: Optional[str] = None
+
+
+class LicenseUpload(BaseModel):
+    license_type: str = Field(..., pattern="^(A1|A2|A)$", description="License type: A1, A2, or A")
+    license_photo_base64: str = Field(..., description="Base64 encoded photo of the license")
 
 
 class RouteCreate(BaseModel):
