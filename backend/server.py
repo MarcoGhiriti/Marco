@@ -975,6 +975,8 @@ async def create_route(payload: RouteCreate):
         difficulty=doc["difficulty"],
         participants_min=doc["participants_min"],
         participants_max=doc["participants_max"],
+        participants_count=0,
+        is_joined=False,
         created_at=doc["created_at"],
     )
     return out
