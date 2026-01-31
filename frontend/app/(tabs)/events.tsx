@@ -180,9 +180,11 @@ export default function EventsScreen() {
                 </View>
 
                 <View style={styles.cardFooter}>
-                  <View style={styles.viewDetailsRow}>
+                  <View style={styles.locationRow}>
                     <Ionicons name="location-outline" size={14} color={Colors.accent} />
-                    <Text style={styles.viewDetailsText}>View details & distance</Text>
+                    <Text style={styles.locationText} numberOfLines={1}>
+                      {e.location_name || "View details & location"}
+                    </Text>
                   </View>
                   <Pressable
                     onPress={(ev) => {
