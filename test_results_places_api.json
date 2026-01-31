@@ -1,47 +1,47 @@
 {
   "summary": {
     "total_tests": 6,
-    "passed": 5,
-    "failed": 1,
-    "success_rate": "83.3%"
+    "passed": 6,
+    "failed": 0,
+    "success_rate": "100.0%"
   },
   "results": [
     {
       "test": "POST /api/auth/login",
       "success": true,
       "details": "Got token: eyJhbGciOiJIUzI1NiIs...",
-      "timestamp": "2026-01-31T13:17:57.030962"
+      "timestamp": "2026-01-31T13:18:42.229987"
     },
     {
       "test": "GET /api/places/autocomplete",
       "success": true,
       "details": "Found 5 results, first place_id: ChIJT608vzr5sUARKKacfOMyBqw",
-      "timestamp": "2026-01-31T13:17:57.126588"
+      "timestamp": "2026-01-31T13:18:42.329555"
     },
     {
       "test": "GET /api/places/details",
       "success": true,
       "details": "Got coordinates: lat=44.4267674, lng=26.1025384, name='Bucharest'",
-      "timestamp": "2026-01-31T13:17:57.239181"
+      "timestamp": "2026-01-31T13:18:42.407632"
     },
     {
       "test": "GET /api/directions/route",
       "success": true,
       "details": "Got route: 229 points, 553.39km, 413min",
-      "timestamp": "2026-01-31T13:17:57.483012"
+      "timestamp": "2026-01-31T13:18:42.580179"
     },
     {
       "test": "POST /api/routes",
       "success": true,
-      "details": "Route created with created_by: 697b5d8b1b0ad06ac5ba7463, id: 697e010546048a5389eacaf9",
-      "timestamp": "2026-01-31T13:17:57.503778"
+      "details": "Route created with created_by: 697b5d8b1b0ad06ac5ba7463, id: 697e013266e5a17bec83a7f9",
+      "timestamp": "2026-01-31T13:18:42.594389"
     },
     {
       "test": "POST /api/events",
-      "success": false,
-      "details": "Event created but missing or empty created_by field",
-      "timestamp": "2026-01-31T13:17:57.550488"
+      "success": true,
+      "details": "Event created with created_by: 697b5d8b1b0ad06ac5ba7463, id: 697e013266e5a17bec83a7fa",
+      "timestamp": "2026-01-31T13:18:42.647095"
     }
   ],
-  "timestamp": "2026-01-31T13:17:57.550803"
+  "timestamp": "2026-01-31T13:18:42.647412"
 }
