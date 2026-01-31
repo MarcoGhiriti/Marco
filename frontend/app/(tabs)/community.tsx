@@ -560,6 +560,45 @@ const styles = StyleSheet.create({
   createModalForm: {
     gap: 14,
   },
+  photoSection: {
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  photoPicker: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.card2,
+    borderWidth: 2,
+    borderColor: Colors.accent,
+    borderStyle: "dashed",
+    overflow: "hidden",
+  },
+  photoPreview: {
+    width: "100%",
+    height: "100%",
+  },
+  photoPlaceholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoPlaceholderText: {
+    color: Colors.accent,
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 4,
+  },
+  removePhotoBtn: {
+    position: "absolute",
+    top: 0,
+    right: "30%",
+  },
+  groupPhoto: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 14,
+  },
   formField: {
     gap: 8,
   },
