@@ -28,6 +28,7 @@ class GroupOut(BaseModel):
     owner_id: str
     admins: list[str]
     members_count: int
+    members: list[str] = []
     created_at: datetime
 
 

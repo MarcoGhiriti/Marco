@@ -762,6 +762,7 @@ async def groups_create(payload: GroupCreate, current_user: dict = Depends(get_c
         owner_id=doc["owner_id"],
         admins=doc["admins"],
         members_count=len(doc["members"]),
+        members=doc["members"],
         created_at=doc["created_at"],
     )
 
@@ -782,6 +783,7 @@ async def groups_list(current_user: dict = Depends(get_current_user)):
                 owner_id=g.get("owner_id", ""),
                 admins=g.get("admins") or [],
                 members_count=len(g.get("members") or []),
+                members=g.get("members") or [],
                 created_at=g.get("created_at") or datetime.utcnow(),
             )
         )
