@@ -1181,6 +1181,7 @@ async def list_routes(
                 participants_max=int(r.get("participants_max", 10)),
                 participants_count=len(participants),
                 is_joined=uid in participants,
+                created_by=r.get("created_by", ""),
                 created_at=r.get("created_at") or datetime.utcnow(),
             )
         )
