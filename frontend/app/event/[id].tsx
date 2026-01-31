@@ -9,7 +9,6 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
@@ -17,9 +16,8 @@ import { apiGet, apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { EventOut } from "../../src/types/api";
 
-// Haversine formula to calculate distance between two points
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -53,7 +51,6 @@ export default function EventDetailScreen() {
     setLoading(true);
     setError(null);
     try {
-      // Get all events and find the one we need
       const events = await apiGet<EventOut[]>("/api/events", headers);
       const found = events.find((e) => e.id === id);
       if (!found) {
@@ -69,10 +66,14 @@ export default function EventDetailScreen() {
   }, [headers, id]);
 
   const loadLocation = useCallback(async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status === "granted") {
-      const loc = await Location.getCurrentPositionAsync({});
-      setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const loc = await Location.getCurrentPositionAsync({});
+        setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+      }
+    } catch (e) {
+      console.log("Location not available");
     }
   }, []);
 
@@ -151,7 +152,6 @@ export default function EventDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.headerBtn}>
           <Ionicons name="chevron-back" size={20} color={Colors.text} />
@@ -161,44 +161,26 @@ export default function EventDetailScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Map with meeting point */}
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            provider={PROVIDER_GOOGLE}
-            initialRegion={{
-              latitude: event.start_point[0],
-              longitude: event.start_point[1],
-              latitudeDelta: 0.02,
-              longitudeDelta: 0.02,
-            }}
-            showsUserLocation
-            customMapStyle={darkMapStyle}
-          >
-            <Marker
-              coordinate={{
-                latitude: event.start_point[0],
-                longitude: event.start_point[1],
-              }}
-            >
-              <View style={styles.meetingMarker}>
-                <Ionicons name="flag" size={20} color="#FFF" />
-              </View>
-            </Marker>
-          </MapView>
-
-          {/* Distance Badge */}
-          {distance !== null && (
-            <View style={styles.distanceBadge}>
-              <Ionicons name="navigate" size={16} color={Colors.accent} />
-              <Text style={styles.distanceText}>
+        {/* Distance Card */}
+        {distance !== null && (
+          <View style={styles.distanceCard}>
+            <Ionicons name="navigate" size={24} color={Colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.distanceValue}>
                 {distance < 1
-                  ? `${Math.round(distance * 1000)} m away`
-                  : `${distance.toFixed(1)} km away`}
+                  ? `${Math.round(distance * 1000)} meters`
+                  : `${distance.toFixed(1)} km`}
+              </Text>
+              <Text style={styles.distanceLabel}>from your location</Text>
+            </View>
+            <View style={styles.locationBadge}>
+              <Ionicons name="location" size={14} color={Colors.text} />
+              <Text style={styles.locationBadgeText}>
+                {event.start_point[0].toFixed(4)}, {event.start_point[1].toFixed(4)}
               </Text>
             </View>
-          )}
-        </View>
+          </View>
+        )}
 
         {/* Event Info Card */}
         <View style={styles.infoCard}>
@@ -236,7 +218,7 @@ export default function EventDetailScreen() {
                 <Text style={styles.statValue}>
                   {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
                 </Text>
-                <Text style={styles.statLabel}>from you</Text>
+                <Text style={styles.statLabel}>away</Text>
               </View>
             )}
           </View>
@@ -270,41 +252,12 @@ export default function EventDetailScreen() {
   );
 }
 
-const darkMapStyle = [
-  { elementType: "geometry", stylers: [{ color: "#1d1d1d" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c2c2c" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3c3c3c" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-];
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-  },
-  loadingText: {
-    color: Colors.muted,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-    padding: 20,
-  },
-  errorText: {
-    color: Colors.muted,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "center",
-  },
+  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
+  loadingText: { color: Colors.muted, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  errorContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 20 },
+  errorText: { color: Colors.muted, fontSize: 14, fontFamily: "Inter_600SemiBold", textAlign: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -324,49 +277,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: {
-    color: Colors.text,
-    fontSize: 16,
-    fontFamily: "Inter_900Black",
-  },
+  headerTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
   content: { padding: 16, gap: 16 },
-  mapContainer: {
-    height: 220,
-    borderRadius: 20,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  map: { flex: 1 },
-  meetingMarker: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFF",
-  },
-  distanceBadge: {
-    position: "absolute",
-    bottom: 12,
-    left: 12,
+  distanceCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 14,
     backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderColor: Colors.accent,
+    borderRadius: 18,
+    padding: 16,
   },
-  distanceText: {
-    color: Colors.text,
-    fontSize: 14,
-    fontFamily: "Inter_700Bold",
+  distanceValue: { color: Colors.text, fontSize: 20, fontFamily: "Inter_900Black" },
+  distanceLabel: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  locationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.card2,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
+  locationBadgeText: { color: Colors.muted, fontSize: 10, fontFamily: "Inter_600SemiBold" },
   infoCard: {
     backgroundColor: Colors.card,
     borderWidth: 1,
@@ -375,11 +309,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 16,
   },
-  titleRow: {
-    flexDirection: "row",
-    gap: 14,
-    alignItems: "center",
-  },
+  titleRow: { flexDirection: "row", gap: 14, alignItems: "center" },
   dateBox: {
     width: 56,
     height: 56,
@@ -390,69 +320,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  dateBoxDay: {
-    color: Colors.accent,
-    fontSize: 20,
-    fontFamily: "Inter_900Black",
-  },
-  dateBoxMonth: {
-    color: Colors.muted,
-    fontSize: 10,
-    fontFamily: "Inter_700Bold",
-    textTransform: "uppercase",
-  },
-  title: {
-    color: Colors.text,
-    fontSize: 18,
-    fontFamily: "Inter_900Black",
-  },
-  datetime: {
-    color: Colors.muted,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    marginTop: 4,
-  },
-  descSection: {
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  sectionLabel: {
-    color: Colors.muted,
-    fontSize: 11,
-    fontFamily: "Inter_700Bold",
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  description: {
-    color: Colors.text,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    lineHeight: 20,
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  statItem: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  statValue: {
-    color: Colors.text,
-    fontSize: 16,
-    fontFamily: "Inter_900Black",
-  },
-  statLabel: {
-    color: Colors.muted,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
+  dateBoxDay: { color: Colors.accent, fontSize: 20, fontFamily: "Inter_900Black" },
+  dateBoxMonth: { color: Colors.muted, fontSize: 10, fontFamily: "Inter_700Bold", textTransform: "uppercase" },
+  title: { color: Colors.text, fontSize: 18, fontFamily: "Inter_900Black" },
+  datetime: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold", marginTop: 4 },
+  descSection: { paddingTop: 12, borderTopWidth: 1, borderTopColor: Colors.border },
+  sectionLabel: { color: Colors.muted, fontSize: 11, fontFamily: "Inter_700Bold", textTransform: "uppercase", marginBottom: 8 },
+  description: { color: Colors.text, fontSize: 14, fontFamily: "Inter_600SemiBold", lineHeight: 20 },
+  statsRow: { flexDirection: "row", gap: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: Colors.border },
+  statItem: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
+  statValue: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
+  statLabel: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
   joinButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -462,17 +340,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
   },
-  joinButtonJoined: {
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.accent,
-  },
-  joinButtonText: {
-    color: Colors.bg,
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-  },
-  joinButtonTextJoined: {
-    color: Colors.text,
-  },
+  joinButtonJoined: { backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.accent },
+  joinButtonText: { color: Colors.bg, fontSize: 16, fontFamily: "Inter_700Bold" },
+  joinButtonTextJoined: { color: Colors.text },
 });
