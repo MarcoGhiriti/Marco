@@ -1142,6 +1142,79 @@ async def groups_join(group_id: str, current_user: dict = Depends(get_current_us
     return {"ok": True}
 
 
+@api_router.get("/groups/{group_id}/members")
+async def get_group_members(group_id: str, current_user: dict = Depends(get_current_user)):
+    """Get list of members in a group."""
+    g = await db.groups.find_one({"_id": _as_object_id(group_id)})
+    if not g:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    member_ids = g.get("members") or []
+    members = []
+    
+    for mid in member_ids:
+        user = await db.users.find_one({"_id": _as_object_id(mid)})
+        if user:
+            members.append({
+                "id": _oid_str(user.get("_id")),
+                "username": user.get("username", ""),
+                "avatar": user.get("avatar"),
+                "level": user.get("level", 0),
+            })
+    
+    return {
+        "group_id": group_id,
+        "group_name": g.get("name", ""),
+        "created_by": g.get("created_by", ""),
+        "members": members,
+    }
+
+
+@api_router.post("/groups/{group_id}/add-member")
+async def add_group_member(group_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    """Add a member to a group (only creator or admin can add)."""
+    uid = current_user["id"]
+    g = await db.groups.find_one({"_id": _as_object_id(group_id)})
+    if not g:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Check if user is creator
+    if g.get("created_by") != uid:
+        raise HTTPException(status_code=403, detail="Only the group creator can add members")
+    
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
+    # Check if user exists
+    target_user = await db.users.find_one({"_id": _as_object_id(user_id)})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    await db.groups.update_one({"_id": _as_object_id(group_id)}, {"$addToSet": {"members": user_id}})
+    return {"ok": True}
+
+
+@api_router.post("/groups/{group_id}/remove-member")
+async def remove_group_member(group_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    """Remove a member from a group (only creator can remove, or user can leave)."""
+    uid = current_user["id"]
+    g = await db.groups.find_one({"_id": _as_object_id(group_id)})
+    if not g:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
+    # Allow creator to remove anyone, or user to remove themselves
+    if g.get("created_by") != uid and user_id != uid:
+        raise HTTPException(status_code=403, detail="Only the group creator can remove members")
+    
+    await db.groups.update_one({"_id": _as_object_id(group_id)}, {"$pull": {"members": user_id}})
+    return {"ok": True}
+
+
 @api_router.get("/dm/{other_user_id}/messages", response_model=list[MessageOut])
 async def dm_messages(other_user_id: str, limit: int = Query(default=50, ge=1, le=200), current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
