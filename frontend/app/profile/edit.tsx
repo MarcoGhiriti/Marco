@@ -128,8 +128,26 @@ export default function EditProfileScreen() {
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
-            <Text style={styles.label}>Username</Text>
-            <Text style={styles.value}>{me?.username ?? ""}</Text>
+            <View style={styles.photoRow}>
+              <View style={styles.photoCircle}>
+                {photoBase64 ? (
+                  <Image
+                    source={{ uri: photoBase64 }}
+                    style={styles.photo}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Ionicons name="person" size={22} color={Colors.text} />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Username</Text>
+                <Text style={styles.value}>{me?.username ?? ""}</Text>
+              </View>
+              <Pressable onPress={pickPhoto} style={styles.photoBtn}>
+                <Ionicons name="image-outline" size={18} color={Colors.accent} />
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.card}>
