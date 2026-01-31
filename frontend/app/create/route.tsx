@@ -563,11 +563,11 @@ export default function CreateRouteScreen() {
             </View>
 
             <View style={styles.formCard}>
-              <Text style={styles.formLabel}>Descriere</Text>
+              <Text style={styles.formLabel}>Description</Text>
               <TextInput
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Descrie traseul..."
+                placeholder="Describe the route..."
                 placeholderTextColor={Colors.muted}
                 style={[styles.formInput, styles.formTextarea]}
                 multiline
@@ -576,7 +576,33 @@ export default function CreateRouteScreen() {
             </View>
 
             <View style={styles.formCard}>
-              <Text style={styles.formLabel}>Dificultate</Text>
+              <Text style={styles.formLabel}>Ride Date & Time *</Text>
+              <View style={styles.dateTimeRow}>
+                <View style={styles.dateTimeField}>
+                  <Ionicons name="calendar-outline" size={18} color={Colors.muted} />
+                  <TextInput
+                    value={startDate}
+                    onChangeText={setStartDate}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={Colors.muted}
+                    style={styles.dateTimeInput}
+                  />
+                </View>
+                <View style={styles.dateTimeField}>
+                  <Ionicons name="time-outline" size={18} color={Colors.muted} />
+                  <TextInput
+                    value={startTime}
+                    onChangeText={setStartTime}
+                    placeholder="HH:MM"
+                    placeholderTextColor={Colors.muted}
+                    style={styles.dateTimeInput}
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.formCard}>
+              <Text style={styles.formLabel}>Difficulty</Text>
               <View style={styles.difficultyRow}>
                 {DIFFICULTY_OPTIONS.map((d) => (
                   <Pressable
@@ -585,7 +611,7 @@ export default function CreateRouteScreen() {
                     style={[styles.difficultyBtn, difficulty === d && styles.difficultyBtnActive]}
                   >
                     <Text style={[styles.difficultyBtnText, difficulty === d && styles.difficultyBtnTextActive]}>
-                      {d === "easy" ? "Ușor" : d === "medium" ? "Mediu" : "Greu"}
+                      {d === "easy" ? "Easy" : d === "medium" ? "Medium" : "Hard"}
                     </Text>
                   </Pressable>
                 ))}
