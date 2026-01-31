@@ -148,6 +148,29 @@ export default function EventDetailScreen() {
     }
   };
 
+  const handleDelete = () => {
+    if (!headers || !event) return;
+    Alert.alert(
+      "Delete Event",
+      "Are you sure you want to delete this event? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiDelete(`/api/events/${event.id}`, headers);
+              router.back();
+            } catch (e) {
+              Alert.alert("Error", e instanceof Error ? e.message : "Could not delete event");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const openInMaps = () => {
     if (!event || event.start_point.length < 2) return;
     const lat = event.start_point[0];
