@@ -450,6 +450,8 @@ class RouteOut(BaseModel):
     difficulty: Difficulty
     participants_min: int
     participants_max: int
+    
+    start_date: Optional[datetime] = None
 
     created_at: datetime
 
