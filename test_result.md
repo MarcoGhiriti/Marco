@@ -329,7 +329,7 @@
 ##   run_ui: false
 ## test_plan:
 ##   current_focus:
-##     - "Routes City Detection (start_city/end_city fields)"
+##     - "Group Search + Join Feature"
 ##   stuck_tasks: []
 ##   test_all: false
 ##   test_priority: "high_first"
