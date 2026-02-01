@@ -667,6 +667,20 @@ class StoryOut(BaseModel):
     expires_at: datetime
 
 
+class StoryViewerOut(BaseModel):
+    user_id: str
+    username: str
+    profile_photo: Optional[str] = None
+    viewed_at: datetime
+
+
+class StoryViewsOut(BaseModel):
+    story_id: str
+    views_count: int
+    viewers: list[StoryViewerOut]
+
+
+
 class StoryOwner(BaseModel):
     user_id: str
     username: str
