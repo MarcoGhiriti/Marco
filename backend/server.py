@@ -1369,6 +1369,7 @@ async def get_group_members(group_id: str, current_user: dict = Depends(get_curr
 async def add_group_member(group_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
     """Add a member to a group (only creator or admin can add)."""
     uid = current_user["id"]
+    inviter_username = current_user.get("username", "Someone")
     g = await db.groups.find_one({"_id": _as_object_id(group_id)})
     if not g:
         raise HTTPException(status_code=404, detail="Group not found")
@@ -1388,6 +1389,17 @@ async def add_group_member(group_id: str, payload: dict, current_user: dict = De
         raise HTTPException(status_code=404, detail="User not found")
     
     await db.groups.update_one({"_id": _as_object_id(group_id)}, {"$addToSet": {"members": user_id}})
+    
+    # Create notification for the added user
+    group_name = g.get("name", "a group")
+    await create_notification(
+        user_id=user_id,
+        notif_type="group_invite",
+        title="Added to Group",
+        message=f"{inviter_username} added you to '{group_name}'",
+        data={"group_id": group_id, "group_name": group_name, "inviter_id": uid}
+    )
+    
     return {"ok": True}
 
 
