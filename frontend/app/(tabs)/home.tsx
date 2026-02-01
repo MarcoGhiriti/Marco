@@ -123,6 +123,16 @@ export default function HomeScreen() {
     }
   }, [authHeader]);
 
+  const loadUnreadNotifCount = useCallback(async () => {
+    if (!authHeader) return;
+    try {
+      const data = await apiGet<UnreadCountResponse>("/api/notifications/unread-count", authHeader);
+      setUnreadNotifCount(data.count);
+    } catch (e) {
+      console.error("Failed to load notification count:", e);
+    }
+  }, [authHeader]);
+
   const load = useCallback(async () => {
     if (!authHeader) {
       setLoading(false);
