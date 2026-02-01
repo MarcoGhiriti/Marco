@@ -97,7 +97,7 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator color={Colors.bg} />
               ) : (
-                <Text style={styles.primaryBtnText}>Continue</Text>
+                <Text style={styles.primaryBtnText}>{t("auth.continue")}</Text>
               )}
             </Pressable>
 
