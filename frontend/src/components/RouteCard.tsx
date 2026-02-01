@@ -66,8 +66,8 @@ export function RouteCard({
       {/* Mini Map */}
       <RouteMiniMap 
         polyline={item.polyline} 
-        startCity={item.start_city}
-        endCity={item.end_city}
+        startCity={item.start_city || undefined}
+        endCity={item.end_city || undefined}
       />
 
       {/* Card Content */}

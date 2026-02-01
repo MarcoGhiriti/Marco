@@ -65,12 +65,12 @@ export default function RootLayout() {
     });
 
     return () => {
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
-      }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
-      }
+      try {
+        notificationListener.current?.remove();
+      } catch {}
+      try {
+        responseListener.current?.remove();
+      } catch {}
     };
   }, [router]);
 

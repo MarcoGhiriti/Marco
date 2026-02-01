@@ -338,7 +338,7 @@ export default function ProfileScreen() {
         <Pressable onPress={() => setShowLicenseModal(true)} style={styles.licenseCard}>
           <View style={styles.licenseIconBox}>
             <Ionicons 
-              name={licenseStatus?.license_verified ? "checkmark-shield" : "card"} 
+              name={licenseStatus?.license_verified ? "shield-checkmark" : "card"} 
               size={24} 
               color={licenseStatus?.license_verified ? Colors.success : Colors.accent} 
             />
