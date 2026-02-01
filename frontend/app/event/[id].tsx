@@ -486,8 +486,32 @@ export default function EventDetailScreen() {
                 placeholder="Description (optional)"
                 placeholderTextColor={Colors.muted}
                 multiline
-                numberOfLines={4}
+                numberOfLines={3}
               />
+
+              <Text style={styles.inputLabel}>Date & Time</Text>
+              <View style={styles.dateTimeRow}>
+                <View style={styles.dateInput}>
+                  <Ionicons name="calendar-outline" size={18} color={Colors.muted} />
+                  <TextInput
+                    style={styles.dateTimeTextInput}
+                    value={editDate}
+                    onChangeText={setEditDate}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={Colors.muted}
+                  />
+                </View>
+                <View style={styles.timeInput}>
+                  <Ionicons name="time-outline" size={18} color={Colors.muted} />
+                  <TextInput
+                    style={styles.dateTimeTextInput}
+                    value={editTime}
+                    onChangeText={setEditTime}
+                    placeholder="HH:MM"
+                    placeholderTextColor={Colors.muted}
+                  />
+                </View>
+              </View>
 
               <Pressable
                 onPress={handleSaveEdit}
