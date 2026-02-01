@@ -461,7 +461,78 @@ function GroupsTab() {
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Groups</Text>
+        <Text style={styles.sectionTitle}>Descoperă grupuri</Text>
+
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Ionicons name="search-outline" size={18} color={Colors.muted} />
+            <TextInput
+              value={groupQ}
+              onChangeText={setGroupQ}
+              onSubmitEditing={searchGroups}
+              placeholder="Caută grup după nume"
+              placeholderTextColor={Colors.muted}
+              style={styles.searchInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+            />
+          </View>
+          <Pressable onPress={searchGroups} style={styles.searchBtn}>
+            <Text style={styles.searchBtnText}>Caută</Text>
+          </Pressable>
+        </View>
+
+        {searching ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={Colors.accent} />
+          </View>
+        ) : null}
+
+        {searchResults.length ? (
+          <View style={{ gap: 10 }}>
+            {searchResults.map((g) => {
+              const membersCount = g.members_count ?? (g.members ? g.members.length : 0);
+              const alreadyIn = !!me?.id && (g.members ?? []).includes(me.id);
+              const joining = joiningId === g.id;
+              return (
+                <View key={g.id} style={styles.groupCard}>
+                  <Pressable onPress={() => openGroup(g.id)} style={{ flexDirection: "row", flex: 1, alignItems: "center", gap: 12 }}>
+                    <View style={styles.groupIcon}>
+                      {g.photo_base64 ? (
+                        <Image source={{ uri: g.photo_base64 }} style={styles.groupPhoto} />
+                      ) : (
+                        <Ionicons name="people" size={24} color={Colors.accent} />
+                      )}
+                    </View>
+                    <View style={styles.groupInfo}>
+                      <Text style={styles.groupName}>{g.name}</Text>
+                      <Text style={styles.groupMembers}>{membersCount} membri</Text>
+                    </View>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => joinPublicGroup(g.id)}
+                    disabled={joining}
+                    style={[styles.smallBtn, joining ? { opacity: 0.7 } : null]}
+                  >
+                    {joining ? (
+                      <ActivityIndicator color={Colors.bg} />
+                    ) : (
+                      <Text style={styles.smallBtnText}>{alreadyIn ? "Deschide" : "Join"}</Text>
+                    )}
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        ) : groupQ.trim().length ? (
+          <Text style={styles.mutedText}>Niciun grup public găsit.</Text>
+        ) : null}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Grupurile tale</Text>
         {groups.length === 0 ? (
           <View style={styles.emptyGroups}>
             <Ionicons name="people-outline" size={48} color={Colors.muted} />
