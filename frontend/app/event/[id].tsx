@@ -188,7 +188,27 @@ export default function EventDetailScreen() {
 
   const handleEdit = () => {
     if (!event) return;
-    router.push(`/create/event?edit=${event.id}`);
+    setEditTitle(event.title);
+    setEditDescription(event.description || "");
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!headers || !event) return;
+    setEditSaving(true);
+    try {
+      await apiPut(`/api/events/${event.id}`, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+      }, headers);
+      setShowEditModal(false);
+      await loadEvent();
+      Alert.alert("Success", "Event updated successfully!");
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Could not update event");
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const openInMaps = () => {
