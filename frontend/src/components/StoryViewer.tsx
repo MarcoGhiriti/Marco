@@ -281,6 +281,73 @@ export function StoryViewer({
             <Text style={styles.caption}>{currentStory.caption}</Text>
           </View>
         )}
+
+        {/* Views (owner only) */}
+        {isOwnStory ? (
+          <View style={styles.viewsBar}>
+            <Pressable
+              onPress={() => {
+                setShowViewsModal(true);
+                loadViews();
+              }}
+              style={styles.viewsBtn}
+            >
+              <Ionicons name="eye-outline" size={18} color={Colors.text} />
+              <Text style={styles.viewsText}>
+                {loadingViews ? "…" : String(viewsCount)}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* Views modal */}
+        <Modal
+          visible={showViewsModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowViewsModal(false)}
+        >
+          <View style={styles.viewsOverlay}>
+            <View style={styles.viewsSheet}>
+              <View style={styles.viewsHeader}>
+                <Text style={styles.viewsTitle}>Views</Text>
+                <Pressable
+                  onPress={() => setShowViewsModal(false)}
+                  style={styles.viewsClose}
+                >
+                  <Ionicons name="close" size={22} color={Colors.text} />
+                </Pressable>
+              </View>
+
+              {viewers.length === 0 ? (
+                <View style={styles.viewsEmpty}>
+                  <Text style={styles.viewsEmptyText}>No views yet</Text>
+                </View>
+              ) : (
+                <View style={styles.viewsList}>
+                  {viewers.map((v) => (
+                    <View key={v.user_id} style={styles.viewerRow}>
+                      <View style={styles.viewerAvatar}>
+                        {v.profile_photo ? (
+                          <Image
+                            source={{ uri: v.profile_photo }}
+                            style={styles.viewerAvatarImg}
+                          />
+                        ) : (
+                          <Ionicons name="person" size={16} color={Colors.muted} />
+                        )}
+                      </View>
+                      <Text style={styles.viewerName} numberOfLines={1}>
+                        {v.username}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
+
       </SafeAreaView>
     </Modal>
   );
