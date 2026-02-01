@@ -822,4 +822,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Inter_700Bold",
   },
+  // Difficulty picker styles
+  difficultyPicker: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16,
+  },
+  difficultyOption: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+  },
+  difficultyOptionActive: {
+    borderColor: "transparent",
+  },
+  difficultyOptionText: {
+    color: Colors.text,
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  // Participants row styles
+  participantsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+  },
+  participantInput: {
+    flex: 1,
+  },
+  participantLabel: {
+    color: Colors.muted,
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    marginBottom: 4,
+  },
+  numberInput: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    padding: 12,
+    color: Colors.text,
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+    textAlign: "center",
+  },
+  participantDash: {
+    color: Colors.muted,
+    fontSize: 16,
+    marginTop: 16,
+  },
 });
