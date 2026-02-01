@@ -603,5 +603,20 @@ async def run_ride_session_tests():
         await tester.close()
 
 if __name__ == "__main__":
-    success = asyncio.run(run_ride_session_tests())
-    exit(0 if success else 1)
+    # Check if we should run waypoints test or ride session test
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "waypoints":
+        # Run waypoints test
+        async def run_waypoints_only():
+            tester = MotoGoTester()
+            try:
+                return await test_route_waypoints_cities(tester)
+            finally:
+                await tester.close()
+        
+        success = asyncio.run(run_waypoints_only())
+        exit(0 if success else 1)
+    else:
+        # Run ride session tests (default)
+        success = asyncio.run(run_ride_session_tests())
+        exit(0 if success else 1)
