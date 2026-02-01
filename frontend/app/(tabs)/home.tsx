@@ -222,8 +222,12 @@ export default function HomeScreen() {
     if (!activeRide || !authHeader) return;
     try {
       await apiPost("/api/rides/pause", { session_id: activeRide.id }, authHeader);
-      Alert.alert("Paused", "Your ride has been paused. Resume when ready!");
-      setShowRideModal(false);
+      // Reload progress to show updated status (PAUSED) - keep modal open!
+      const progress = await apiGet<RideProgress>(
+        `/api/rides/${activeRide.id}/progress`,
+        authHeader
+      );
+      setRideProgress(progress);
       loadActiveRide();
     } catch (e) {
       Alert.alert("Error", e instanceof Error ? e.message : "Failed to pause ride");
@@ -234,8 +238,12 @@ export default function HomeScreen() {
     if (!activeRide || !authHeader) return;
     try {
       await apiPost("/api/rides/resume", { session_id: activeRide.id }, authHeader);
-      Alert.alert("Resumed", "Your ride has been resumed!");
-      setShowRideModal(false);
+      // Reload progress to show updated status (ACTIVE) - keep modal open!
+      const progress = await apiGet<RideProgress>(
+        `/api/rides/${activeRide.id}/progress`,
+        authHeader
+      );
+      setRideProgress(progress);
       loadActiveRide();
     } catch (e) {
       Alert.alert("Error", e instanceof Error ? e.message : "Failed to resume ride");
