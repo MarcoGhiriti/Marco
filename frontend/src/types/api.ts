@@ -6,11 +6,25 @@ export type CostEstimate = {
   currency: string;
 };
 
+export type WaypointOut = {
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  city?: string | null;
+};
+
 export type RouteOut = {
   id: string;
   title: string;
   description: string;
   polyline: number[][]; // [lat,lng]
+
+  start_point?: number[] | null;
+  end_point?: number[] | null;
+  waypoints?: WaypointOut[];
+  min_engine_cc?: number | null;
+
   distance_km: number;
   duration_min: number;
   stops_count: number;
