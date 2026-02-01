@@ -43,6 +43,15 @@ export async function apiPost<T>(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
+    // Try to extract detail message from JSON error response
+    try {
+      const json = JSON.parse(text);
+      if (json.detail) {
+        throw new Error(json.detail);
+      }
+    } catch (parseErr) {
+      // Not JSON or no detail field
+    }
     throw new Error(`POST ${path} failed: ${res.status} ${text}`);
   }
   return (await res.json()) as T;
