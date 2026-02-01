@@ -105,6 +105,38 @@ export default function NotificationsScreen() {
     }
   };
 
+  const handleAcceptFriend = async (notif: Notification) => {
+    if (!headers) return;
+    const fromUserId = notif.data.from_user_id;
+    if (!fromUserId) return;
+    
+    try {
+      await apiPost("/api/friends/accept", { from_user_id: fromUserId }, headers);
+      // Mark notification as read and remove it
+      await markAsRead(notif.id);
+      setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+      Alert.alert("Success!", "Friend request accepted 🎉");
+    } catch (e) {
+      Alert.alert("Error", "Failed to accept friend request");
+      console.error("Failed to accept friend:", e);
+    }
+  };
+
+  const handleRejectFriend = async (notif: Notification) => {
+    if (!headers) return;
+    const fromUserId = notif.data.from_user_id;
+    if (!fromUserId) return;
+    
+    try {
+      await apiPost("/api/friends/reject", { from_user_id: fromUserId }, headers);
+      // Remove notification
+      await deleteNotification(notif.id);
+    } catch (e) {
+      Alert.alert("Error", "Failed to reject friend request");
+      console.error("Failed to reject friend:", e);
+    }
+  };
+
   const handleNotificationPress = (notif: Notification) => {
     // Mark as read
     if (!notif.read) {
