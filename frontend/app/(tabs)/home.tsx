@@ -43,6 +43,7 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   
   // Story viewer state
   const [storyViewerVisible, setStoryViewerVisible] = useState(false);
