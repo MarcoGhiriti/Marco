@@ -348,6 +348,90 @@ async def google_directions_distance_duration(
     return round(total_m / 1000.0, 2), int(round(total_s / 60.0))
 
 
+
+def _extract_city_from_geocode_result(result: dict) -> Optional[str]:
+    """Extract best-effort city/locality name from Google Geocoding result."""
+    comps = result.get("address_components") or []
+    # Prefer locality (city), then postal_town, then admin_area_level_2, then admin_area_level_1
+    preferred = [
+        "locality",
+        "postal_town",
+        "administrative_area_level_2",
+        "administrative_area_level_1",
+    ]
+    for t in preferred:
+        for c in comps:
+            types = c.get("types") or []
+            if t in types:
+                name = c.get("long_name") or c.get("short_name")
+                if isinstance(name, str) and name.strip():
+                    return name.strip()
+    return None
+
+
+async def google_reverse_geocode_city(lat: float, lng: float) -> Optional[str]:
+    """Reverse geocode (lat,lng) to a city name using Google Geocoding API."""
+    if not GOOGLE_MAPS_API_KEY:
+        return None
+
+    url = "https://maps.googleapis.com/maps/api/geocode/json"
+    params: dict[str, Any] = {
+        "latlng": f"{lat},{lng}",
+        "key": GOOGLE_MAPS_API_KEY,
+        "result_type": "locality|postal_town|administrative_area_level_2|administrative_area_level_1",
+        "language": "ro",
+    }
+
+    async with httpx.AsyncClient(timeout=12) as http:
+        resp = await http.get(url, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+
+    if data.get("status") != "OK":
+        return None
+
+    results = data.get("results") or []
+    for r in results:
+        city = _extract_city_from_geocode_result(r)
+        if city:
+            return city
+
+    return None
+
+
+async def ensure_route_city_fields(doc: dict) -> dict:
+    """Populate start_city/end_city in route doc ONLY if missing and polyline exists."""
+    if doc.get("start_city") and doc.get("end_city"):
+        return doc
+
+    polyline = doc.get("polyline") or []
+    if not isinstance(polyline, list) or len(polyline) < 2:
+        return doc
+
+    try:
+        start = polyline[0]
+        end = polyline[-1]
+        start_city = doc.get("start_city")
+        end_city = doc.get("end_city")
+
+        if not start_city and isinstance(start, list) and len(start) == 2:
+            start_city = await google_reverse_geocode_city(float(start[0]), float(start[1]))
+        if not end_city and isinstance(end, list) and len(end) == 2:
+            end_city = await google_reverse_geocode_city(float(end[0]), float(end[1]))
+
+        # update local doc
+        if start_city:
+            doc["start_city"] = start_city
+        if end_city:
+            doc["end_city"] = end_city
+
+    except Exception:
+        # best-effort only
+        return doc
+
+    return doc
+
+
 # -----------------
 # Models
 # -----------------
