@@ -195,7 +195,7 @@ export function StoryViewer({
             <Video
               source={{ uri: currentStory.media_base64 }}
               style={styles.media}
-              resizeMode={ResizeMode.CONTAIN}
+              resizeMode={ResizeMode.COVER}
               shouldPlay
               isLooping={false}
               isMuted={false}
@@ -204,7 +204,7 @@ export function StoryViewer({
             <Image
               source={{ uri: currentStory.media_base64 }}
               style={styles.media}
-              resizeMode="contain"
+              resizeMode="cover"
             />
           )}
 
