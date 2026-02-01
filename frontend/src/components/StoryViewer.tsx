@@ -91,6 +91,33 @@ export function StoryViewer({
     };
   }, [visible, ownerIndex, storyIndex, currentStory]);
 
+  const markViewed = useCallback(async () => {
+    if (!authHeader || !currentStory) return;
+    // Only mark if not your own story
+    if (isOwnStory) return;
+    try {
+      await apiPost(`/api/stories/${currentStory.id}/view`, {}, authHeader);
+    } catch (e) {
+      // silent
+    }
+  }, [authHeader, currentStory, isOwnStory]);
+
+  const loadViews = useCallback(async () => {
+    if (!authHeader || !currentStory) return;
+    if (!isOwnStory) return;
+    try {
+      setLoadingViews(true);
+      const data = await apiGet<StoryViewsOut>(`/api/stories/${currentStory.id}/views`, authHeader);
+      setViewsCount(data.views_count);
+      setViewers(data.viewers.map(v => ({ user_id: v.user_id, username: v.username, profile_photo: v.profile_photo })));
+    } catch (e) {
+      // silent
+    } finally {
+      setLoadingViews(false);
+    }
+  }, [authHeader, currentStory, isOwnStory]);
+
+
   const goNext = () => {
     if (!currentOwner) return;
 
