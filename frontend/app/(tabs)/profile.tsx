@@ -588,13 +588,13 @@ export default function ProfileScreen() {
 
           <View style={styles.premiumCard}>
             <Text style={styles.premiumTitle}>MotoGO Premium</Text>
-            <Text style={styles.premiumSub}>Premium Features:</Text>
+            <Text style={styles.premiumSub}>Premium features:</Text>
             {[
-              "Personal Routes History (saved permanently)",
-              "Advanced Riding Statistics",
-              "Smart Motorcycle Notifications",
-              "Ride Data Export (PDF / CSV)",
-              "Exclusive Premium Badges",
+              "Private routes",
+              "Group-only rides",
+              "Personal stats",
+              "Smart reminders",
+              "Advanced groups",
             ].map((t) => (
               <View key={t} style={styles.bulletRow}>
                 <View style={styles.bullet} />
