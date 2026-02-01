@@ -11,13 +11,16 @@ import {
   StyleSheet,
   Text,
   View,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Svg, { Circle, Rect } from "react-native-svg";
 import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
-import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
+import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { EventOut } from "../../src/types/api";
 
@@ -46,6 +49,10 @@ export default function EventDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
