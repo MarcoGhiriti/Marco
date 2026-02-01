@@ -1,161 +1,125 @@
 <analysis>
+
 <original_problem_statement>
-The user wants to build a premium mobile application for motorcyclists called **Moto GO**.
+The user wants to build a premium mobile application for motorcyclists called **Moto GO**. The work is guided by a detailed Product Requirements Document (PRD).
 
-**Initial Product Requirements were extensive (see previous summary). The user provided a new, detailed PRD mid-session which now defines the upcoming work:**
-
-**NEW PRODUCT REQUIREMENTS (PRD):**
+**PRODUCT REQUIREMENTS (PRD):**
 
 -   **🔔 NOTIFICATIONS HUB:**
-    -   Friend requests MUST appear in a centralized Notifications hub (accessible from the Home screen icon), NOT in the chat/community section.
-    -   This hub should be the central place for all alerts: friend requests, route/event/group invitations, and automated reminders (e.g., Event starts in 1h).
-
+    -   A centralized Notifications hub for all alerts: friend requests, route/event/group invitations, and automated reminders.
 -   **👥 GROUPS (Control & Clarity):**
-    -   When creating a group, the creator MUST be able to set a maximum number of members.
-    -   In the group chat, every message bubble MUST display the sender's username.
-
+    -   Group creators must be able to set a maximum number of members.
+    -   Every message bubble in group chat must display the sender's username.
+    -   Group creators should be able to edit the group's name and picture.
+    -   A search function for public groups.
 -   **🧑 PROFILE (Content Management):**
-    -   In the user's own profile, they MUST be able to **✏️ Edit** and **🗑️ Delete** the routes and events they have created. The profile should be a content management hub.
-
+    -   Users must be able to **✏️ Edit** and **🗑️ Delete** their own created routes and events from their profile. The user's 'bio' field should be removed.
 -   **🛑 RIDES – ADVANCED FUNCTIONS:**
-    -   During an active ride session, there MUST be a **PAUSE** button that allows the user to temporarily stop and later resume the ride. Kilometer tracking should only happen when the ride is active (not paused).
-
+    -   An active ride session must have a **PAUSE/RESUME** button.
+    -   The Active Ride banner should be visible to all participants and show the ride's progress and status (Active/Paused).
+    -   The creator should have quick access to Pause/Stop controls.
 -   **🗺️ MINI-MAP UX:**
-    -   The mini-map preview on Home/Route cards must be an intelligent zoom-out (like a GPS preview).
-    -   It must display the main route polyline highlighted, adjacent streets in gray, and text labels for the **start and end city names** directly on the map.
-    -   It must be purely visual, with no raw coordinates shown to the user.
-
--   **🎯 CORE UX GOALS:**
-    -   The app must feel intuitive and map-oriented.
-    -   Key actions should take a maximum of 1-2 clicks.
-
--   **🔑 CORE CONSTRAINTS:**
-    -   Routes (start to end path) and Events (single location meetup) remain distinct concepts.
-    -   All locations must be selected via a search bar (Google Maps-like), not manual coordinate entry.
+    -   The mini-map preview on route cards must display the main route polyline highlighted, adjacent streets in gray, and text labels for the **start and end city names** directly on the map.
+-   **🔗 CONNECTIVITY:**
+    -   Functionality should be interconnected. If there's a notification for an invitation, there must be a button in the UI to send that invitation.
 
 </original_problem_statement>
 
 **User's preferred language**: Romanian (română). The next agent MUST respond in Romanian.
 
 **what currently exists?**
-The application is a feature-rich, full-stack Expo/FastAPI app. In this session, the agent addressed multiple user requests and bug fixes, significantly expanding functionality.
+The application is a full-stack Expo/FastAPI app. In this session, the agent implemented a significant number of features and fixes based on user requests.
+
 -   **Backend (FastAPI/MongoDB):**
-    -   An **Event Details** flow was implemented by adding  to Event models and endpoints.
-    -   **DELETE endpoints** for routes () and events () were created.
-    -   **Group Management endpoints** (, ) were created and later fixed to correctly identify the group owner.
-    -   A **License Verification** system was added. The User model was updated with , , . An endpoint () was created that accepts a photo and automatically marks the user as verified.
-    -   A **Notifications system** has been started. New Pydantic models (, ) and a  collection were added. Endpoints (, ) were created, and the friend request logic was updated to generate a notification.
+    -   **Notifications Hub:** A full notification system was built with endpoints for fetching, reading, counting, and creating notifications for various types (, , , ).
+    -   **AI License Verification:** The license upload endpoint () was enhanced with OpenAI GPT-4o to validate that the uploaded image is a real driving license and not a random photo or a template.
+    -   **Advanced Ride Management:** The  model now includes a  field. Endpoints for , ,  (now works for paused rides), and  calculation were added. The  endpoint now correctly returns both active and paused rides.
+    -   **Content Management:**  endpoints for updating routes and events were created (, ). A new endpoint  was added to fetch events created by the user.
+    -   **Group Management:** A  endpoint () was added for editing group name/image. Group creation and member addition logic now enforce a member limit (100 for standard, 1000 for premium). A test endpoint for premium subscriptions was also added.
+    -   **Chat:** The  model and related endpoints were updated to include and return the  for every message.
+    -   **Gating:** License verification is now enforced on endpoints for joining () and starting () routes.
+
 -   **Frontend (Expo/React Native):**
-    -   A new **Event Details Screen** () was created, showing a map, location name, distance, and participant info. The  screen was also translated to English.
-    -   **Edit/Delete Buttons** have been added to the Route and Event detail screens. The Delete functionality works (using a  check for web confirmation). The Edit button UI exists, but is not functional.
-    -   **Friend Profile Navigation**: The friends list in  now navigates to a detailed user profile screen () on click, with a separate button for initiating a chat.
-    -   **Shop Relocation**: The Store tab was removed from the bottom tab bar. A new file  was created, and a Shop icon button that links to it was added to the  header.
-    -   **Group Management UI**: The group chat screen () was completely rewritten. It now features a modal (opened via a 3-dot menu) that shows the member list. The group creator sees Add Member and Remove Member buttons, while other members see a Leave Group button.
-    -   **License Verification UI**: The Profile screen () now has a Verify Your License section and a modal to upload a license photo and select the category (A1, A2, A).
-    -   **Route Gating**: The Home screen () and Create Route screen () now block access/functionality and show a verification prompt if the user's license is not verified.
-    -   **Animated Splash Screen**: A new component  was created and integrated into  to show a loading animation on app start.
-    -   **Forgot Password UI**: A Forgot your password? link was added to  which navigates to a new  screen with a form to request a reset link. The backend functionality is missing.
+    -   **Notifications Hub:** A functional  screen was built, showing a list of notifications and allowing actions (Accept/Reject for friend requests). A notification badge with an unread count was added to the home screen bell icon.
+    -   **Advanced Ride Management:** The  screen now features a clickable Active Ride banner that opens a modal showing ride progress, status, and creator controls (Pause/Resume/Cancel). The banner correctly reflects the Paused state with a different color and text. The initial bug of a phantom active ride has been fixed.
+    -   **Full Edit Functionality:** The route () and event () detail screens now feature comprehensive Edit modals that allow updating all key details (difficulty, privacy, dates, etc.), not just title/description.
+    -   **Profile as Content Hub:** The user's profile screen () was redesigned with a tabbed view to list My Routes and My Events, allowing users to manage their created content directly. The user 'bio' field has been removed from the edit profile screen.
+    -   **Group Chat & Management:** Usernames are now displayed above messages in group chat. The group chat header now includes Edit Group and Invite buttons for the creator, which open corresponding modals.
+    -   **Mini-Map UI (Partial):** The  component was updated to display start/end city name labels and a gray grid pattern. However, the backend does not yet supply the city name data.
 
 **Last working item**:
--   Last item agent was working: The agent began implementing the **Notifications Hub** as per the user's new high-priority PRD.
-    -   It created the backend models and endpoints for notifications and updated the friend request flow to generate a notification.
-    -   It created the basic frontend files for the notifications screen ( and ).
-    -   The agent was in the process of linking the home screen's notification bell icon to this new screen and implementing logic to show a notification count badge.
+-   Last item agent was working: Implementing the Invite Friend functionality for Routes.
+    -   The agent was working on the  file. It had added the state, the Invite button to the UI, the modal structure for listing friends, and the  function to call the backend. The agent was about to add the necessary CSS styles for the new modal when the session ended.
 -   Status: **IN PROGRESS**
 -   Agent Testing Done: N
--   Which testing method agent to use?: both. The backend needs testing to ensure notifications are created correctly for different actions. The frontend needs testing to verify the UI of the new notifications screen, the badge count on the home screen, and the read/unread logic.
+-   Which testing method agent to use?: frontend testing agent. The agent should verify that clicking the Invite button on the route details page opens a modal, the modal lists the user's friends, and clicking Invite next to a friend's name sends the correct API request and shows a confirmation.
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Finish the **Notifications Hub**. (P0)
-  - Issue 2: Implement functionality for the **Edit buttons** on routes and events. (P1)
-  - Issue 3: Implement the backend logic for the **Forgot Password** flow. (P1)
-  - Issue 4: The user reported in a previous session that a friend's **Story might show the wrong avatar**. This was never verified or fixed. (P2)
+  - Issue 1: **Username in Group Chat Not Visible for Old Messages** (P2)
+  - Issue 2: **Story Avatar Bug** (P2)
 
   Issues Detail:
-  - Issue 1:
-     - Description: Implement the full Notifications Hub as per the new PRD. This is the user's highest priority.
-     - Where to resume:
-        1.  **Frontend**: Build the UI in  to list notifications with different layouts based on .
-        2.  **Frontend**: Implement logic to fetch notifications from . Add a badge to the bell icon in  showing the unread count.
-        3.  **Frontend**: Implement  for notifications (e.g., clicking a friend request notification should show an Accept/Reject prompt or navigate to the community tab).
-        4.  **Backend**: Modify other actions (group invites, event invites, etc.) to also create notifications.
-     - Why fix this issue and what will be achieved with the fix?: Fulfills the user's top priority from their new PRD, centralizing all app alerts into one intuitive place.
-     - Status: IN PROGRESS
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix?: both
-
-  - Issue 2:
-     - Description: The Edit buttons on the route () and event () detail screens were added, but they have no functionality. Clicking them does nothing.
-     - Next debug checklist:
-        1.  Create new frontend screens for editing a route () and event (), pre-filled with existing data.
-        2.  Create backend  or  endpoints (e.g., , ) to handle updates.
-        3.  Wire the Edit buttons to navigate to these new screens.
-     - Why fix this issue and what will be achieved with the fix?: Fulfills a direct user request for content management from their profile.
+  - Issue 1: 
+     - Description: The user reported that usernames were not showing up in group chat. The agent fixed the backend to include  in all new messages, and the frontend to display it. However, messages created *before* this fix do not have this field in the database and thus will not show the username.
+     - Attempted fixes: The core issue for new messages is fixed. No fix was attempted for historical data.
+     - Next debug checklist: This is a data migration issue. A one-time script could be run on the database to backfill the  for old messages, but this might be low priority. The agent should confirm with the user if this is necessary or if it's acceptable for only new messages to have usernames.
+     - Why fix this issue and what will be achieved with the fix?: To provide a consistent user experience where all messages, old and new, show who sent them.
      - Status: NOT STARTED
      - Is recurring issue? N
-     - Should Test frontend/backend/both after fix?: both
-
-  - Issue 3:
-     - Description: The Forgot Password UI () was created, but there is no backend implementation to handle the password reset request. Clicking Send Reset Link does nothing.
-     - Next debug checklist:
-        1.  Implement a backend endpoint (e.g., ) that takes an email, generates a unique reset token, stores it, and sends a reset email to the user (this may require an email service integration).
-        2.  Create a new frontend screen for the user to enter their new password after clicking the link in the email.
-        3.  Implement a backend endpoint to validate the token and update the user's password.
-     - Why fix this issue and what will be achieved with the fix?: Implements a critical, standard authentication feature.
-     - Status: NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix?: backend
-
-  - Issue 4:
-     - Description: A bug reported in a much earlier session about the  on the home screen potentially showing the current user's avatar instead of the friend's avatar who posted the story. This was never verified.
+     - Should Test frontend/backend/both after fix?: backend (if a migration script is run)
+  - Issue 2: 
+     - Description: A bug reported in a much earlier session about the  on the home screen potentially showing the current user's avatar instead of the friend's avatar who posted the story. This has never been verified or addressed.
+     - Attempted fixes: None.
      - Next debug checklist:
         1. As , add  as a friend.
         2. Log in as  and post a story.
         3. Log in as  and view the  on the home screen.
         4. Verify that the story circle shows 's avatar, not 's.
-     - Why fix this issue and what will be achieved with the fix?: Resolves a lingering, user-reported bug related to a core social feature.
+     - Why fix this issue and what will be achieved with the fix?: Resolves a long-standing, user-reported bug related to a core social feature.
      - Status: NOT STARTED
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix?: frontend
 
 **In progress Task List**:
-- Task 1: Complete the Notifications Hub
-    - Where to resume: The agent has laid the groundwork. The next step is to build the UI on the frontend in , connect it to the new backend endpoints, and add the notification badge logic to .
-    - What will be achieved with this?: A centralized, user-friendly system for all app alerts, as requested.
-    - Status: IN PROGRESS
-    - Should Test frontend/backend/both after fix?: both
-    - Blocked on something: None
+  - Task 1: **Complete the Invite to Activity Feature** (P0)
+     - Where to resume: 
+        1. In , add the styles for the Invite Friend modal (the styles were not added before the session ended).
+        2. Implement the same Invite Friend button and modal functionality on the event detail screen ().
+     - What will be achieved with this?: Fulfills the user's request for full connectivity, allowing users to invite friends to all types of activities (groups, routes, and events), which then generates notifications.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix?: frontend
+     - Blocked on something: None
 
 **Upcoming and Future Tasks**
-Upcoming Tasks (from the new PRD):
--   **Group Member Limit (P1)**: Add a field during group creation to set a maximum number of members and enforce it on the backend.
--   **Display Sender in Group Chat (P1)**: Modify the group chat UI to show the sender's username above or next to each message bubble.
--   **Pause/Resume Ride (P2)**: Implement a Pause button on the active ride screen and adjust the backend logic to stop/resume km tracking.
--   **Improved Mini-Map UI (P2)**: Refactor the  component to display city name labels for start/end points and show surrounding streets, as per the PRD.
+
+-   **Upcoming Tasks:**
+    -   **P0: Implement Group Search**: Create a new UI section (likely in the Community tab) with a search bar to find and join public groups. This will require a new backend endpoint (e.g., ).
+    -   **P1: Implement Automatic City Name Extraction for Mini-Map**: The backend needs to be updated to populate the  and  fields on the  model. This will likely require using an external Geocoding API (like Google's) to reverse-geocode the route's start and end coordinates into city names when a route is created or fetched.
 
 **Completed work in this session**
 - List of all completed tasks with file and method name:
-    -   **Event Details & Location Fix**: Created  and updated backend () to save/show event location names.
-    -   **Delete Functionality**: Added working Delete buttons to  and  with backend  endpoints.
-    -   **Friend Profile Navigation**: Updated  to link to a new detailed profile screen .
-    -   **Shop UI Refactor**: Moved the Shop link from the tab bar to an icon in the  header.
-    -   **Group Member Management**: Rewrote  and added backend endpoints to allow group owners to add/remove members.
-    -   **License Verification System**: Implemented a full-stack flow for users to upload a license on  and have the backend verify it.
-    -   **Route Gating**: Blocked route creation () and interaction () for unverified users.
-    -   **Animated Splash Screen**: Added a custom animated splash screen using  in .
-    -   **Forgot Password UI**: Added the UI for a password reset flow in  and .
+    -   **Notifications Hub**: Fully implemented backend and frontend UI, including badge count and in-notification actions. (, , ).
+    -   **AI License Verification**: Integrated GPT-4o to validate license uploads. ().
+    -   **Advanced Ride Management**: Implemented Pause/Resume/Cancel/Progress functionality for active rides. (, ).
+    -   **Group Member Limits**: Enforced member limits on group creation and member addition. ().
+    -   **Full Edit for Routes/Events**: Created comprehensive inline edit modals for all key route and event details. (, ).
+    -   **Profile as Content Hub**: Redesigned profile page to list and manage user-created routes and events. (, ).
+    -   **Username in Group Chat**: Backend and frontend updated to show sender's username in group chat messages. (, , ).
+    -   **Group Edit (Name/Photo)**: Added functionality for group creators to edit the group's name and image. (, ).
+    -   **License Gating**: Enforced license verification for joining and starting rides. ().
+    -   **Remove User Bio**: Removed the 'bio' field from the user profile edit screen. ().
 
 - Recently completed:
-  - License Verification and Route Gating (DONE)
-  - Animated Splash Screen & Forgot Password UI (DONE - Functionality Pending)
-  - Group Member Management (Bugs fixed, DONE)
-  - Edit/Delete button UI and Delete functionality (DONE - Edit Functionality Pending)
-  - Event Details screen and location fix (DONE)
+  - Group Edit (Name/Photo) and Invite to Group functionality (DONE)
+  - Full, detailed Edit functionality for Routes and Events (DONE)
+  - Profile page redesigned as a Content Management hub (DONE)
+  - Username display in group chats (DONE for new messages)
+  - AI-powered License Verification (DONE)
+  - Advanced Ride Controls (Pause/Resume/Cancel/Progress) (DONE)
 
 **Earlier issues found/mentioned but not fixed**
-   - Issue 1: **Story Avatar Bug** (Detailed in All Pending/In progress Issue list).
-   - Issue 2: **Edit Functionality**: Edit buttons were added to route/event detail screens, but they are not functional. No backend or frontend editing logic exists.
+   - **Story Avatar Bug**: This was mentioned in the initial handover and is still pending verification and fix. See All Pending/In progress Issue list for details.
 
 **Known issue recurrence from previous fork**
   - Issue recurrence in previous fork: The Story avatar bug was mentioned in the initial handover summary and remains unverified.
@@ -166,100 +130,104 @@ Upcoming Tasks (from the new PRD):
 
 
 **Key Technical Concepts**
--   **Frontend:** React Native, Expo, Expo Router, TypeScript, Zustand, , , .
--   **Backend:** FastAPI, Python, MongoDB (), Pydantic.
--   **APIs:** Google Places API, Google Directions API.
+-   **Frontend:** React Native, Expo Router, TypeScript, Zustand, , .
+-   **Backend:** FastAPI, Python, MongoDB (), Pydantic, Socket.IO.
+-   **AI:** OpenAI GPT-4o via  library for image analysis (license verification).
 -   **Authentication:** JWT.
--   **Platform Specificity:** Using  to provide a  dialog fallback for delete actions.
+-   **UI Patterns:** Heavy use of Modals for inline editing and actions (invites, ride progress) to avoid navigating to separate screens.
 
 **key DB schema**
 -   : 
--   : 
--   : 
 -   root: 
--   : **(NEW)** 
+-   : 
+-   :  (Fields added to model, but not populated from DB yet)
+-   :  (Field added for new messages)
 
 **changes in tech stack**
--    was added and used for the animated splash screen.
+-   : Added for OpenAI integration.
 
 **All files of reference**
--   : Heavily modified with new endpoints for delete, group management, license verification, and notifications.
--   : Modified to add Shop icon, license gate banner, and disabled route cards.
--   : Heavily modified to add the entire license verification flow.
--   : Completely rewritten to implement the group member management modal.
--   : New file for event details.
--   : New file for viewing other users' profiles.
--   : Modified to integrate the new  component.
--   : New file, part of the in-progress Notifications Hub.
+-   : Massively updated with numerous new and modified endpoints for all features.
+-   : Major rewrite to include the ride progress modal and logic.
+-   : Major rewrite for the content management hub.
+-   : Major rewrite for group edit and invite features.
+-   : Major rewrite for full route editing and invite features.
+-   : Major rewrite for full event editing.
+-   : Updated for new mini-map UX.
 
 **Areas that need refactoring**:
--   **Backend :** This file is now critically oversized. It urgently needs to be split into multiple  files (e.g., , , ) for maintainability.
--   **Hardcoded Text**: The app has been translated to English, but all UI strings are hardcoded. A localization library like  should be introduced to manage translations effectively.
+-   **:** This file is critically oversized and handles all application logic (auth, users, routes, events, groups, rides, notifications, chat). It urgently needs to be broken down into smaller, more manageable  files based on functionality (e.g., , , etc.).
+-   **Hardcoded UI Strings:** All UI text is hardcoded in English/Romanian. This makes localization difficult. An i18n library should be considered.
+-   **Redundant Invite Friend Modal**: The Invite Friend modal logic and UI is being duplicated across  and . This should be extracted into a reusable component.
 
 **key api endpoints**
--    (DELETE - NEW)
--    (DELETE - NEW)
--    (NEW)
--    (NEW)
--    (NEW)
--    (GET - NEW)
--    (POST - NEW)
+-   **NEW:**
+    -   
+    -   
+    -   
+    -   
+    -   
+    -   
+    -   
+    -   
+    -   
+    -    (for testing)
+-   **MODIFIED:**
+    -    (added AI verification)
+    -    (added limit check)
+    -    (now includes paused rides)
+    -    (now works on paused rides)
+    -    (now include )
 
 **Critical Info for New Agent**
 -   **User Language:** The user communicates in **Romanian**. All responses must be in Romanian.
--   **New PRD is King**: The user provided a detailed list of new requirements mid-session. This is the new source of truth for upcoming work. The highest priority is the **Notifications Hub**.
--   **Incomplete Features**: Be aware that Edit for routes/events and the Forgot Password flow are UI-only at this point and lack backend functionality. These are pending tasks.
--   **Backend Refactor Needed**: The  file is extremely large and difficult to manage. Proposing a refactor into smaller, organized router files is highly recommended.
+-   **Priorities**: The user wants full connectivity between features. The next logical steps are to finish the Invite flow (for Events), implement Group Search, and finish the Mini-Map city name feature (backend part).
+-   **Incomplete Backend Logic**: The  and  fields for routes are defined in the models but are NOT populated by the backend. This will require a geocoding API integration to resolve coordinates to city names.
+-   **Refactoring Needed**: Propose refactoring  into smaller router files. The current state is unsustainable.
+-   **State Loss on Web**: Be aware that the web preview loses authentication state on direct URL navigation or page reloads. Test features through the app's internal navigation flow.
 
 **documents created in this job**
--   /app/frontend/app/event/_layout.tsx
--   /app/frontend/app/event/[id].tsx
--   /app/frontend/app/profile/_layout.tsx
--   /app/frontend/app/profile/[userId].tsx
--   /app/frontend/app/(tabs)/shop.tsx
--   /app/frontend/app/auth/forgot-password.tsx
--   /app/frontend/src/components/AnimatedSplash.tsx
--   /app/frontend/app/notifications/_layout.tsx
--   /app/frontend/app/notifications/index.tsx
+- None. All changes were modifications to existing files or new  screens within the existing structure.
 
 **Last 10 User Messages and any pending HUMAN messages**
--   : User wants to test the app on Expo Go. (Done)
--   : User confirms the agent's proposed priority list for the new PRD. (Actioned)
--   A large, detailed PRD message was sent by the user, outlining many new features. (Received, work started)
--   : Request to block routes for unverified users and asked if verification is automatic. (Implemented)
--   : Request for an animated splash screen and a Forgot Password link. (Implemented - UI only for forgot password)
--   : Reported that Add member button is missing for group creators and confirmed to proceed with license verification. (Bug fixed, feature implemented)
--   : Reported that group management, delete buttons, and edit buttons were not working or missing. (Bugs fixed, Edit still pending functionality)
--   : Multiple requests: move Shop to Home header, implement group member management, and add license verification. (Implemented)
--   : Request for Edit/Delete buttons, friend profile navigation, and restoring the Shop page. (Implemented - Edit pending functionality)
--   : User asked to test previous work and reported a bug with event locations. (Bug Fixed)
+10. : User requested AI license verification. (DONE)
+9.  : User reported bug with active ride banner and requested progress/pause/stop features. (DONE)
+8.  : User requested the pause/resume modal to stay open. (DONE)
+7.  : User reported that the paused ride banner doesn't show and disappears when the modal is closed. (DONE)
+6.  : User reported being able to join routes without a verified license and that the cancel ride button was broken for paused rides. (DONE)
+5.  : User requested group member limits. (DONE)
+4.  : User asked to ignore subscription logic for now and continue with other tasks. (Actioned)
+3.  : User clarified they want a content management section on their profile and detailed Mini-Map improvements. (DONE/IN PROGRESS)
+2.  : User reported username in chat isn't working and requested edit functionality to be for *all* details. (DONE)
+1.  : User requested to remove 'bio', add group edit (name/photo), and critically, to connect all the features by adding Invite buttons and group search. (PARTIALLY DONE)
 
 **Project Health Check:**
--   **Working**: Core functionalities, license verification, group management, delete actions, splash screen.
+-   **Working**: Core app, AI License Verification, Advanced Ride Management, Group Member Limits, Full Edit Modals, Profile Content Hub, Group Edit.
 -   **Incomplete**:
-    -   **Notifications Hub**: Backend/Frontend started but far from complete.
-    -   **Edit Functionality**: UI buttons exist, but no edit screens or backend logic.
-    -   **Forgot Password**: UI exists, but no backend logic.
--   **Not Started (but required)**: Most items from the new PRD (Group member limits, Pause/Resume ride, Mini-map UX improvements).
--   **Broken**: None identified, but regressions are possible given the volume of changes.
+    -   **Invite Functionality**: Implemented for Groups and started for Routes. Missing for Events. The UI for Routes needs styling.
+    -   **Mini-Map UX**: Frontend is ready to display city names, but the backend doesn't provide them.
+-   **Not Started (but required)**: Group Search functionality.
+-   **Broken**: No known broken features, but old group chat messages will lack a username.
 
 **3rd Party Integrations**
--   **Google Maps Platform**: Used for Places Autocomplete, Place Details, and Directions API.
--   **Expo**: Core framework, including  and .
--   **react-native-reanimated**: Used for the splash screen animation.
+-   **OpenAI GPT-4o**: Used via  for AI license verification. Requires .
+-   **Google Maps Platform**: Used for Places Autocomplete, Place Details, and Directions API. (Implicitly required for future Geocoding API task).
+-   **Expo**: Core framework, including , .
 
 **Testing status**
-- Testing agent used after significant changes: NO, agent primarily used the  for visual verification.
-- Troubleshoot agent used after agent stuck in loop: NO.
-- Test files created: None.
-- Known regressions: None identified.
+-   Testing agent used after significant changes: NO. Agent relied on manual testing via  and  with .
+-   Troubleshoot agent used after agent stuck in loop: NO.
+-   Test files created: None.
+-   Known regressions: None identified.
 
 **Credentials to test flow:**
 -   **User 1 (Verified License):**  / 
 -   **User 2 (Unverified License):**  / 
+-   **User 3 (Test user):**  / 
 
 **What agent forgot to execute**
--   The agent added Edit buttons for routes and events but never implemented the corresponding edit screens or backend endpoints to make them functional.
--   The agent created the Forgot Password UI but did not implement any backend logic to handle the password reset process.
--   The agent still has not verified or fixed the long-standing Story avatar bug mentioned in the very first handover summary.
+-   The agent added the  and  fields to the  model but forgot to implement the backend logic to actually populate these fields (e.g., by calling a geocoding API).
+-   The user requested căutare grupuri (group search), but the agent did not start implementing this feature.
+-   The Invite functionality was implemented for Groups and started for Routes, but completely missed for Events.
+
 </analysis>
