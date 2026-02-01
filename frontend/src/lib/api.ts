@@ -77,6 +77,34 @@ export async function apiPatch<T>(
   return (await res.json()) as T;
 }
 
+export async function apiPut<T>(
+  path: string,
+  body: unknown,
+  headers?: Record<string, string>
+): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(headers ?? {}),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    try {
+      const json = JSON.parse(text);
+      if (json.detail) {
+        throw new Error(json.detail);
+      }
+    } catch (parseErr) {
+      // Not JSON or no detail field
+    }
+    throw new Error(`PUT ${path} failed: ${res.status} ${text}`);
+  }
+  return (await res.json()) as T;
+}
+
 export async function apiDelete<T>(
   path: string,
   headers?: Record<string, string>
