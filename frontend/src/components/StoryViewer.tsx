@@ -43,6 +43,11 @@ export function StoryViewer({
   const currentOwner = stories[ownerIndex];
   const currentStory = currentOwner?.stories[storyIndex];
   const isOwnStory = currentOwner?.user_id === currentUserId;
+  const [viewsCount, setViewsCount] = useState<number>(0);
+  const [showViewsModal, setShowViewsModal] = useState(false);
+  const [viewers, setViewers] = useState<Array<{ user_id: string; username: string; profile_photo?: string | null }>>([]);
+  const [loadingViews, setLoadingViews] = useState(false);
+
 
   // Reset when modal opens
   useEffect(() => {
