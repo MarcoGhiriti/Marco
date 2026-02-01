@@ -42,7 +42,7 @@ export default function RouteDetailScreen() {
   
   // Invite modal
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friends, setFriends] = useState<UserSearchOut[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
 
   const headers = useMemo(() => {
