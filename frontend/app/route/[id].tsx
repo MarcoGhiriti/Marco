@@ -412,8 +412,16 @@ export default function RouteDetailScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Bottom Action Button */}
+      {/* Bottom Action Bar */}
       <View style={styles.bottomBar}>
+        <View style={styles.bottomActions}>
+          <Pressable onPress={handleOpenInvite} style={styles.actionIconBtn}>
+            <Ionicons name="person-add-outline" size={22} color={Colors.accent} />
+          </Pressable>
+          <Pressable onPress={handleShare} style={styles.actionIconBtn}>
+            <Ionicons name="share-outline" size={22} color={Colors.accent} />
+          </Pressable>
+        </View>
         <Pressable
           onPress={handleJoin}
           style={[styles.joinButton, route.is_joined && styles.joinButtonJoined]}
@@ -424,10 +432,68 @@ export default function RouteDetailScreen() {
             color={route.is_joined ? Colors.text : Colors.bg}
           />
           <Text style={[styles.joinButtonText, route.is_joined && styles.joinButtonTextJoined]}>
-            {route.is_joined ? "You joined" : "Join Route"}
+            {route.is_joined ? "Joined" : "Join Route"}
           </Text>
         </Pressable>
       </View>
+
+      {/* Invite Friends Modal */}
+      <Modal
+        visible={showInviteModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowInviteModal(false)}
+      >
+        <View style={styles.inviteModalOverlay}>
+          <View style={styles.inviteModalContent}>
+            <View style={styles.inviteModalHeader}>
+              <Text style={styles.inviteModalTitle}>Invite Friends</Text>
+              <Pressable onPress={() => setShowInviteModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.text} />
+              </Pressable>
+            </View>
+            
+            {loadingFriends ? (
+              <View style={styles.inviteLoading}>
+                <ActivityIndicator color={Colors.accent} />
+              </View>
+            ) : friends.length === 0 ? (
+              <View style={styles.inviteEmpty}>
+                <Ionicons name="people-outline" size={48} color={Colors.muted} />
+                <Text style={styles.inviteEmptyText}>No friends to invite</Text>
+                <Text style={styles.inviteEmptySub}>Add friends to invite them to this route</Text>
+              </View>
+            ) : (
+              <ScrollView style={styles.inviteList}>
+                {friends.map((friend) => (
+                  <View key={friend.id} style={styles.inviteFriendRow}>
+                    <View style={styles.inviteFriendInfo}>
+                      {friend.avatar ? (
+                        <Image 
+                          source={{ uri: friend.avatar.startsWith("data:") ? friend.avatar : `data:image/jpeg;base64,${friend.avatar}` }} 
+                          style={styles.inviteFriendAvatar} 
+                        />
+                      ) : (
+                        <View style={styles.inviteFriendAvatarPlaceholder}>
+                          <Ionicons name="person" size={18} color={Colors.muted} />
+                        </View>
+                      )}
+                      <Text style={styles.inviteFriendName}>{friend.username}</Text>
+                    </View>
+                    <Pressable 
+                      onPress={() => handleInviteToRoute(friend.id)} 
+                      style={styles.inviteSendBtn}
+                    >
+                      <Ionicons name="paper-plane" size={16} color="#FFF" />
+                      <Text style={styles.inviteSendBtnText}>Invite</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Edit Modal */}
       <Modal
