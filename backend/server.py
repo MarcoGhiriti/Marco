@@ -2616,10 +2616,14 @@ async def get_ride_progress(ride_id: str, current_user: dict = Depends(get_curre
 
 @api_router.get("/rides/active", response_model=Optional[RideSessionOut])
 async def get_active_ride(current_user: dict = Depends(get_current_user)):
-    """Get current active ride session if any."""
+    """Get current active or paused ride session if any."""
     uid = current_user["id"]
     
-    session = await db.ride_sessions.find_one({"user_id": uid, "status": "active"})
+    # Find active OR paused rides (both are "in progress")
+    session = await db.ride_sessions.find_one({
+        "user_id": uid, 
+        "status": {"$in": ["active", "paused"]}
+    })
     if not session:
         return None
     
@@ -2627,9 +2631,9 @@ async def get_active_ride(current_user: dict = Depends(get_current_user)):
         id=oid_str(session.get("_id")),
         user_id=uid,
         route_id=session.get("route_id", ""),
-        status="active",
+        status=session.get("status", "active"),  # Return actual status!
         start_time=session.get("start_time"),
-        km_tracked=0,
+        km_tracked=session.get("km_tracked", 0),
         is_validated=False,
     )
 
