@@ -70,8 +70,8 @@ export function PlaceSearchInput({
 
     setLoading(true);
     try {
-      const data = await apiGet(`/api/places/autocomplete?query=${encodeURIComponent(text)}`, headers);
-      setResults(data || []);
+      const data = await apiGet<any>(`/api/places/autocomplete?query=${encodeURIComponent(text)}`, headers);
+      setResults(Array.isArray(data) ? data : []);
       setShowResults(true);
     } catch (error) {
       console.error("Places search error:", error);
