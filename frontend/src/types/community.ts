@@ -27,6 +27,7 @@ export type MessageOut = {
   thread_id: string;
   kind: "dm" | "group";
   from_user_id: string;
+  from_username?: string | null;
   to_user_id?: string | null;
   group_id?: string | null;
   text: string;
