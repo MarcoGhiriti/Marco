@@ -2747,7 +2747,7 @@ async def route_join(route_id: str, current_user: dict = Depends(get_current_use
         if user_cc < min_cc:
             raise HTTPException(status_code=403, detail=f"Minimum {min_cc}cc required")
 
-    res = await db.routes.update_one({"_id": _as_object_id(route_id)}, {"$addToSet": {"participants": uid}})
+    await db.routes.update_one({"_id": _as_object_id(route_id)}, {"$addToSet": {"participants": uid}})
     return {"ok": True}
 
 
