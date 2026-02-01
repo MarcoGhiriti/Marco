@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { Platform, StyleSheet, View } from "react-native";
-import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
+import { Platform, StyleSheet, View, Text } from "react-native";
+import Svg, { Polyline as SvgPolyline, Circle, Rect, Line } from "react-native-svg";
 import { softShadow } from "../theme/shadow";
 import { Colors } from "../theme/colors";
 
@@ -28,7 +28,7 @@ function normalizeToSvg(
   if (!coords.length) return { points: "", start: null, end: null };
 
   const b = boundsFromCoords(coords);
-  const pad = 6;
+  const pad = 20; // Increased padding for labels
   const w = Math.max(1, width - pad * 2);
   const h = Math.max(1, height - pad * 2);
 
@@ -59,68 +59,114 @@ function normalizeToSvg(
   };
 }
 
+// Generate grid lines for background streets
+function generateGridLines(width: number, height: number) {
+  const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
+  const spacing = 25;
+  
+  // Vertical lines
+  for (let x = spacing; x < width; x += spacing) {
+    lines.push({ x1: x, y1: 0, x2: x, y2: height });
+  }
+  
+  // Horizontal lines
+  for (let y = spacing; y < height; y += spacing) {
+    lines.push({ x1: 0, y1: y, x2: width, y2: y });
+  }
+  
+  return lines;
+}
+
+type RouteMiniMapProps = {
+  polyline: number[][]; // [lat,lng]
+  startCity?: string;
+  endCity?: string;
+};
+
 export function RouteMiniMap({
   polyline,
-}: {
-  polyline: number[][]; // [lat,lng]
-}) {
+  startCity,
+  endCity,
+}: RouteMiniMapProps) {
   const coords = useMemo(() => {
     return (polyline || [])
       .filter((p) => Array.isArray(p) && p.length === 2)
       .map((p) => ({ latitude: p[0], longitude: p[1] }));
   }, [polyline]);
 
-  // Native MapView is used on iOS/Android. Web uses SVG fallback.
-
   const width = 420;
   const height = 150;
   const svg = useMemo(() => normalizeToSvg(coords, width, height), [coords]);
+  const gridLines = useMemo(() => generateGridLines(width, height), []);
 
-  if (Platform.OS === "web") {
-    return (
-      <View style={styles.wrap}>
-        <Svg width={width} height={height}>
-          <SvgPolyline
-            points={svg.points}
-            fill="none"
-            stroke={Colors.accent}
-            strokeWidth={3}
-            strokeLinejoin="round"
-            strokeLinecap="round"
+  const renderMap = () => (
+    <View style={styles.mapContainer}>
+      <Svg width={width} height={height}>
+        {/* Background grid (secondary streets) */}
+        {gridLines.map((line, i) => (
+          <Line
+            key={i}
+            x1={line.x1}
+            y1={line.y1}
+            x2={line.x2}
+            y2={line.y2}
+            stroke={Colors.border}
+            strokeWidth={0.5}
+            strokeOpacity={0.4}
           />
-          {svg.start ? (
-            <Circle cx={svg.start.x} cy={svg.start.y} r={5} fill={Colors.accent} />
-          ) : null}
-          {svg.end ? (
-            <Circle cx={svg.end.x} cy={svg.end.y} r={5} fill={Colors.muted} />
-          ) : null}
-        </Svg>
-        <View pointerEvents="none" style={styles.overlayBorder} />
-      </View>
-    );
-  }
+        ))}
+        
+        {/* Main route polyline */}
+        <SvgPolyline
+          points={svg.points}
+          fill="none"
+          stroke={Colors.accent}
+          strokeWidth={4}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        
+        {/* Start point marker */}
+        {svg.start && (
+          <>
+            <Circle cx={svg.start.x} cy={svg.start.y} r={8} fill={Colors.success} />
+            <Circle cx={svg.start.x} cy={svg.start.y} r={4} fill="#FFF" />
+          </>
+        )}
+        
+        {/* End point marker */}
+        {svg.end && (
+          <>
+            <Circle cx={svg.end.x} cy={svg.end.y} r={8} fill={Colors.danger} />
+            <Circle cx={svg.end.x} cy={svg.end.y} r={4} fill="#FFF" />
+          </>
+        )}
+      </Svg>
+      
+      {/* City labels */}
+      {startCity && svg.start && (
+        <View style={[styles.cityLabel, styles.startLabel, { 
+          left: Math.max(4, Math.min(svg.start.x - 30, width - 70)),
+          top: svg.start.y > height / 2 ? svg.start.y - 28 : svg.start.y + 12 
+        }]}>
+          <Text style={styles.cityLabelText} numberOfLines={1}>{startCity}</Text>
+        </View>
+      )}
+      
+      {endCity && svg.end && (
+        <View style={[styles.cityLabel, styles.endLabel, { 
+          left: Math.max(4, Math.min(svg.end.x - 30, width - 70)),
+          top: svg.end.y > height / 2 ? svg.end.y - 28 : svg.end.y + 12 
+        }]}>
+          <Text style={styles.cityLabelText} numberOfLines={1}>{endCity}</Text>
+        </View>
+      )}
+    </View>
+  );
 
-  // For native platforms, we'll use a placeholder for now to avoid import issues
   return (
     <View style={styles.wrap}>
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.card2, alignItems: 'center', justifyContent: 'center' }]}>
-        <Svg width={width} height={height}>
-          <SvgPolyline
-            points={svg.points}
-            fill="none"
-            stroke={Colors.accent}
-            strokeWidth={3}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-          {svg.start ? (
-            <Circle cx={svg.start.x} cy={svg.start.y} r={5} fill={Colors.accent} />
-          ) : null}
-          {svg.end ? (
-            <Circle cx={svg.end.x} cy={svg.end.y} r={5} fill={Colors.muted} />
-          ) : null}
-        </Svg>
-      </View>
+      {renderMap()}
       <View pointerEvents="none" style={styles.overlayBorder} />
     </View>
   );
@@ -134,10 +180,33 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card2,
     ...softShadow(10, "#000", 0.55),
   },
+  mapContainer: {
+    flex: 1,
+    position: "relative",
+  },
   overlayBorder: {
     ...StyleSheet.absoluteFillObject,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 14,
+  },
+  cityLabel: {
+    position: "absolute",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    maxWidth: 80,
+  },
+  startLabel: {
+    backgroundColor: Colors.success + "DD",
+  },
+  endLabel: {
+    backgroundColor: Colors.danger + "DD",
+  },
+  cityLabelText: {
+    color: "#FFF",
+    fontSize: 9,
+    fontWeight: "700",
+    textAlign: "center",
   },
 });
