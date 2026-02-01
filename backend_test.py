@@ -279,6 +279,21 @@ async def run_ride_session_tests():
             print(f"❌ CRITICAL: Login failed: {login_result['error']}")
             return False
         
+        # Test 2.5: Check license verification status
+        print("\n" + "=" * 50)
+        print("TEST 2.5: Check License Verification Status")
+        print("=" * 50)
+        
+        license_test_result = await tester.test_ride_start_without_license()
+        if not license_test_result["success"]:
+            print(f"❌ License verification test failed: {license_test_result['error']}")
+            return False
+        
+        if license_test_result["blocked"]:
+            print(f"ℹ️ License verification is working: {license_test_result['detail']}")
+        else:
+            print(f"ℹ️ User has verified license, ride start allowed: {license_test_result['detail']}")
+        
         # Test 3: GET /api/rides/active should return 200 and null initially
         print("\n" + "=" * 50)
         print("TEST 3: GET /api/rides/active (cleanup existing rides)")
