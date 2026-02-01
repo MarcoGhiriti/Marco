@@ -224,6 +224,35 @@ export default function EventDetailScreen() {
         event_date: eventDateTime?.toISOString(),
       }, headers);
       setShowEditModal(false);
+
+  const loadFriends = async () => {
+    if (!headers) return;
+    setLoadingFriends(true);
+    try {
+      const data = await apiGet<UserSearchOut[]>("/api/friends", headers);
+      setFriends(data);
+    } catch (e) {
+      console.error("Failed to load friends:", e);
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
+
+  const handleOpenInvite = () => {
+    loadFriends();
+    setShowInviteModal(true);
+  };
+
+  const handleInviteToEvent = async (friendId: string) => {
+    if (!headers || !event) return;
+    try {
+      await apiPost(`/api/events/${event.id}/invite`, { user_id: friendId }, headers);
+      Alert.alert("Succes", "Invitația a fost trimisă!");
+    } catch (e) {
+      Alert.alert("Eroare", e instanceof Error ? e.message : "Nu am putut trimite invitația");
+    }
+  };
+
       await loadEvent();
       Alert.alert("Success", "Event updated successfully!");
     } catch (e) {
