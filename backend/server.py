@@ -2064,6 +2064,37 @@ async def route_leave(route_id: str, current_user: dict = Depends(get_current_us
     return {"ok": True}
 
 
+@api_router.post("/routes/{route_id}/invite")
+async def route_invite(route_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    """Invite a user to a route (sends notification)."""
+    uid = current_user["id"]
+    inviter_username = current_user.get("username", "Someone")
+    
+    route = await db.routes.find_one({"_id": _as_object_id(route_id)})
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+    
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
+    # Check if target user exists
+    target_user = await db.users.find_one({"_id": _as_object_id(user_id)})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    route_title = route.get("title", "a route")
+    await create_notification(
+        user_id=user_id,
+        notif_type="route_invite",
+        title="Route Invitation",
+        message=f"{inviter_username} invited you to join '{route_title}'",
+        data={"route_id": route_id, "route_title": route_title, "inviter_id": uid}
+    )
+    
+    return {"ok": True}
+
+
 @api_router.get("/routes/my", response_model=list[RouteOut])
 async def get_my_routes(current_user: dict = Depends(get_current_user)):
     """Get routes created by the current user."""
