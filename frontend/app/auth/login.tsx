@@ -18,6 +18,7 @@ import { useAuthStore } from "../../src/state/authStore";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { login } = useAuthStore();
 
   const [email, setEmail] = useState("user1@example.com");
