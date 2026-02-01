@@ -27,6 +27,10 @@ type LicenseStatus = {
   license_verified: boolean;
 };
 
+type UnreadCountResponse = {
+  count: number;
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
