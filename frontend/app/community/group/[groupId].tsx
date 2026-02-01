@@ -518,6 +518,116 @@ export default function GroupChatScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Edit Group Modal */}
+      <Modal
+        visible={showEditGroupModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowEditGroupModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.editModalOverlay}
+        >
+          <View style={styles.editModalContent}>
+            <View style={styles.editModalHeader}>
+              <Text style={styles.editModalTitle}>Edit Group</Text>
+              <Pressable onPress={() => setShowEditGroupModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.text} />
+              </Pressable>
+            </View>
+
+            <View style={styles.editModalBody}>
+              {/* Group Photo */}
+              <Pressable onPress={handlePickGroupPhoto} style={styles.photoPickerBtn}>
+                {editGroupPhoto ? (
+                  <Image source={{ uri: editGroupPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Ionicons name="camera" size={32} color={Colors.muted} />
+                    <Text style={styles.photoPlaceholderText}>Add Photo</Text>
+                  </View>
+                )}
+              </Pressable>
+
+              {/* Group Name */}
+              <Text style={styles.inputLabel}>Group Name</Text>
+              <TextInput
+                style={styles.editInput}
+                value={editGroupName}
+                onChangeText={setEditGroupName}
+                placeholder="Enter group name"
+                placeholderTextColor={Colors.muted}
+              />
+
+              <Pressable
+                onPress={handleSaveGroupEdit}
+                disabled={editSaving || !editGroupName.trim()}
+                style={[styles.saveBtn, (editSaving || !editGroupName.trim()) && styles.saveBtnDisabled]}
+              >
+                {editSaving ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save Changes</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Invite Friends Modal */}
+      <Modal
+        visible={showInviteModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowInviteModal(false)}
+      >
+        <View style={styles.inviteModalOverlay}>
+          <View style={styles.inviteModalContent}>
+            <View style={styles.editModalHeader}>
+              <Text style={styles.editModalTitle}>Invite Friends</Text>
+              <Pressable onPress={() => setShowInviteModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.text} />
+              </Pressable>
+            </View>
+
+            <ScrollView style={styles.inviteList}>
+              {availableFriends.length === 0 ? (
+                <View style={styles.emptyInvite}>
+                  <Ionicons name="people-outline" size={48} color={Colors.muted} />
+                  <Text style={styles.emptyInviteText}>
+                    All your friends are already in this group
+                  </Text>
+                </View>
+              ) : (
+                availableFriends.map((f) => (
+                  <View key={f.id} style={styles.inviteFriendRow}>
+                    <View style={styles.memberInfo}>
+                      <View style={styles.memberAvatar}>
+                        {f.avatar ? (
+                          <Image
+                            source={{ uri: f.avatar.startsWith("data:") ? f.avatar : `data:image/jpeg;base64,${f.avatar}` }}
+                            style={styles.memberAvatarImg}
+                          />
+                        ) : (
+                          <Ionicons name="person" size={18} color={Colors.muted} />
+                        )}
+                      </View>
+                      <Text style={styles.memberName}>{f.username}</Text>
+                    </View>
+                    <Pressable onPress={() => handleInviteToGroup(f.id)} style={styles.inviteBtn}>
+                      <Ionicons name="paper-plane" size={16} color="#FFF" />
+                      <Text style={styles.inviteBtnText}>Invite</Text>
+                    </Pressable>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
