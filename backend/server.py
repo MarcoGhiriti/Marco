@@ -1735,14 +1735,23 @@ async def group_messages(group_id: str, limit: int = Query(default=50, ge=1, le=
     thread_id = f"group:{group_id}"
     cursor = db.messages.find({"thread_id": thread_id}).sort("created_at", -1).limit(limit)
     docs = await cursor.to_list(length=limit)
+    
+    # Get all unique user IDs to fetch usernames
+    user_ids = list(set(m.get("from_user_id") for m in docs if m.get("from_user_id")))
+    users_cursor = db.users.find({"_id": {"$in": [_as_object_id(uid) for uid in user_ids]}})
+    users = await users_cursor.to_list(length=len(user_ids))
+    user_map = {oid_str(u.get("_id")): u.get("username", "Unknown") for u in users}
+    
     out: list[MessageOut] = []
     for m in reversed(docs):
+        from_user_id = m.get("from_user_id")
         out.append(
             MessageOut(
                 id=oid_str(m.get("_id")),
                 thread_id=m.get("thread_id"),
                 kind=m.get("kind"),
-                from_user_id=m.get("from_user_id"),
+                from_user_id=from_user_id,
+                from_username=user_map.get(from_user_id, "Unknown"),
                 to_user_id=m.get("to_user_id"),
                 group_id=m.get("group_id"),
                 text=m.get("text", ""),
