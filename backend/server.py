@@ -1764,6 +1764,7 @@ async def group_messages(group_id: str, limit: int = Query(default=50, ge=1, le=
 @api_router.post("/groups/{group_id}/messages", response_model=MessageOut)
 async def group_send_rest(group_id: str, payload: MessageCreate, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
+    username = current_user.get("username", "Unknown")
     if not await is_group_member(group_id, uid):
         raise HTTPException(status_code=403, detail="Not a group member")
 
@@ -1773,6 +1774,7 @@ async def group_send_rest(group_id: str, payload: MessageCreate, current_user: d
         "kind": "group",
         "thread_id": thread_id,
         "from_user_id": uid,
+        "from_username": username,
         "to_user_id": None,
         "group_id": group_id,
         "text": payload.text.strip(),
@@ -1784,6 +1786,7 @@ async def group_send_rest(group_id: str, payload: MessageCreate, current_user: d
         thread_id=thread_id,
         kind="group",
         from_user_id=uid,
+        from_username=username,
         to_user_id=None,
         group_id=group_id,
         text=doc["text"],
