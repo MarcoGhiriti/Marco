@@ -2190,6 +2190,7 @@ async def list_routes(
                 start_point=r.get("start_point"),
                 end_point=r.get("end_point"),
                 waypoints=waypoints,
+                min_engine_cc=r.get("min_engine_cc"),
                 distance_km=float(r.get("distance_km", 0.0)),
                 duration_min=int(r.get("duration_min", 0)),
                 stops_count=int(r.get("stops_count", 0)),
