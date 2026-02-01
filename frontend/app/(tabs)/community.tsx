@@ -269,6 +269,46 @@ function GroupsTab() {
         setLoading(true);
         await loadGroups();
       } catch (e) {
+
+  const searchGroups = useCallback(async () => {
+    if (!headers) return;
+    const term = groupQ.trim();
+    if (!term) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      setError(null);
+      setSearching(true);
+      const data = await apiGet<GroupOut[]>(
+        `/api/groups/search?q=${encodeURIComponent(term)}&limit=20`,
+        headers
+      );
+      setSearchResults(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Search failed");
+    } finally {
+      setSearching(false);
+    }
+  }, [headers, groupQ]);
+
+  const joinPublicGroup = useCallback(
+    async (groupId: string) => {
+      if (!headers) return;
+      try {
+        setJoiningId(groupId);
+        await apiPost(`/api/groups/${groupId}/join`, {}, headers);
+        await loadGroups();
+        // keep results but reflect join by refreshed groups
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Join failed");
+      } finally {
+        setJoiningId(null);
+      }
+    },
+    [headers, loadGroups]
+  );
+
         setError(e instanceof Error ? e.message : "Failed to load groups");
       } finally {
         setLoading(false);
