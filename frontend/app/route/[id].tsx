@@ -323,6 +323,85 @@ export default function RouteDetailScreen() {
           </View>
         </View>
 
+
+        {/* Date/Time */}
+        {route.start_date ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Date & Time</Text>
+            <View style={styles.kvRow}>
+              <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
+              <Text style={styles.kvValue}>
+                {new Date(route.start_date).toLocaleString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Cities (Start / Stops / End) */}
+        {(route.start_city || route.end_city || (route.waypoints && route.waypoints.length)) ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Route locations</Text>
+
+            {route.start_city ? (
+              <View style={styles.kvRow}>
+                <Ionicons name="flag-outline" size={18} color={Colors.success} />
+                <Text style={styles.kvLabel}>Start</Text>
+                <Text style={styles.kvValue}>{route.start_city}</Text>
+              </View>
+            ) : null}
+
+            {(route.waypoints || []).map((wp, idx) => {
+              const city = wp.city || "";
+              const label = wp.name || city || `Stop ${idx + 1}`;
+              const subtitle = city && wp.name && wp.name !== city ? city : "";
+              return (
+                <View key={`${idx}-${wp.lat}-${wp.lng}`} style={styles.stopRow}>
+                  <View style={styles.stopLeft}>
+                    <View style={styles.stopBadge}>
+                      <Text style={styles.stopBadgeText}>{idx + 1}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.stopTitle} numberOfLines={1}>
+                        {label}
+                      </Text>
+                      {subtitle ? (
+                        <Text style={styles.stopSubtitle} numberOfLines={1}>
+                          {subtitle}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+
+            {route.end_city ? (
+              <View style={styles.kvRow}>
+                <Ionicons name="flag" size={18} color={Colors.danger} />
+                <Text style={styles.kvLabel}>Finish</Text>
+                <Text style={styles.kvValue}>{route.end_city}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Min CC */}
+        {route.min_engine_cc ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Requirements</Text>
+            <View style={styles.kvRow}>
+              <Ionicons name="speedometer-outline" size={18} color={Colors.accent} />
+              <Text style={styles.kvValue}>Minimum {route.min_engine_cc}cc</Text>
+            </View>
+          </View>
+        ) : null}
+
         {/* Stats Cards */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
