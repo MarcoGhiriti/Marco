@@ -2228,6 +2228,25 @@ async def get_my_events(current_user: dict = Depends(get_current_user)):
 STORY_EXPIRATION_SECONDS = 24 * 60 * 60  # 24 hours
 
 
+async def ensure_story_views_indexes():
+    """Indexes for story views at scale."""
+    try:
+        await db.story_views.create_index(
+            [("story_id", 1), ("viewer_id", 1)],
+            unique=True,
+            name="story_view_unique_idx",
+            background=True,
+        )
+        await db.story_views.create_index(
+            [("story_id", 1), ("viewed_at", -1)],
+            name="story_view_story_idx",
+            background=True,
+        )
+    except Exception:
+        pass
+
+
+
 async def ensure_stories_ttl_index():
     """Create TTL index on stories collection for automatic 24h expiration."""
     try:
