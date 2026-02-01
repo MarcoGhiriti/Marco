@@ -18,7 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
-import type { RouteOut, RideSessionOut } from "../../src/types/api";
+import type { RouteOut, RideSessionOut, EventOut } from "../../src/types/api";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 
 type Stats = {
