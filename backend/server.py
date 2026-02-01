@@ -1578,12 +1578,13 @@ async def groups_search(
     current_user: dict = Depends(get_current_user),
 ):
     """Search public groups by name (case-insensitive)."""
+    await ensure_groups_search_indexes()
+
     uid = current_user["id"]
     query: dict[str, Any] = {"is_private": False}
 
     term = (q or "").strip()
     if term:
-        # prefix-friendly search
         query["name"] = {"$regex": term, "$options": "i"}
 
     cursor = (
@@ -1612,7 +1613,7 @@ async def groups_search(
             )
         )
 
-    # Optional: put groups you're already in to the end
+    # Put groups you're already in to the end
     out.sort(key=lambda x: (uid in (x.members or []),), reverse=False)
     return out
 
