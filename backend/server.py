@@ -2226,6 +2226,26 @@ async def ensure_stories_ttl_index():
         pass
 
 
+
+async def ensure_groups_search_indexes():
+    """Indexes to keep group search fast at scale."""
+    try:
+        # For search: filter by is_private + sort by created_at
+        await db.groups.create_index(
+            [("is_private", 1), ("created_at", -1)],
+            name="groups_public_created_idx",
+            background=True,
+        )
+        # For regex search on name, an index on name helps some query patterns.
+        await db.groups.create_index(
+            [("name", 1)],
+            name="groups_name_idx",
+            background=True,
+        )
+    except Exception:
+        pass
+
+
 @api_router.post("/stories", response_model=StoryOut)
 async def create_story(payload: StoryCreate, current_user: dict = Depends(get_current_user)):
     """Create a new story (24h expiration)."""
