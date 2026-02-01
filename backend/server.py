@@ -1987,6 +1987,34 @@ async def list_events(
     return result
 
 
+@api_router.get("/events/my", response_model=list[EventOut])
+async def get_my_events(current_user: dict = Depends(get_current_user)):
+    """Get events created by the current user."""
+    uid = current_user["id"]
+    cursor = db.events.find({"created_by": uid}).sort("created_at", -1)
+    events = await cursor.to_list(length=50)
+    result: list[EventOut] = []
+    for e in events:
+        participants = e.get("participants") or []
+        result.append(
+            EventOut(
+                id=_oid_str(e.get("_id")),
+                title=e.get("title", ""),
+                description=e.get("description", ""),
+                start_point=e.get("start_point", [0, 0]),
+                location_name=e.get("location_name", ""),
+                start_time=e.get("start_time") or datetime.utcnow(),
+                poster_base64=e.get("poster_base64"),
+                associated_route_id=e.get("associated_route_id"),
+                participants_count=len(participants),
+                is_joined=uid in participants,
+                created_by=e.get("created_by", ""),
+                created_at=e.get("created_at") or datetime.utcnow(),
+            )
+        )
+    return result
+
+
 
 
 # -----------------
