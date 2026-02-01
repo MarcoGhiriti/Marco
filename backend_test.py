@@ -251,6 +251,186 @@ class MotoGoTester:
             print(f"❌ Failed to cancel ride: {response.text}")
             return {"success": False, "error": response.text}
 
+async def test_route_waypoints_cities(tester: MotoGoTester) -> bool:
+    """Test Route waypoints/cities functionality as specified in Romanian review request."""
+    print("=" * 60)
+    print("🛣️ ROUTE WAYPOINTS/CITIES TESTING")
+    print("=" * 60)
+    
+    try:
+        # Step 1: Login user1@example.com / Password123
+        print("\n" + "=" * 50)
+        print("TEST 1: Login user1@example.com / Password123")
+        print("=" * 50)
+        
+        login_result = await tester.login("user1@example.com", "Password123")
+        if not login_result["success"]:
+            print(f"❌ CRITICAL: Login failed: {login_result['error']}")
+            return False
+        
+        # Step 2: Create route with waypoints
+        print("\n" + "=" * 50)
+        print("TEST 2: Create Route with Waypoints")
+        print("=" * 50)
+        
+        route_data = {
+            "title": f"Test Route Waypoints {random.randint(1000, 9999)}",
+            "description": "Rută de test pentru waypoints și cities",
+            "polyline": [
+                [44.4268, 26.1025],  # Bucharest center
+                [44.4378, 26.1125],  # Intermediate point
+                [44.4478, 26.1225]   # End point
+            ],
+            "start_point": [44.4268, 26.1025],
+            "end_point": [44.4478, 26.1225],
+            "waypoints": [
+                {
+                    "name": "Piața Universității",
+                    "address": "Piața Universității, București",
+                    "lat": 44.4355,
+                    "lng": 26.1027
+                },
+                {
+                    "name": "Parcul Herăstrău", 
+                    "address": "Șoseaua Nordului, București",
+                    "lat": 44.4723,
+                    "lng": 26.0824
+                }
+            ],
+            "start_date": (datetime.utcnow() + timedelta(days=7)).isoformat(),
+            "difficulty": "medium",
+            "participants_min": 2,
+            "participants_max": 8
+        }
+        
+        response = await tester.client.post(
+            f"{BACKEND_URL}/routes",
+            json=route_data,
+            headers=tester._auth_headers()
+        )
+        
+        print(f"POST /api/routes response: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"❌ CRITICAL: Route creation failed: {response.text}")
+            return False
+        
+        created_route = response.json()
+        route_id = created_route.get("id")
+        print(f"✅ Route created with ID: {route_id}")
+        
+        # Step 3: Verify response includes required fields
+        print("\n" + "=" * 50)
+        print("TEST 3: Verify Route Response Fields")
+        print("=" * 50)
+        
+        required_fields = ["start_point", "end_point", "waypoints", "start_city", "end_city"]
+        missing_fields = []
+        
+        for field in required_fields:
+            if field not in created_route:
+                missing_fields.append(field)
+        
+        if missing_fields:
+            print(f"❌ CRITICAL: Missing required fields in route response: {missing_fields}")
+            return False
+        
+        print("✅ All required fields present in route response")
+        
+        # Verify waypoints structure
+        waypoints = created_route.get("waypoints", [])
+        print(f"📍 Route has {len(waypoints)} waypoints:")
+        for i, wp in enumerate(waypoints):
+            city = wp.get("city")
+            city_status = f"city: {city}" if city else "city: null (acceptable per requirements)"
+            print(f"   Waypoint {i+1}: {wp.get('name', 'No name')} - {city_status}")
+            
+            # Verify waypoint has required fields
+            wp_required = ["name", "address", "lat", "lng"]
+            for wp_field in wp_required:
+                if wp_field not in wp:
+                    print(f"❌ CRITICAL: Waypoint missing field: {wp_field}")
+                    return False
+        
+        # Check start/end cities
+        start_city = created_route.get("start_city")
+        end_city = created_route.get("end_city")
+        print(f"🏙️  Start city: {start_city}")
+        print(f"🏙️  End city: {end_city}")
+        
+        # Step 4: GET /api/routes and verify same fields
+        print("\n" + "=" * 50)
+        print("TEST 4: GET /api/routes - Verify Same Fields")
+        print("=" * 50)
+        
+        routes_response = await tester.client.get(
+            f"{BACKEND_URL}/routes",
+            headers=tester._auth_headers()
+        )
+        
+        print(f"GET /api/routes response: {routes_response.status_code}")
+        
+        if routes_response.status_code != 200:
+            print(f"❌ CRITICAL: Get routes failed: {routes_response.text}")
+            return False
+        
+        routes_list = routes_response.json()
+        print(f"✅ Retrieved {len(routes_list)} routes")
+        
+        # Find our created route in the list
+        target_route = None
+        for route in routes_list:
+            if route.get("id") == route_id:
+                target_route = route
+                break
+        
+        if not target_route:
+            print(f"❌ CRITICAL: Route {route_id} not found in routes list")
+            return False
+        
+        print(f"✅ Route found in list")
+        
+        # Verify required fields in list response
+        missing_fields_list = []
+        for field in required_fields:
+            if field not in target_route:
+                missing_fields_list.append(field)
+        
+        if missing_fields_list:
+            print(f"❌ CRITICAL: Missing required fields in routes list: {missing_fields_list}")
+            return False
+        
+        print("✅ All required fields present in routes list")
+        
+        # Check waypoints in list
+        list_waypoints = target_route.get("waypoints", [])
+        print(f"📍 Route in list has {len(list_waypoints)} waypoints:")
+        for i, wp in enumerate(list_waypoints):
+            city = wp.get("city")
+            city_status = f"city: {city}" if city else "city: null (acceptable)"
+            print(f"   Waypoint {i+1}: {wp.get('name', 'No name')} - {city_status}")
+        
+        print("\n" + "=" * 60)
+        print("🎉 ALL ROUTE WAYPOINTS/CITIES TESTS PASSED!")
+        print("=" * 60)
+        
+        # Summary
+        print(f"\n📋 SUMMARY:")
+        print(f"✅ Login successful")
+        print(f"✅ Route created with waypoints")
+        print(f"✅ Response includes: start_point, end_point, waypoints[], start_city, end_city")
+        print(f"✅ GET /api/routes returns same fields")
+        print(f"✅ Waypoints structure correct (cities can be null as per requirements)")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR during waypoints testing: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 async def run_ride_session_tests():
     """Run the complete ride session test suite as specified in the review request."""
     tester = MotoGoTester()
