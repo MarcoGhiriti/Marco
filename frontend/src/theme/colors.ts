@@ -12,4 +12,5 @@ export const Colors = {
 
   danger: "#FF5A73",
   success: "#39FF88",
+  warning: "#F5C542",
 };
