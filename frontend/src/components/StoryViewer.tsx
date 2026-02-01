@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   },
   media: {
     width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.7,
+    height: "100%",
   },
   touchLeft: {
     position: "absolute",
