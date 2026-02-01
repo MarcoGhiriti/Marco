@@ -252,6 +252,8 @@ export default function CreateRouteScreen() {
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [minEngineCc, setMinEngineCc] = useState("");
+
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("");
