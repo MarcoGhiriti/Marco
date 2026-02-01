@@ -1104,6 +1104,34 @@ async def verify_license(user_id: str, verified: bool = True, current_user: dict
     return {"ok": True}
 
 
+# Subscription endpoints
+@api_router.get("/me/subscription")
+async def get_subscription_status(current_user: dict = Depends(get_current_user)):
+    """Get current user's subscription status."""
+    uid = current_user["id"]
+    user = await db.users.find_one({"_id": _as_object_id(uid)})
+    return {
+        "has_subscription": user.get("has_subscription", False) if user else False,
+        "subscription_type": user.get("subscription_type", "free") if user else "free",
+        "max_group_members": 1000 if user and user.get("has_subscription") else 100,
+    }
+
+
+@api_router.post("/me/subscription/activate")
+async def activate_subscription(current_user: dict = Depends(get_current_user)):
+    """Activate premium subscription (for testing - in production would require payment)."""
+    uid = current_user["id"]
+    await db.users.update_one(
+        {"_id": _as_object_id(uid)},
+        {"$set": {
+            "has_subscription": True,
+            "subscription_type": "premium",
+            "subscription_activated_at": datetime.utcnow(),
+        }}
+    )
+    return {"ok": True, "message": "Premium subscription activated! You can now have up to 1000 members per group."}
+
+
 # -----------------
 # Notifications Endpoints
 # -----------------
