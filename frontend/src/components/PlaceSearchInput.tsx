@@ -52,7 +52,7 @@ export function PlaceSearchInput({
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<string | null>(value || null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (value && value !== query) {
