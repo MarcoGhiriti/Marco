@@ -241,9 +241,19 @@ export default function HomeScreen() {
             <View style={styles.iconBtn}>
               <Ionicons name="search-outline" size={20} color={Colors.text} />
             </View>
-            <View style={styles.iconBtn}>
+            <Pressable 
+              onPress={() => router.push("/notifications")} 
+              style={styles.iconBtn}
+            >
               <Ionicons name="notifications-outline" size={20} color={Colors.text} />
-            </View>
+              {unreadNotifCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>
+                    {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
           </View>
         </View>
 
