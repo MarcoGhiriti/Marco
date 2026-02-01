@@ -222,6 +222,15 @@ export default function EventDetailScreen() {
       }, headers);
       setShowEditModal(false);
 
+      await loadEvent();
+      Alert.alert("Success", "Event updated successfully!");
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Could not update event");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const loadFriends = async () => {
     if (!headers) return;
     setLoadingFriends(true);
