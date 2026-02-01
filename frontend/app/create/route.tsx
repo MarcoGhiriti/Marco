@@ -254,6 +254,13 @@ export default function CreateRouteScreen() {
   const [description, setDescription] = useState("");
   const [minEngineCc, setMinEngineCc] = useState("");
 
+  useEffect(() => {
+    // ensure numeric
+    if (minEngineCc && /[^0-9]/.test(minEngineCc)) {
+      setMinEngineCc(minEngineCc.replace(/[^0-9]/g, ""));
+    }
+  }, [minEngineCc]);
+
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("");
