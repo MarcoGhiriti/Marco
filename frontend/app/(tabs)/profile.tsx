@@ -1063,6 +1063,87 @@ const styles = StyleSheet.create({
   rowSubtitle: { marginTop: 2, color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
   lockedText: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
 
+  // Tab Switcher Styles
+  tabSwitcher: {
+    flexDirection: "row",
+    backgroundColor: Colors.card,
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 12,
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  tabBtnActive: {
+    backgroundColor: Colors.bg,
+  },
+  tabBtnText: {
+    color: Colors.muted,
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  tabBtnTextActive: {
+    color: Colors.text,
+    fontFamily: "Inter_700Bold",
+  },
+  createContentBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  createContentBtnText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  myEventCard: {
+    flexDirection: "row",
+    backgroundColor: Colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: "hidden",
+  },
+  eventIconBox: {
+    width: 70,
+    backgroundColor: Colors.card2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  myEventLocation: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    marginTop: 2,
+  },
+  editRouteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: Colors.card2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  editRouteBtnText: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+
   // My Routes Styles
   sectionHeader: {
     flexDirection: "row",
