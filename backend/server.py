@@ -1185,6 +1185,7 @@ async def friends_request(payload: FriendRequestCreate, current_user: dict = Dep
         raise HTTPException(status_code=404, detail="User not found")
 
     from_id = current_user["id"]
+    from_username = current_user.get("username", "Someone")
     to_id = oid_str(target.get("_id"))
 
     if to_id == from_id:
@@ -1196,6 +1197,16 @@ async def friends_request(payload: FriendRequestCreate, current_user: dict = Dep
 
     await db.users.update_one({"_id": _as_object_id(to_id)}, {"$addToSet": {"friend_requests_in": from_id}})
     await db.users.update_one({"_id": _as_object_id(from_id)}, {"$addToSet": {"friend_requests_out": to_id}})
+    
+    # Create notification for the recipient
+    await create_notification(
+        user_id=to_id,
+        notif_type="friend_request",
+        title="New Friend Request",
+        message=f"{from_username} wants to be your friend",
+        data={"from_user_id": from_id, "from_username": from_username}
+    )
+    
     return {"ok": True}
 
 
@@ -1203,6 +1214,7 @@ async def friends_request(payload: FriendRequestCreate, current_user: dict = Dep
 async def friends_accept(payload: FriendAccept, current_user: dict = Depends(get_current_user)):
     from_id = payload.from_user_id
     to_id = current_user["id"]
+    to_username = current_user.get("username", "Someone")
 
     # must exist in incoming
     if from_id not in (current_user.get("friend_requests_in") or []):
@@ -1223,6 +1235,16 @@ async def friends_accept(payload: FriendAccept, current_user: dict = Depends(get
             "$pull": {"friend_requests_out": to_id},
         },
     )
+    
+    # Create notification for the person who sent the request
+    await create_notification(
+        user_id=from_id,
+        notif_type="friend_accepted",
+        title="Friend Request Accepted",
+        message=f"{to_username} accepted your friend request",
+        data={"user_id": to_id, "username": to_username}
+    )
+    
     return {"ok": True}
 
 
