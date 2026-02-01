@@ -13,7 +13,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Video, ResizeMode } from "expo-av";
 import { Colors } from "../theme/colors";
-import type { StoryOwner } from "../types/api";
+import type { StoryOwner, StoryViewsOut } from "../types/api";
+import { apiGet, apiPost } from "../lib/api";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const STORY_DURATION = 5000; // 5 seconds per story
