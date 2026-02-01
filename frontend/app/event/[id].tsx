@@ -52,6 +52,8 @@ export default function EventDetailScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
   const headers = useMemo(() => {
