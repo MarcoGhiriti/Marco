@@ -13,6 +13,8 @@ import {
   Modal,
   TextInput,
   KeyboardAvoidingView,
+  Image,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -21,6 +23,12 @@ import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut } from "../../src/types/api";
+
+type Friend = {
+  id: string;
+  username: string;
+  avatar?: string;
+};
 
 export default function RouteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +46,11 @@ export default function RouteDetailScreen() {
   const [editParticipantsMin, setEditParticipantsMin] = useState("1");
   const [editParticipantsMax, setEditParticipantsMax] = useState("10");
   const [editSaving, setEditSaving] = useState(false);
+  
+  // Invite modal
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
 
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
