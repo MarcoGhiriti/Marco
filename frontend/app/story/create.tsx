@@ -178,13 +178,7 @@ export default function CreateStoryScreen() {
                 style={styles.previewImage}
                 resizeMode="cover"
               />
-              <Pressable
-                onPress={() => setMediaBase64(null)}
-                style={styles.removeBtn}
-              >
-                <Ionicons name="trash-outline" size={20} color={Colors.danger} />
-              </Pressable>
-            </View>
+
               {/* Story frame preview overlay */}
               <View pointerEvents="none" style={styles.frameOverlay}>
                 <View style={styles.frameBorder} />
@@ -192,6 +186,13 @@ export default function CreateStoryScreen() {
                 <View style={styles.frameBottomFade} />
               </View>
 
+              <Pressable
+                onPress={() => setMediaBase64(null)}
+                style={styles.removeBtn}
+              >
+                <Ionicons name="trash-outline" size={20} color={Colors.danger} />
+              </Pressable>
+            </View>
           ) : (
             <View style={styles.placeholder}>
               <Ionicons
