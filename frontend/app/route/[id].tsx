@@ -430,63 +430,18 @@ export default function RouteDetailScreen() {
         </Pressable>
       </View>
 
-      {/* Invite Friends Modal */}
-      <Modal
+      <InviteFriendsModal
         visible={showInviteModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowInviteModal(false)}
-      >
-        <View style={styles.inviteModalOverlay}>
-          <View style={styles.inviteModalContent}>
-            <View style={styles.inviteModalHeader}>
-              <Text style={styles.inviteModalTitle}>Invite Friends</Text>
-              <Pressable onPress={() => setShowInviteModal(false)}>
-                <Ionicons name="close" size={24} color={Colors.text} />
-              </Pressable>
-            </View>
-            
-            {loadingFriends ? (
-              <View style={styles.inviteLoading}>
-                <ActivityIndicator color={Colors.accent} />
-              </View>
-            ) : friends.length === 0 ? (
-              <View style={styles.inviteEmpty}>
-                <Ionicons name="people-outline" size={48} color={Colors.muted} />
-                <Text style={styles.inviteEmptyText}>No friends to invite</Text>
-                <Text style={styles.inviteEmptySub}>Add friends to invite them to this route</Text>
-              </View>
-            ) : (
-              <ScrollView style={styles.inviteList}>
-                {friends.map((friend) => (
-                  <View key={friend.id} style={styles.inviteFriendRow}>
-                    <View style={styles.inviteFriendInfo}>
-                      {friend.avatar ? (
-                        <Image 
-                          source={{ uri: friend.avatar.startsWith("data:") ? friend.avatar : `data:image/jpeg;base64,${friend.avatar}` }} 
-                          style={styles.inviteFriendAvatar} 
-                        />
-                      ) : (
-                        <View style={styles.inviteFriendAvatarPlaceholder}>
-                          <Ionicons name="person" size={18} color={Colors.muted} />
-                        </View>
-                      )}
-                      <Text style={styles.inviteFriendName}>{friend.username}</Text>
-                    </View>
-                    <Pressable 
-                      onPress={() => handleInviteToRoute(friend.id)} 
-                      style={styles.inviteSendBtn}
-                    >
-                      <Ionicons name="paper-plane" size={16} color="#FFF" />
-                      <Text style={styles.inviteSendBtnText}>Invite</Text>
-                    </Pressable>
-                  </View>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
+        title="Invită prieteni la traseu"
+        friends={friends}
+        loading={loadingFriends}
+        onClose={() => setShowInviteModal(false)}
+        onInvite={async (friendId) => {
+          await handleInviteToRoute(friendId);
+        }}
+        emptyTitle="Nu ai prieteni de invitat"
+        emptySubtitle="Adaugă prieteni ca să îi poți invita la traseu."
+      />
 
       {/* Edit Modal */}
       <Modal
