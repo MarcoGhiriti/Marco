@@ -67,7 +67,7 @@ export default function LoginScreen() {
               style={styles.input}
             />
 
-            <Text style={[styles.label, { marginTop: 12 }]}>Password</Text>
+            <Text style={[styles.label, { marginTop: 12 }]}>{t("auth.password")}</Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
