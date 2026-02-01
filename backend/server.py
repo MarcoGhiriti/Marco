@@ -3166,15 +3166,24 @@ async def get_leaderboard(limit: int = Query(default=50, ge=1, le=100)):
         
         # Calculate level
         level = 1
-        if km_total >= 100: level = 2
-        if km_total >= 500: level = 3
-        if km_total >= 1000: level = 4
-        if km_total >= 2500: level = 5
-        if km_total >= 5000: level = 6
-        if km_total >= 10000: level = 7
-        if km_total >= 25000: level = 8
-        if km_total >= 50000: level = 9
-        if km_total >= 100000: level = 10
+        if km_total >= 100:
+            level = 2
+        if km_total >= 500:
+            level = 3
+        if km_total >= 1000:
+            level = 4
+        if km_total >= 2500:
+            level = 5
+        if km_total >= 5000:
+            level = 6
+        if km_total >= 10000:
+            level = 7
+        if km_total >= 25000:
+            level = 8
+        if km_total >= 50000:
+            level = 9
+        if km_total >= 100000:
+            level = 10
         
         # Count badges
         badges_count = await db.badges.count_documents({"user_id": user_id})
