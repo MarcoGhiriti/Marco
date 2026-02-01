@@ -371,7 +371,8 @@ export default function CreateRouteScreen() {
         },
         headers
       );
-      router.back();
+      // Navigate to Profile so user can immediately see it in "My Routes"
+      router.replace("/(tabs)/profile");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error creating route");
     } finally {
