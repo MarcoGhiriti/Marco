@@ -1569,6 +1569,54 @@ async def groups_list(current_user: dict = Depends(get_current_user)):
     return out
 
 
+
+@api_router.get("/groups/search", response_model=list[GroupOut])
+async def groups_search(
+    q: str = Query(default="", min_length=0, max_length=60),
+    limit: int = Query(default=20, ge=1, le=50),
+    skip: int = Query(default=0, ge=0, le=5000),
+    current_user: dict = Depends(get_current_user),
+):
+    """Search public groups by name (case-insensitive)."""
+    uid = current_user["id"]
+    query: dict[str, Any] = {"is_private": False}
+
+    term = (q or "").strip()
+    if term:
+        # prefix-friendly search
+        query["name"] = {"$regex": term, "$options": "i"}
+
+    cursor = (
+        db.groups.find(query)
+        .sort("created_at", -1)
+        .skip(skip)
+        .limit(limit)
+    )
+    docs = await cursor.to_list(length=limit)
+
+    out: list[GroupOut] = []
+    for g in docs:
+        members = g.get("members") or []
+        out.append(
+            GroupOut(
+                id=oid_str(g.get("_id")),
+                name=g.get("name", ""),
+                description=g.get("description", ""),
+                is_private=bool(g.get("is_private", False)),
+                owner_id=g.get("owner_id") or g.get("created_by", ""),
+                admins=g.get("admins") or [],
+                members_count=len(members),
+                members=members,
+                photo_base64=g.get("photo_base64"),
+                created_at=g.get("created_at") or datetime.utcnow(),
+            )
+        )
+
+    # Optional: put groups you're already in to the end
+    out.sort(key=lambda x: (uid in (x.members or []),), reverse=False)
+    return out
+
+
 @api_router.post("/groups/{group_id}/join")
 async def groups_join(group_id: str, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
