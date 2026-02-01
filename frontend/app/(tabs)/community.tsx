@@ -551,7 +551,7 @@ function GroupsTab() {
                 </View>
                 <View style={styles.groupInfo}>
                   <Text style={styles.groupName}>{g.name}</Text>
-                  <Text style={styles.groupMembers}>{membersCount} members</Text>
+                  <Text style={styles.groupMembers}>{membersCount} membri</Text>
                 </View>
                 {isAdmin && (
                   <View style={styles.adminBadge}>
