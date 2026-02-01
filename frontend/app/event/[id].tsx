@@ -994,7 +994,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Inter_700Bold",
   },
-  dateTimeRow: {
+  editDateTimeRow: {
     flexDirection: "row",
     gap: 12,
     marginBottom: 16,
