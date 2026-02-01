@@ -167,7 +167,7 @@ export default function RouteDetailScreen() {
     if (!headers) return;
     setLoadingFriends(true);
     try {
-      const data = await apiGet<Friend[]>("/api/friends", headers);
+      const data = await apiGet<UserSearchOut[]>("/api/friends", headers);
       setFriends(data);
     } catch (e) {
       console.error("Failed to load friends:", e);
