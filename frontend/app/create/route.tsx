@@ -369,6 +369,15 @@ export default function CreateRouteScreen() {
           polyline: routeInfo.polyline,
           difficulty,
           stops_count: waypoints.length,
+          start_point: startPoint ? [startPoint.lat, startPoint.lng] : null,
+          end_point: endPoint ? [endPoint.lat, endPoint.lng] : null,
+          waypoints: waypoints.map((w) => ({
+            name: w.name,
+            address: w.address,
+            lat: w.lat,
+            lng: w.lng,
+          })),
+          min_engine_cc: minEngineCc.trim() ? Number(minEngineCc.trim()) : null,
           start_date: startDateTime.toISOString(),
         },
         headers
