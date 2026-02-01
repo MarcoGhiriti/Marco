@@ -766,23 +766,8 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: "rgba(255,193,7,0.15)",
     alignItems: "center",
-
-            <View style={styles.formCard}>
-              <Text style={styles.formLabel}>Minimum engine size (cc)</Text>
-              <TextInput
-                value={minEngineCc}
-                onChangeText={(v) => setMinEngineCc(v.replace(/[^0-9]/g, ""))}
-                placeholder="e.g. 600"
-                placeholderTextColor={Colors.muted}
-                style={styles.formInput}
-                keyboardType="number-pad"
-              />
-              <Text style={styles.formHint}>
-                Riders with a smaller bike CC won't be able to join.
-              </Text>
-            </View>
-
     justifyContent: "center",
+  },
   },
   blockedTitle: {
     color: Colors.warning,
