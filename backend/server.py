@@ -2358,6 +2358,44 @@ async def get_stories(current_user: dict = Depends(get_current_user)):
             media_base64=s.get("media_base64", ""),
             media_type=s.get("media_type", "image"),
             caption=s.get("caption"),
+            created_at=s.get("created_at") or now,
+            expires_at=s.get("expires_at") or now,
+        )
+
+        if owner_id not in grouped:
+            grouped[owner_id] = []
+        grouped[owner_id].append(story)
+
+    # Build final response with owner first (self), then friends
+    result: list[StoryOwner] = []
+
+    # Self first
+    if uid in grouped:
+        owner_info = owners_map.get(uid, {})
+        result.append(
+            StoryOwner(
+                user_id=uid,
+                username=owner_info.get("username", current_user.get("username", "")),
+                profile_photo=owner_info.get("profile_photo_base64")
+                or current_user.get("profile_photo_base64"),
+                stories=grouped[uid],
+            )
+        )
+
+    # Then friends
+    for friend_id in friend_ids:
+        if friend_id in grouped and friend_id != uid:
+            owner_info = owners_map.get(friend_id, {})
+            result.append(
+                StoryOwner(
+                    user_id=friend_id,
+                    username=owner_info.get("username", ""),
+                    profile_photo=owner_info.get("profile_photo_base64"),
+                    stories=grouped[friend_id],
+                )
+            )
+
+    return result
 
 
 @api_router.post("/stories/{story_id}/view")
@@ -2368,7 +2406,6 @@ async def mark_story_view(story_id: str, current_user: dict = Depends(get_curren
     uid = current_user["id"]
     now = datetime.utcnow()
 
-    # Fetch story (must exist and not be expired)
     story = await db.stories.find_one({"_id": _as_object_id(story_id)})
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
@@ -2381,11 +2418,13 @@ async def mark_story_view(story_id: str, current_user: dict = Depends(get_curren
         return {"ok": True, "counted": False}
 
     try:
-        await db.story_views.insert_one({
-            "story_id": story_id,
-            "viewer_id": uid,
-            "viewed_at": now,
-        })
+        await db.story_views.insert_one(
+            {
+                "story_id": story_id,
+                "viewer_id": uid,
+                "viewed_at": now,
+            }
+        )
         return {"ok": True, "counted": True}
     except Exception:
         # likely duplicate key, already viewed
@@ -2405,13 +2444,19 @@ async def get_story_views(story_id: str, current_user: dict = Depends(get_curren
     if story.get("owner_id") != uid:
         raise HTTPException(status_code=403, detail="Only the owner can view story analytics")
 
-    # If expired, still allow reading views for a short time? For now, allow until it disappears from DB.
-    cursor = db.story_views.find({"story_id": story_id}).sort("viewed_at", -1).limit(200)
+    cursor = (
+        db.story_views.find({"story_id": story_id})
+        .sort("viewed_at", -1)
+        .limit(200)
+    )
     views_docs = await cursor.to_list(length=200)
 
     viewer_ids = [v.get("viewer_id") for v in views_docs if v.get("viewer_id")]
     viewer_oids = [_as_object_id(x) for x in viewer_ids]
-    users = await db.users.find({"_id": {"$in": viewer_oids}}, {"username": 1, "profile_photo_base64": 1}).to_list(length=200)
+    users = await db.users.find(
+        {"_id": {"$in": viewer_oids}},
+        {"username": 1, "profile_photo_base64": 1},
+    ).to_list(length=200)
     user_map = {oid_str(u.get("_id")): u for u in users}
 
     viewers: list[StoryViewerOut] = []
@@ -2432,40 +2477,6 @@ async def get_story_views(story_id: str, current_user: dict = Depends(get_curren
         views_count=len(views_docs),
         viewers=viewers,
     )
-
-            created_at=s.get("created_at") or now,
-            expires_at=s.get("expires_at") or now,
-        )
-        
-        if owner_id not in grouped:
-            grouped[owner_id] = []
-        grouped[owner_id].append(story)
-    
-    # Build final response with owner first (self), then friends
-    result: list[StoryOwner] = []
-    
-    # Self first
-    if uid in grouped:
-        owner_info = owners_map.get(uid, {})
-        result.append(StoryOwner(
-            user_id=uid,
-            username=owner_info.get("username", current_user.get("username", "")),
-            profile_photo=owner_info.get("profile_photo_base64") or current_user.get("profile_photo_base64"),
-            stories=grouped[uid],
-        ))
-    
-    # Then friends
-    for friend_id in friend_ids:
-        if friend_id in grouped and friend_id != uid:
-            owner_info = owners_map.get(friend_id, {})
-            result.append(StoryOwner(
-                user_id=friend_id,
-                username=owner_info.get("username", ""),
-                profile_photo=owner_info.get("profile_photo_base64"),
-                stories=grouped[friend_id],
-            ))
-    
-    return result
 
 
 @api_router.delete("/stories/{story_id}")
