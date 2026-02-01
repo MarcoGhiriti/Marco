@@ -365,10 +365,10 @@ export default function HomeScreen() {
             activeRide.status === "paused" && styles.pausedRideBanner
           ]}>
             <View style={styles.activeRideIcon}>
-              <Ionicons 
-                name={activeRide.status === "paused" ? "pause" : "bicycle"} 
-                size={20} 
-                color={Colors.bg} 
+              <Ionicons
+                name={activeRide.status === "paused" ? "pause" : "speedometer"}
+                size={20}
+                color={Colors.bg}
               />
             </View>
             <View style={{ flex: 1 }}>
