@@ -2727,6 +2727,16 @@ async def start_ride(payload: RideSessionStart, current_user: dict = Depends(get
     # Check if route exists
     route = await db.routes.find_one({"_id": _as_object_id(payload.route_id)})
     if not route:
+
+    # Safety: auto-close any stale sessions (shouldn't happen, but prevents phantom banners)
+    try:
+        await db.ride_sessions.update_many(
+            {"user_id": uid, "status": {"$in": ["active", "paused"]}},
+            {"$set": {"status": "cancelled", "end_time": datetime.utcnow()}},
+        )
+    except Exception:
+        pass
+
         raise HTTPException(status_code=404, detail="Route not found")
     
     # Check if user already has an active or paused ride
