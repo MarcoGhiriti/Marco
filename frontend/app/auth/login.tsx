@@ -36,7 +36,14 @@ export default function LoginScreen() {
       await login(email.trim(), password);
       router.replace("/(tabs)/community");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Login failed");
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.toLowerCase().includes("invalid credentials")) {
+        setError(t("auth.invalidCredentials"));
+      } else if (msg.toLowerCase().includes("invalid email")) {
+        setError(t("auth.invalidEmail"));
+      } else {
+        setError(msg || t("errors.generic"));
+      }
     } finally {
       setLoading(false);
     }
