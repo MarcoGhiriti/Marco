@@ -74,6 +74,15 @@ export function RouteCard({
       <View style={styles.cardContent}>
         {/* Header Row */}
         <View style={styles.headerRow}>
+
+        {/* Date/Time */}
+        {startDateText ? (
+          <View style={[styles.statItem, { marginTop: 8 }]}>
+            <Ionicons name="calendar-outline" size={14} color={Colors.accent} />
+            <Text style={styles.statText}>{startDateText}</Text>
+          </View>
+        ) : null}
+
           <Text style={styles.title} numberOfLines={1}>
             {item.title}
           </Text>
