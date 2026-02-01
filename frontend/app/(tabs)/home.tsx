@@ -201,6 +201,80 @@ export default function HomeScreen() {
     }
   };
 
+  const handleOpenRideModal = async () => {
+    if (!activeRide || !authHeader) return;
+    setShowRideModal(true);
+    setLoadingRideProgress(true);
+    try {
+      const progress = await apiGet<RideProgress>(
+        `/api/rides/${activeRide.id}/progress`,
+        authHeader
+      );
+      setRideProgress(progress);
+    } catch (e) {
+      console.error("Failed to load ride progress:", e);
+    } finally {
+      setLoadingRideProgress(false);
+    }
+  };
+
+  const handlePauseRide = async () => {
+    if (!activeRide || !authHeader) return;
+    try {
+      await apiPost("/api/rides/pause", { session_id: activeRide.id }, authHeader);
+      Alert.alert("Paused", "Your ride has been paused. Resume when ready!");
+      setShowRideModal(false);
+      loadActiveRide();
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to pause ride");
+    }
+  };
+
+  const handleResumeRide = async () => {
+    if (!activeRide || !authHeader) return;
+    try {
+      await apiPost("/api/rides/resume", { session_id: activeRide.id }, authHeader);
+      Alert.alert("Resumed", "Your ride has been resumed!");
+      setShowRideModal(false);
+      loadActiveRide();
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to resume ride");
+    }
+  };
+
+  const handleCancelRide = async () => {
+    if (!activeRide || !authHeader) return;
+    
+    const confirmCancel = () => {
+      if (Platform.OS === "web") {
+        return window.confirm("Are you sure you want to cancel this ride? No kilometers will be recorded.");
+      }
+      return new Promise<boolean>((resolve) => {
+        Alert.alert(
+          "Cancel Ride?",
+          "Are you sure? No kilometers will be recorded.",
+          [
+            { text: "No", style: "cancel", onPress: () => resolve(false) },
+            { text: "Yes, Cancel", style: "destructive", onPress: () => resolve(true) }
+          ]
+        );
+      });
+    };
+
+    const confirmed = await confirmCancel();
+    if (!confirmed) return;
+
+    try {
+      await apiPost("/api/rides/cancel", { session_id: activeRide.id }, authHeader);
+      Alert.alert("Cancelled", "Your ride has been cancelled.");
+      setShowRideModal(false);
+      setActiveRide(null);
+      load();
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to cancel ride");
+    }
+  };
+
   const handleStartRide = async (routeId: string) => {
     if (!authHeader) return;
     try {
