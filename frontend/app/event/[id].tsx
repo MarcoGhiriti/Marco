@@ -548,7 +548,7 @@ export default function EventDetailScreen() {
               />
 
               <Text style={styles.inputLabel}>Date & Time</Text>
-              <View style={styles.dateTimeRow}>
+              <View style={styles.editDateTimeRow}>
                 <View style={styles.dateInput}>
                   <Ionicons name="calendar-outline" size={18} color={Colors.muted} />
                   <TextInput
