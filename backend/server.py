@@ -2358,6 +2358,81 @@ async def get_stories(current_user: dict = Depends(get_current_user)):
             media_base64=s.get("media_base64", ""),
             media_type=s.get("media_type", "image"),
             caption=s.get("caption"),
+
+
+@api_router.post("/stories/{story_id}/view")
+async def mark_story_view(story_id: str, current_user: dict = Depends(get_current_user)):
+    """Mark a story as viewed by the current user (idempotent)."""
+    await ensure_story_views_indexes()
+
+    uid = current_user["id"]
+    now = datetime.utcnow()
+
+    # Fetch story (must exist and not be expired)
+    story = await db.stories.find_one({"_id": _as_object_id(story_id)})
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+    if story.get("expires_at") and story.get("expires_at") <= now:
+        raise HTTPException(status_code=404, detail="Story expired")
+
+    # Do not count self-views
+    if story.get("owner_id") == uid:
+        return {"ok": True, "counted": False}
+
+    try:
+        await db.story_views.insert_one({
+            "story_id": story_id,
+            "viewer_id": uid,
+            "viewed_at": now,
+        })
+        return {"ok": True, "counted": True}
+    except Exception:
+        # likely duplicate key, already viewed
+        return {"ok": True, "counted": False}
+
+
+@api_router.get("/stories/{story_id}/views", response_model=StoryViewsOut)
+async def get_story_views(story_id: str, current_user: dict = Depends(get_current_user)):
+    """Get views count and viewer list for a story (owner only)."""
+    uid = current_user["id"]
+    now = datetime.utcnow()
+
+    story = await db.stories.find_one({"_id": _as_object_id(story_id)})
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+    if story.get("owner_id") != uid:
+        raise HTTPException(status_code=403, detail="Only the owner can view story analytics")
+
+    # If expired, still allow reading views for a short time? For now, allow until it disappears from DB.
+    cursor = db.story_views.find({"story_id": story_id}).sort("viewed_at", -1).limit(200)
+    views_docs = await cursor.to_list(length=200)
+
+    viewer_ids = [v.get("viewer_id") for v in views_docs if v.get("viewer_id")]
+    viewer_oids = [_as_object_id(x) for x in viewer_ids]
+    users = await db.users.find({"_id": {"$in": viewer_oids}}, {"username": 1, "profile_photo_base64": 1}).to_list(length=200)
+    user_map = {oid_str(u.get("_id")): u for u in users}
+
+    viewers: list[StoryViewerOut] = []
+    for v in views_docs:
+        vid = v.get("viewer_id")
+        u = user_map.get(vid, {})
+        viewers.append(
+            StoryViewerOut(
+                user_id=vid,
+                username=u.get("username", ""),
+                profile_photo=u.get("profile_photo_base64"),
+                viewed_at=v.get("viewed_at") or now,
+            )
+        )
+
+    return StoryViewsOut(
+        story_id=story_id,
+        views_count=len(views_docs),
+        viewers=viewers,
+    )
+
             created_at=s.get("created_at") or now,
             expires_at=s.get("expires_at") or now,
         )
