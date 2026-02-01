@@ -24,6 +24,10 @@ import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { EventOut } from "../../src/types/api";
 
+
+import type { UserSearchOut } from "../../src/types/api";
+import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
+
 // Haversine distance calculator
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371; // Earth's radius in km
