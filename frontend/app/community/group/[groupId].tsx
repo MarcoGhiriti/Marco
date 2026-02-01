@@ -310,10 +310,14 @@ export default function GroupChatScreen() {
             <Ionicons name="chevron-back" size={20} color={Colors.text} />
           </Pressable>
           <View style={styles.headerInfo}>
-            <View style={styles.headerIcon}>
-              <Ionicons name="people" size={20} color={Colors.accent} />
-            </View>
-            <View>
+            {groupInfo?.photo_base64 ? (
+              <Image source={{ uri: groupInfo.photo_base64 }} style={styles.groupPhoto} />
+            ) : (
+              <View style={styles.headerIcon}>
+                <Ionicons name="people" size={20} color={Colors.accent} />
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
               <Text style={styles.headerTitle} numberOfLines={1}>
                 {groupName}
               </Text>
@@ -322,9 +326,19 @@ export default function GroupChatScreen() {
               </Text>
             </View>
           </View>
-          <Pressable onPress={handleOpenMembers} style={styles.headerBtn}>
-            <Ionicons name="ellipsis-vertical" size={18} color={Colors.text} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            {isCreator && (
+              <Pressable onPress={handleOpenEditGroup} style={styles.headerBtn}>
+                <Ionicons name="create-outline" size={18} color={Colors.accent} />
+              </Pressable>
+            )}
+            <Pressable onPress={() => { loadFriends(); setShowInviteModal(true); }} style={styles.headerBtn}>
+              <Ionicons name="person-add-outline" size={18} color={Colors.accent} />
+            </Pressable>
+            <Pressable onPress={handleOpenMembers} style={styles.headerBtn}>
+              <Ionicons name="ellipsis-vertical" size={18} color={Colors.text} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Messages */}
