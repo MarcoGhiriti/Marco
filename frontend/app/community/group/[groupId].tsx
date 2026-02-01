@@ -56,6 +56,15 @@ export default function GroupChatScreen() {
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [friends, setFriends] = useState<GroupMember[]>([]);
   const [showAddMember, setShowAddMember] = useState(false);
+  
+  // Edit group modal
+  const [showEditGroupModal, setShowEditGroupModal] = useState(false);
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupPhoto, setEditGroupPhoto] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  
+  // Invite modal
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
 
