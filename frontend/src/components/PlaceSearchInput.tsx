@@ -227,10 +227,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   resultsContainer: {
-    position: "absolute",
-    top: 80,
-    left: 0,
-    right: 0,
+    marginTop: 10,
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
