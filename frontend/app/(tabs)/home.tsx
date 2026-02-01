@@ -659,6 +659,7 @@ const styles = StyleSheet.create({
   },
   pausedRideBanner: {
     backgroundColor: Colors.warning,
+    borderColor: Colors.warning,
   },
   activeRideIcon: {
     width: 40,
