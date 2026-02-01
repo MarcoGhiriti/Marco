@@ -618,24 +618,7 @@ export default function RouteDetailScreen() {
                     onChangeText={setEditParticipantsMax}
                     keyboardType="number-pad"
                     maxLength={3}
-  kvRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 10,
-  },
-  kvLabel: {
-    color: Colors.muted,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    width: 58,
-  },
-  kvValue: {
-    color: Colors.text,
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    flex: 1,
-  },
+                  />
   stopRow: {
     marginTop: 10,
     borderWidth: 1,
