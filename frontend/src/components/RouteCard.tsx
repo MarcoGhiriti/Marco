@@ -47,7 +47,11 @@ export function RouteCard({
   return (
     <Pressable onPress={onPress} style={styles.card}>
       {/* Mini Map */}
-      <RouteMiniMap polyline={item.polyline} />
+      <RouteMiniMap 
+        polyline={item.polyline} 
+        startCity={item.start_city}
+        endCity={item.end_city}
+      />
 
       {/* Card Content */}
       <View style={styles.cardContent}>
