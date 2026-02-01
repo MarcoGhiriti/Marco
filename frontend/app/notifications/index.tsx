@@ -200,6 +200,8 @@ export default function NotificationsScreen() {
       color: Colors.muted,
     };
 
+    const isFriendRequest = item.type === "friend_request";
+
     return (
       <Pressable
         onPress={() => handleNotificationPress(item)}
@@ -233,6 +235,26 @@ export default function NotificationsScreen() {
             {item.message}
           </Text>
           <Text style={styles.notifTime}>{getTimeAgo(item.created_at)}</Text>
+          
+          {/* Friend Request Action Buttons */}
+          {isFriendRequest && item.data.from_user_id && (
+            <View style={styles.actionBtns}>
+              <Pressable
+                onPress={() => handleAcceptFriend(item)}
+                style={[styles.actionBtn, styles.acceptBtn]}
+              >
+                <Ionicons name="checkmark" size={16} color="#FFF" />
+                <Text style={styles.actionBtnText}>Accept</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => handleRejectFriend(item)}
+                style={[styles.actionBtn, styles.rejectBtn]}
+              >
+                <Ionicons name="close" size={16} color={Colors.text} />
+                <Text style={[styles.actionBtnText, { color: Colors.text }]}>Decline</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
         {!item.read && <View style={styles.unreadDot} />}
       </Pressable>
