@@ -34,6 +34,19 @@ export type UserSearchOut = {
   profile_photo_base64?: string | null;
 };
 
+export type StoryViewerOut = {
+  user_id: string;
+  username: string;
+  profile_photo?: string | null;
+  viewed_at: string;
+};
+
+export type StoryViewsOut = {
+  story_id: string;
+  views_count: number;
+  viewers: StoryViewerOut[];
+};
+
 export type EventOut = {
   id: string;
   title: string;
