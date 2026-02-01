@@ -229,7 +229,7 @@ async def run_ride_session_tests():
         
         # Test 3: GET /api/rides/active should return 200 and null initially
         print("\n" + "=" * 50)
-        print("TEST 3: GET /api/rides/active (should be null initially)")
+        print("TEST 3: GET /api/rides/active (cleanup existing rides)")
         print("=" * 50)
         
         active_ride_result = await tester.get_active_ride()
@@ -237,9 +237,26 @@ async def run_ride_session_tests():
             print(f"❌ CRITICAL: Failed to get active ride: {active_ride_result['error']}")
             return False
         
+        # If there's an existing active/paused ride, cancel it first
         if active_ride_result["data"] is not None:
-            print(f"❌ CRITICAL: Expected null active ride, got: {active_ride_result['data']}")
-            return False
+            existing_ride = active_ride_result["data"]
+            existing_session_id = existing_ride.get("id")
+            print(f"⚠️ Found existing ride session {existing_session_id} with status '{existing_ride.get('status')}', cancelling it first...")
+            
+            cancel_existing_result = await tester.cancel_ride(existing_session_id)
+            if not cancel_existing_result["success"]:
+                print(f"❌ CRITICAL: Failed to cancel existing ride: {cancel_existing_result['error']}")
+                return False
+            
+            # Verify it's now null
+            active_ride_result = await tester.get_active_ride()
+            if not active_ride_result["success"]:
+                print(f"❌ CRITICAL: Failed to get active ride after cleanup: {active_ride_result['error']}")
+                return False
+            
+            if active_ride_result["data"] is not None:
+                print(f"❌ CRITICAL: Expected null after cleanup, got: {active_ride_result['data']}")
+                return False
         
         print("✅ GET /api/rides/active correctly returns null (no active ride)")
         
