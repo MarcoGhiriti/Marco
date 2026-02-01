@@ -156,18 +156,6 @@ export default function EditProfileScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Bio</Text>
-            <TextInput
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Tell riders about you"
-              placeholderTextColor={Colors.muted}
-              style={[styles.input, { height: 96 }]}
-              multiline
-            />
-          </View>
-
-          <View style={styles.card}>
             <Text style={styles.label}>Motorcycle</Text>
             <TextInput
               value={bikeModel}
