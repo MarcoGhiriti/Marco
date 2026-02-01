@@ -2409,9 +2409,12 @@ async def end_ride(payload: RideSessionEnd, current_user: dict = Depends(get_cur
 
 
 @api_router.post("/rides/cancel")
-async def cancel_ride(session_id: str, current_user: dict = Depends(get_current_user)):
+async def cancel_ride(payload: dict, current_user: dict = Depends(get_current_user)):
     """Cancel an active ride session."""
     uid = current_user["id"]
+    session_id = payload.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
     
     res = await db.ride_sessions.update_one(
         {"_id": _as_object_id(session_id), "user_id": uid, "status": "active"},
@@ -2420,6 +2423,178 @@ async def cancel_ride(session_id: str, current_user: dict = Depends(get_current_
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Active ride session not found")
     return {"ok": True}
+
+
+@api_router.post("/rides/pause")
+async def pause_ride(payload: dict, current_user: dict = Depends(get_current_user)):
+    """Pause an active ride session."""
+    uid = current_user["id"]
+    session_id = payload.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+    
+    session = await db.ride_sessions.find_one({
+        "_id": _as_object_id(session_id),
+        "user_id": uid,
+        "status": "active"
+    })
+    if not session:
+        raise HTTPException(status_code=404, detail="Active ride session not found")
+    
+    await db.ride_sessions.update_one(
+        {"_id": _as_object_id(session_id)},
+        {"$set": {"status": "paused", "paused_at": datetime.utcnow()}}
+    )
+    return {"ok": True, "status": "paused"}
+
+
+@api_router.post("/rides/resume")
+async def resume_ride(payload: dict, current_user: dict = Depends(get_current_user)):
+    """Resume a paused ride session."""
+    uid = current_user["id"]
+    session_id = payload.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+    
+    session = await db.ride_sessions.find_one({
+        "_id": _as_object_id(session_id),
+        "user_id": uid,
+        "status": "paused"
+    })
+    if not session:
+        raise HTTPException(status_code=404, detail="Paused ride session not found")
+    
+    # Calculate paused duration and add to total paused time
+    paused_at = session.get("paused_at")
+    total_paused = session.get("total_paused_seconds", 0)
+    if paused_at:
+        paused_duration = (datetime.utcnow() - paused_at).total_seconds()
+        total_paused += paused_duration
+    
+    await db.ride_sessions.update_one(
+        {"_id": _as_object_id(session_id)},
+        {
+            "$set": {
+                "status": "active",
+                "paused_at": None,
+                "total_paused_seconds": total_paused
+            }
+        }
+    )
+    return {"ok": True, "status": "active"}
+
+
+@api_router.post("/rides/update-location")
+async def update_ride_location(payload: dict, current_user: dict = Depends(get_current_user)):
+    """Update creator's current location during a ride (for progress tracking)."""
+    uid = current_user["id"]
+    session_id = payload.get("session_id")
+    lat = payload.get("lat")
+    lng = payload.get("lng")
+    
+    if not session_id or lat is None or lng is None:
+        raise HTTPException(status_code=400, detail="session_id, lat, and lng are required")
+    
+    session = await db.ride_sessions.find_one({
+        "_id": _as_object_id(session_id),
+        "user_id": uid,
+        "status": {"$in": ["active", "paused"]}
+    })
+    if not session:
+        raise HTTPException(status_code=404, detail="Ride session not found")
+    
+    await db.ride_sessions.update_one(
+        {"_id": _as_object_id(session_id)},
+        {
+            "$set": {
+                "current_location": {"lat": lat, "lng": lng},
+                "location_updated_at": datetime.utcnow()
+            }
+        }
+    )
+    return {"ok": True}
+
+
+class RideProgressOut(BaseModel):
+    ride_id: str
+    route_id: str
+    route_title: str
+    creator_id: str
+    creator_username: str
+    status: str
+    progress_percent: float
+    distance_km: float
+    elapsed_minutes: float
+    participants: List[str]
+    is_creator: bool
+    current_location: Optional[dict] = None
+
+
+@api_router.get("/rides/{ride_id}/progress", response_model=RideProgressOut)
+async def get_ride_progress(ride_id: str, current_user: dict = Depends(get_current_user)):
+    """Get detailed progress of a ride (visible to creator and participants)."""
+    uid = current_user["id"]
+    
+    session = await db.ride_sessions.find_one({"_id": _as_object_id(ride_id)})
+    if not session:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    route = await db.routes.find_one({"_id": _as_object_id(session.get("route_id"))})
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+    
+    # Check if user is creator or participant
+    creator_id = session.get("user_id")
+    participants = route.get("participants", [])
+    
+    if uid != creator_id and uid not in participants:
+        raise HTTPException(status_code=403, detail="You are not part of this ride")
+    
+    # Get creator info
+    creator = await db.users.find_one({"_id": _as_object_id(creator_id)})
+    creator_username = creator.get("username", "Unknown") if creator else "Unknown"
+    
+    # Calculate progress based on current location vs route
+    progress_percent = 0.0
+    current_loc = session.get("current_location")
+    
+    if current_loc and route.get("waypoints"):
+        waypoints = route.get("waypoints", [])
+        if len(waypoints) >= 2:
+            # Simple progress calculation: distance from start / total distance
+            start = waypoints[0]
+            end = waypoints[-1]
+            total_dist = haversine_distance(
+                start.get("lat", 0), start.get("lng", 0),
+                end.get("lat", 0), end.get("lng", 0)
+            )
+            dist_from_start = haversine_distance(
+                start.get("lat", 0), start.get("lng", 0),
+                current_loc.get("lat", 0), current_loc.get("lng", 0)
+            )
+            if total_dist > 0:
+                progress_percent = min(100.0, (dist_from_start / total_dist) * 100)
+    
+    # Calculate elapsed time (excluding paused time)
+    start_time = session.get("start_time", datetime.utcnow())
+    total_paused = session.get("total_paused_seconds", 0)
+    elapsed_seconds = (datetime.utcnow() - start_time).total_seconds() - total_paused
+    elapsed_minutes = max(0, elapsed_seconds / 60)
+    
+    return RideProgressOut(
+        ride_id=ride_id,
+        route_id=session.get("route_id", ""),
+        route_title=route.get("title", "Unknown Route"),
+        creator_id=creator_id,
+        creator_username=creator_username,
+        status=session.get("status", "unknown"),
+        progress_percent=round(progress_percent, 1),
+        distance_km=route.get("distance_km", 0),
+        elapsed_minutes=round(elapsed_minutes, 1),
+        participants=participants,
+        is_creator=(uid == creator_id),
+        current_location=current_loc
+    )
 
 
 @api_router.get("/rides/active", response_model=Optional[RideSessionOut])
