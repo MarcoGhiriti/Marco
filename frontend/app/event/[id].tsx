@@ -23,7 +23,7 @@ import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { EventOut, UserSearchOut } from "../../src/types/api";
-import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
+import { InviteFriendsModal } from "../../../src/components/InviteFriendsModal";
 
 // Haversine distance calculator
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
