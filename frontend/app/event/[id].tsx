@@ -19,11 +19,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Svg, { Circle, Rect } from "react-native-svg";
 import * as Location from "expo-location";
-import { Colors } from "../../../src/theme/colors";
-import { apiGet, apiPost, apiDelete, apiPut } from "../../../src/lib/api";
-import { useAuthStore } from "../../../src/state/authStore";
-import type { EventOut, UserSearchOut } from "../../../src/types/api";
-import { InviteFriendsModal } from "../../../src/components/InviteFriendsModal";
+import { Colors } from "../../src/theme/colors";
+import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
+import { useAuthStore } from "../../src/state/authStore";
+import type { EventOut, UserSearchOut } from "../../src/types/api";
+import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
 
 // Haversine distance calculator
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {

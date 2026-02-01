@@ -17,11 +17,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
-import { Colors } from "../../../src/theme/colors";
-import { apiGet, apiPost, apiDelete, apiPut } from "../../../src/lib/api";
-import { useAuthStore } from "../../../src/state/authStore";
-import type { RouteOut, UserSearchOut } from "../../../src/types/api";
-import { InviteFriendsModal } from "../../../src/components/InviteFriendsModal";
+import { Colors } from "../../src/theme/colors";
+import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
+import { useAuthStore } from "../../src/state/authStore";
+import type { RouteOut, UserSearchOut } from "../../src/types/api";
+import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
 
 export default function RouteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
