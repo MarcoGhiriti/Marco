@@ -419,6 +419,25 @@ async def ensure_route_city_fields(doc: dict) -> dict:
         if not end_city and isinstance(end, list) and len(end) == 2:
             end_city = await google_reverse_geocode_city(float(end[0]), float(end[1]))
 
+async def _enrich_waypoints_with_city(waypoints: list[dict], max_geocodes: int = 12) -> list[dict]:
+    """Best-effort: add `city` field to waypoint dicts using reverse geocoding.
+
+    To keep API usage under control, we cap the number of geocoding calls.
+    """
+    out: list[dict] = []
+    for idx, wp in enumerate(waypoints):
+        wp2 = dict(wp)
+        if idx < max_geocodes:
+            try:
+                city = await google_reverse_geocode_city(float(wp2.get("lat")), float(wp2.get("lng")))
+                if city:
+                    wp2["city"] = city
+            except Exception:
+                pass
+        out.append(wp2)
+    return out
+
+
         # update local doc
         if start_city:
             doc["start_city"] = start_city
@@ -504,10 +523,30 @@ class LicenseUpload(BaseModel):
     license_photo_base64: str = Field(..., description="Base64 encoded photo of the license")
 
 
+class WaypointIn(BaseModel):
+    name: str = Field(default="", max_length=120)
+    address: str = Field(default="", max_length=240)
+    lat: float
+    lng: float
+
+
+class WaypointOut(BaseModel):
+    name: str = ""
+    address: str = ""
+    lat: float
+    lng: float
+    city: Optional[str] = None
+
+
 class RouteCreate(BaseModel):
     title: str = Field(min_length=2, max_length=80)
     description: str = Field(default="", max_length=800)
     polyline: list[list[float]] = Field(min_length=2, description="List of [lat,lng] points")
+
+    # For displaying start/stops/end cities in details UI
+    start_point: Optional[list[float]] = Field(default=None, min_length=2, max_length=2)
+    end_point: Optional[list[float]] = Field(default=None, min_length=2, max_length=2)
+    waypoints: list[WaypointIn] = Field(default_factory=list)
 
     rules: str = Field(default="", max_length=800)
     difficulty: Difficulty = "medium"
@@ -520,7 +559,7 @@ class RouteCreate(BaseModel):
     currency: str = Field(default="RON", min_length=3, max_length=3)
 
     stops_count: int = Field(default=0, ge=0, le=50)
-    
+
     # Start date for the route (when riders will meet)
     start_date: Optional[datetime] = None
 
@@ -547,6 +586,11 @@ class RouteOut(BaseModel):
     description: str
     polyline: list[list[float]]
 
+    # Optional points for UI
+    start_point: Optional[list[float]] = None
+    end_point: Optional[list[float]] = None
+    waypoints: list[WaypointOut] = Field(default_factory=list)
+
     distance_km: float
     duration_min: int
     stops_count: int
@@ -560,9 +604,9 @@ class RouteOut(BaseModel):
     difficulty: Difficulty
     participants_min: int
     participants_max: int
-    
+
     start_date: Optional[datetime] = None
-    
+
     # City names for mini-map labels
     start_city: Optional[str] = None
     end_city: Optional[str] = None
