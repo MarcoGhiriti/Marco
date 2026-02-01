@@ -1,0 +1,28 @@
+{
+  "auth": {
+    "signIn": "Sign in",
+    "welcomeBack": "Welcome back",
+    "email": "Email",
+    "password": "Password",
+    "continue": "Continue",
+    "forgotPassword": "Forgot your password?",
+    "noAccount": "No account?",
+    "createOne": "Create one",
+    "invalidCredentials": "Incorrect email or password.",
+    "invalidEmail": "Please enter a valid email address.",
+    "missingFields": "Please fill in all fields."
+  },
+  "common": {
+    "search": "Search",
+    "join": "Join",
+    "open": "Open",
+    "members": "members",
+    "discoverGroups": "Discover groups",
+    "searchGroupByName": "Search group by name",
+    "yourGroups": "Your groups",
+    "noResults": "No public groups found."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again."
+  }
+}
