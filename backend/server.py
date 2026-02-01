@@ -2166,12 +2166,24 @@ async def list_routes(
             if distance_to_route > radius_km:
                 continue  # Skip routes too far away
         
+        # Process waypoints safely
+        waypoints = []
+        try:
+            waypoints_data = r.get("waypoints", [])
+            if waypoints_data:
+                waypoints = [WaypointOut(**wp) for wp in waypoints_data]
+        except Exception:
+            waypoints = []
+        
         result.append(
             RouteOut(
                 id=_oid_str(r.get("_id")),
                 title=r.get("title", ""),
                 description=r.get("description", ""),
                 polyline=polyline,
+                start_point=r.get("start_point"),
+                end_point=r.get("end_point"),
+                waypoints=waypoints,
                 distance_km=float(r.get("distance_km", 0.0)),
                 duration_min=int(r.get("duration_min", 0)),
                 stops_count=int(r.get("stops_count", 0)),
