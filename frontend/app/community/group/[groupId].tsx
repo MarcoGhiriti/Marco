@@ -158,6 +158,57 @@ export default function GroupChatScreen() {
     setShowMembersModal(true);
   };
 
+  const handleOpenEditGroup = () => {
+    if (!groupInfo) return;
+    setEditGroupName(groupInfo.name);
+    setEditGroupPhoto(groupInfo.photo_base64 || null);
+    setShowEditGroupModal(true);
+  };
+
+  const handleSaveGroupEdit = async () => {
+    if (!authHeader || !gid) return;
+    setEditSaving(true);
+    try {
+      await apiPut(`/api/groups/${gid}`, {
+        name: editGroupName.trim(),
+        photo_base64: editGroupPhoto,
+      }, authHeader);
+      setShowEditGroupModal(false);
+      setGroupName(editGroupName.trim());
+      loadGroupInfo();
+      Alert.alert("Success", "Group updated!");
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to update group");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handlePickGroupPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+    if (!result.canceled && result.assets[0]?.base64) {
+      setEditGroupPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
+  };
+
+  const handleInviteToGroup = async (userId: string) => {
+    if (!authHeader || !gid) return;
+    try {
+      await apiPost(`/api/groups/${gid}/add-member`, { user_id: userId }, authHeader);
+      Alert.alert("Success", "Invitation sent! User has been added to the group.");
+      loadGroupInfo();
+      setShowInviteModal(false);
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to invite");
+    }
+  };
+
   const handleAddMember = async (userId: string) => {
     if (!authHeader) return;
     try {
