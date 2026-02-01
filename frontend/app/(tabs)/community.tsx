@@ -238,6 +238,13 @@ function GroupsTab() {
   const { accessToken, me } = useAuthStore();
 
   const [groups, setGroups] = useState<GroupOut[]>([]);
+
+  // Search public groups
+  const [groupQ, setGroupQ] = useState("");
+  const [searchResults, setSearchResults] = useState<GroupOut[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
