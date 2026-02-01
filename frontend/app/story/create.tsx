@@ -307,6 +307,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   previewWrapper: {
+  frameOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "space-between",
+  },
+  frameBorder: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    right: 10,
+    bottom: 10,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: 22,
+  },
+  frameTopFade: {
+    height: 90,
+    backgroundColor: "rgba(0,0,0,0.18)",
+  },
+  frameBottomFade: {
+    height: 110,
+    backgroundColor: "rgba(0,0,0,0.22)",
+  },
+
     width: "100%",
     maxHeight: 500,
     aspectRatio: 9 / 16,
