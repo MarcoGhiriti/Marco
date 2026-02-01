@@ -21,7 +21,7 @@ import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut, UserSearchOut } from "../../src/types/api";
-import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
+import { InviteFriendsModal } from "../../../src/components/InviteFriendsModal";
 
 export default function RouteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
