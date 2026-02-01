@@ -2141,6 +2141,7 @@ async def create_route(payload: RouteCreate, current_user: dict = Depends(get_cu
         is_joined=True,
         created_by=uid,
         start_date=doc.get("start_date"),
+        min_engine_cc=doc.get("min_engine_cc"),
         start_city=doc.get("start_city"),
         end_city=doc.get("end_city"),
         created_at=doc["created_at"],
