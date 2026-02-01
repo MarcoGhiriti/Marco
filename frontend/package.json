@@ -20,6 +20,7 @@
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/material-top-tabs": "^7.4.13",
     "@react-navigation/native": "^7.1.6",
+    "@shopify/flash-list": "^2.2.1",
     "expo": "^54.0.33",
     "expo-av": "^16.0.8",
     "expo-blur": "~14.1.5",
