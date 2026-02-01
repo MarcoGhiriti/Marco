@@ -308,6 +308,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   previewWrapper: {
+    width: "100%",
+    maxHeight: 500,
+    aspectRatio: 9 / 16,
+    borderRadius: 24,
+    overflow: "hidden",
+    backgroundColor: Colors.card,
+  },
   frameOverlay: {
     position: "absolute",
     top: 0,
@@ -333,14 +340,6 @@ const styles = StyleSheet.create({
   frameBottomFade: {
     height: 110,
     backgroundColor: "rgba(0,0,0,0.22)",
-  },
-
-    width: "100%",
-    maxHeight: 500,
-    aspectRatio: 9 / 16,
-    borderRadius: 24,
-    overflow: "hidden",
-    backgroundColor: Colors.card,
   },
   previewImage: {
     width: "100%",
