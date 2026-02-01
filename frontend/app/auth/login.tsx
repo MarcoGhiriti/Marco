@@ -50,8 +50,8 @@ export default function LoginScreen() {
       >
         <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
           <View style={styles.header}>
-            <Text style={styles.h1}>Sign in</Text>
-            <Text style={styles.sub}>Welcome back</Text>
+            <Text style={styles.h1}>{t("auth.signIn")}</Text>
+            <Text style={styles.sub}>{t("auth.welcomeBack")}</Text>
           </View>
 
           <View style={styles.form}>
