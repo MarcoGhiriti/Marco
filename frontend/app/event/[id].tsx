@@ -815,4 +815,72 @@ const styles = StyleSheet.create({
   joinButtonTextJoined: {
     color: Colors.text,
   },
+  // Edit Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "flex-end",
+  },
+  editModal: {
+    backgroundColor: Colors.bg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 40,
+  },
+  editModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  editModalTitle: {
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    color: Colors.text,
+  },
+  editModalContent: {
+    padding: 20,
+  },
+  inputLabel: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    padding: 14,
+    color: Colors.text,
+    fontSize: 16,
+    fontFamily: "Inter_500Medium",
+    marginBottom: 16,
+  },
+  textAreaInput: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  saveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 8,
+  },
+  saveButtonDisabled: {
+    opacity: 0.5,
+  },
+  saveButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+  },
 });
