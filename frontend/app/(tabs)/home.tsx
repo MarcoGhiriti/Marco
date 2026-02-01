@@ -360,16 +360,23 @@ export default function HomeScreen() {
 
         {/* Active Ride Banner */}
         {activeRide && (
-          <Pressable onPress={handleOpenRideModal} style={styles.activeRideBanner}>
+          <Pressable onPress={handleOpenRideModal} style={[
+            styles.activeRideBanner,
+            activeRide.status === "paused" && styles.pausedRideBanner
+          ]}>
             <View style={styles.activeRideIcon}>
-              <Ionicons name="bicycle" size={20} color={Colors.bg} />
+              <Ionicons 
+                name={activeRide.status === "paused" ? "pause" : "bicycle"} 
+                size={20} 
+                color={Colors.bg} 
+              />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.activeRideTitle}>
-                {activeRide.status === "paused" ? "Ride Paused" : "Ride in Progress"}
+                {activeRide.status === "paused" ? "⏸️ Ride Paused" : "🏍️ Ride in Progress"}
               </Text>
               <Text style={styles.activeRideSub}>
-                Tap to view progress • Started {new Date(activeRide.start_time).toLocaleTimeString()}
+                Tap to {activeRide.status === "paused" ? "resume" : "view progress"}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={Colors.bg} />
