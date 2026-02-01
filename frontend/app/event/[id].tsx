@@ -436,6 +436,68 @@ export default function EventDetailScreen() {
           </Text>
         </Pressable>
       </View>
+
+      {/* Edit Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.editModal}>
+            <View style={styles.editModalHeader}>
+              <Text style={styles.editModalTitle}>Edit Event</Text>
+              <Pressable onPress={() => setShowEditModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.text} />
+              </Pressable>
+            </View>
+
+            <View style={styles.editModalContent}>
+              <Text style={styles.inputLabel}>Title</Text>
+              <TextInput
+                style={styles.textInput}
+                value={editTitle}
+                onChangeText={setEditTitle}
+                placeholder="Event title"
+                placeholderTextColor={Colors.muted}
+              />
+
+              <Text style={styles.inputLabel}>Description</Text>
+              <TextInput
+                style={[styles.textInput, styles.textAreaInput]}
+                value={editDescription}
+                onChangeText={setEditDescription}
+                placeholder="Description (optional)"
+                placeholderTextColor={Colors.muted}
+                multiline
+                numberOfLines={4}
+              />
+
+              <Pressable
+                onPress={handleSaveEdit}
+                disabled={editSaving || !editTitle.trim()}
+                style={[
+                  styles.saveButton,
+                  (editSaving || !editTitle.trim()) && styles.saveButtonDisabled
+                ]}
+              >
+                {editSaving ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={20} color="#FFF" />
+                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
