@@ -13,8 +13,6 @@ import {
   Modal,
   TextInput,
   KeyboardAvoidingView,
-  Image,
-  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -22,13 +20,8 @@ import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
-import type { RouteOut } from "../../src/types/api";
-
-type Friend = {
-  id: string;
-  username: string;
-  avatar?: string;
-};
+import type { RouteOut, UserSearchOut } from "../../src/types/api";
+import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
 
 export default function RouteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
