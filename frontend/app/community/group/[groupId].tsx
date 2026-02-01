@@ -164,7 +164,7 @@ export default function GroupChatScreen() {
 
   const handleOpenEditGroup = () => {
     if (!groupInfo) return;
-    setEditGroupName(groupInfo.name);
+    setEditGroupName(groupInfo.name || groupInfo.group_name || "");
     setEditGroupPhoto(groupInfo.photo_base64 || null);
     setShowEditGroupModal(true);
   };
