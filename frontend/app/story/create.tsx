@@ -42,7 +42,10 @@ export default function CreateStoryScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: type === "image" ? ["images"] : ["videos"],
+      mediaTypes:
+        type === "image"
+          ? ImagePicker.MediaTypeOptions.Images
+          : ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
       aspect: [9, 16],
       quality: 0.8,

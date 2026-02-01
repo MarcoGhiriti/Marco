@@ -3149,23 +3149,51 @@ async def get_ride_progress(ride_id: str, current_user: dict = Depends(get_curre
 async def get_active_ride(current_user: dict = Depends(get_current_user)):
     """Get current active or paused ride session if any."""
     uid = current_user["id"]
-    
-    # Find active OR paused rides (both are "in progress")
-    # Prefer latest session if somehow multiple exist
-    cursor = db.ride_sessions.find({
-        "user_id": uid,
-        "status": {"$in": ["active", "paused"]},
-    }).sort("start_time", -1).limit(1)
+
+    cursor = (
+        db.ride_sessions.find(
+            {
+                "user_id": uid,
+                "status": {"$in": ["active", "paused"]},
+            }
+        )
+        .sort("start_time", -1)
+        .limit(1)
+    )
     items = await cursor.to_list(length=1)
     session = items[0] if items else None
     if not session:
         return None
-    
+
+    # Guardrail: if a session is stale (e.g., older than 24h), auto-cancel it to prevent phantom banners.
+    try:
+        start_time = session.get("start_time")
+        if start_time and isinstance(start_time, datetime):
+            if start_time < datetime.utcnow() - timedelta(hours=24):
+                await db.ride_sessions.update_one(
+                    {"_id": session.get("_id")},
+                    {"$set": {"status": "cancelled", "end_time": datetime.utcnow()}},
+                )
+                return None
+    except Exception:
+        pass
+
+    # If route_id missing, treat as invalid session
+    if not session.get("route_id"):
+        try:
+            await db.ride_sessions.update_one(
+                {"_id": session.get("_id")},
+                {"$set": {"status": "cancelled", "end_time": datetime.utcnow()}},
+            )
+        except Exception:
+            pass
+        return None
+
     return RideSessionOut(
         id=oid_str(session.get("_id")),
         user_id=uid,
         route_id=session.get("route_id", ""),
-        status=session.get("status", "active"),  # Return actual status!
+        status=session.get("status", "active"),
         start_time=session.get("start_time"),
         km_tracked=session.get("km_tracked", 0),
         is_validated=False,
