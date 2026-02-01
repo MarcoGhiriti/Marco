@@ -2379,6 +2379,40 @@ async def delete_route(route_id: str, current_user: dict = Depends(get_current_u
     return {"ok": True}
 
 
+class RouteUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    difficulty: Optional[str] = None
+    is_private: Optional[bool] = None
+
+
+@api_router.put("/routes/{route_id}")
+async def update_route(route_id: str, payload: RouteUpdate, current_user: dict = Depends(get_current_user)):
+    """Update a route (only creator can update)."""
+    uid = current_user["id"]
+    route = await db.routes.find_one({"_id": _as_object_id(route_id)})
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+    if route.get("created_by") != uid:
+        raise HTTPException(status_code=403, detail="Only the creator can update this route")
+    
+    update_data = {}
+    if payload.title is not None:
+        update_data["title"] = payload.title.strip()
+    if payload.description is not None:
+        update_data["description"] = payload.description.strip()
+    if payload.difficulty is not None:
+        update_data["difficulty"] = payload.difficulty
+    if payload.is_private is not None:
+        update_data["is_private"] = payload.is_private
+    
+    if update_data:
+        update_data["updated_at"] = datetime.utcnow()
+        await db.routes.update_one({"_id": _as_object_id(route_id)}, {"$set": update_data})
+    
+    return {"ok": True}
+
+
 @api_router.delete("/events/{event_id}")
 async def delete_event(event_id: str, current_user: dict = Depends(get_current_user)):
     """Delete an event (only creator can delete)."""
@@ -2390,6 +2424,37 @@ async def delete_event(event_id: str, current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=403, detail="Only the creator can delete this event")
     
     await db.events.delete_one({"_id": _as_object_id(event_id)})
+    return {"ok": True}
+
+
+class EventUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    event_date: Optional[datetime] = None
+
+
+@api_router.put("/events/{event_id}")
+async def update_event(event_id: str, payload: EventUpdate, current_user: dict = Depends(get_current_user)):
+    """Update an event (only creator can update)."""
+    uid = current_user["id"]
+    event = await db.events.find_one({"_id": _as_object_id(event_id)})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if event.get("created_by") != uid:
+        raise HTTPException(status_code=403, detail="Only the creator can update this event")
+    
+    update_data = {}
+    if payload.title is not None:
+        update_data["title"] = payload.title.strip()
+    if payload.description is not None:
+        update_data["description"] = payload.description.strip()
+    if payload.event_date is not None:
+        update_data["event_date"] = payload.event_date
+    
+    if update_data:
+        update_data["updated_at"] = datetime.utcnow()
+        await db.events.update_one({"_id": _as_object_id(event_id)}, {"$set": update_data})
+    
     return {"ok": True}
 
 
