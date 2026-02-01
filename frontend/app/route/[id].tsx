@@ -10,12 +10,15 @@ import {
   StyleSheet,
   Text,
   View,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
 import { Colors } from "../../src/theme/colors";
-import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
+import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut } from "../../src/types/api";
 
@@ -27,6 +30,10 @@ export default function RouteDetailScreen() {
   const [route, setRoute] = useState<RouteOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
