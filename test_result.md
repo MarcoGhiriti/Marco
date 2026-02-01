@@ -300,6 +300,17 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "🎉 PLACES AUTOCOMPLETE & DIRECTIONS API TESTING COMPLETE! All 6 test scenarios from review request passed with 100% success rate: ✅ Authentication with user1@example.com/Password123 successful ✅ GET /api/places/autocomplete?query=Bucuresti returns 5 autocomplete results with required fields (place_id, description, main_text, secondary_text) ✅ GET /api/places/details returns coordinates (lat=44.4267674, lng=26.1025384) and place info for Bucharest ✅ GET /api/directions/route returns route polyline with 229 points, 553.39km distance, 413min duration ✅ POST /api/routes creates route with created_by field populated correctly ✅ POST /api/events creates event with created_by field populated correctly (fixed EventOut model) ✅. Google Maps API integration fully functional. Minor fix applied: Added missing created_by field to EventOut model and updated create_event and list_events endpoints. Places and Directions APIs production-ready."
+##   - task: "Routes City Detection (start_city/end_city fields)"
+##     implemented: true
+##     working: true
+##     file: "backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: false
+##     status_history:
+##       - working: true
+##         agent: "testing"
+##         comment: "🎉 CITY ROUTES BACKEND TESTING COMPLETE! All 4 test scenarios from review request passed with 100% success rate: ✅ Authentication with user1@example.com/Password123 successful ✅ POST /api/routes creates NEW route with 2-point polyline (Bucharest area) and response contains start_city='București' and end_city='București' (both populated as strings) ✅ GET /api/routes (list) confirms same route has start_city/end_city populated correctly ✅ GET /api/routes/my also shows start_city/end_city populated correctly ✅ Regression test: existing endpoints (health, auth, events) still working perfectly. City detection feature fully functional using Google Geocoding API. New routes automatically get city names populated while old routes remain with null values as per requirement. Routes city detection ready for production use."
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
