@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Colors } from "../../src/theme/colors";
 import { useAuthStore } from "../../src/state/authStore";
 
