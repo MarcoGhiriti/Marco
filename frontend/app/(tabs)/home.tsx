@@ -140,7 +140,7 @@ export default function HomeScreen() {
     }
     setError(null);
     try {
-      await Promise.all([loadRoutes(), loadStories(), loadActiveRide(), loadLicenseStatus()]);
+      await Promise.all([loadRoutes(), loadStories(), loadActiveRide(), loadLicenseStatus(), loadUnreadNotifCount()]);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       setError(msg);
@@ -148,7 +148,7 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [authHeader, loadRoutes, loadStories, loadActiveRide]);
+  }, [authHeader, loadRoutes, loadStories, loadActiveRide, loadLicenseStatus, loadUnreadNotifCount]);
 
   useEffect(() => {
     load();
