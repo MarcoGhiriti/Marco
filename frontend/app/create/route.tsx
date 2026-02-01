@@ -711,6 +711,21 @@ export default function CreateRouteScreen() {
               </View>
             </View>
 
+            <View style={styles.formCard}>
+              <Text style={styles.formLabel}>Minimum engine size (cc)</Text>
+              <TextInput
+                value={minEngineCc}
+                onChangeText={(v) => setMinEngineCc(v.replace(/[^0-9]/g, ""))}
+                placeholder="e.g. 600"
+                placeholderTextColor={Colors.muted}
+                style={styles.formInput}
+                keyboardType="number-pad"
+              />
+              <Text style={styles.formHint}>
+                Riders with a smaller bike CC won't be able to join.
+              </Text>
+            </View>
+
             {error && <Text style={styles.errorTextSmall}>{error}</Text>}
             <View style={{ height: 40 }} />
           </ScrollView>
