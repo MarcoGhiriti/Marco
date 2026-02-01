@@ -2,12 +2,14 @@
 """
 Comprehensive Backend Testing for Moto GO Release Readiness
 Tests all backend APIs according to review request specifications
+UPDATED: Group Search + Join Feature Re-test (Romanian review request)
 """
 
 import asyncio
 import json
 import random
 import string
+import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
