@@ -36,6 +36,9 @@ type GroupInfo = {
   group_name: string;
   created_by: string;
   members: GroupMember[];
+  // optional fields depending on endpoint
+  name?: string;
+  photo_base64?: string | null;
 };
 
 export default function GroupChatScreen() {
