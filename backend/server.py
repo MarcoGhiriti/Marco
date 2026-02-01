@@ -2098,11 +2098,31 @@ async def create_route(payload: RouteCreate, current_user: dict = Depends(get_cu
     except Exception:
         pass
 
+    # Enrich waypoints with city information
+    enriched_waypoints = []
+    try:
+        if payload.waypoints:
+            waypoints_dicts = [wp.model_dump() for wp in payload.waypoints]
+            enriched_waypoints_dicts = await _enrich_waypoints_with_city(waypoints_dicts)
+            enriched_waypoints = [WaypointOut(**wp) for wp in enriched_waypoints_dicts]
+            
+            # Update database with enriched waypoints
+            await db.routes.update_one(
+                {"_id": res.inserted_id},
+                {"$set": {"waypoints": enriched_waypoints_dicts}},
+            )
+    except Exception:
+        # Fallback to original waypoints without city info
+        enriched_waypoints = [WaypointOut(**wp.model_dump()) for wp in payload.waypoints]
+
     out = RouteOut(
         id=_oid_str(res.inserted_id),
         title=doc["title"],
         description=doc["description"],
         polyline=doc["polyline"],
+        start_point=doc.get("start_point"),
+        end_point=doc.get("end_point"),
+        waypoints=enriched_waypoints,
         distance_km=doc["distance_km"],
         duration_min=doc["duration_min"],
         stops_count=doc["stops_count"],
