@@ -52,7 +52,10 @@ export default function NotificationsScreen() {
   }, [accessToken]);
 
   const loadNotifications = useCallback(async () => {
-    if (!headers) return;
+    if (!headers) {
+      setLoading(false);
+      return;
+    }
     try {
       const data = await apiGet<Notification[]>("/api/notifications", headers);
       setNotifications(data);
