@@ -36,6 +36,12 @@ export function StoryViewer({
   onClose,
   onDeleteStory,
 }: StoryViewerProps) {
+  const { accessToken } = useAuthStore();
+
+  const authHeader = useMemo(() => {
+    if (!accessToken) return undefined;
+    return { Authorization: `Bearer ${accessToken}` };
+  }, [accessToken]);
   const [ownerIndex, setOwnerIndex] = useState(initialOwnerIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const progressAnim = useRef(new Animated.Value(0)).current;
