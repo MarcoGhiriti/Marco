@@ -768,7 +768,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  },
   blockedTitle: {
     color: Colors.warning,
     fontSize: 24,
