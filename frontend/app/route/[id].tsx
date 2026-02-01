@@ -33,6 +33,10 @@ export default function RouteDetailScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editDifficulty, setEditDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [editRules, setEditRules] = useState("");
+  const [editParticipantsMin, setEditParticipantsMin] = useState("1");
+  const [editParticipantsMax, setEditParticipantsMax] = useState("10");
   const [editSaving, setEditSaving] = useState(false);
 
   const headers = useMemo(() => {
