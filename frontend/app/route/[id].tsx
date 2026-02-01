@@ -619,48 +619,6 @@ export default function RouteDetailScreen() {
                     keyboardType="number-pad"
                     maxLength={3}
                   />
-  stopRow: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  stopLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  stopBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 10,
-    backgroundColor: Colors.card2,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stopBadgeText: {
-    color: Colors.text,
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-  },
-  stopTitle: {
-    color: Colors.text,
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-  },
-  stopSubtitle: {
-    color: Colors.muted,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    marginTop: 2,
-  },
-
-                  />
                 </View>
               </View>
 
