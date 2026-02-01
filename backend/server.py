@@ -2,6 +2,7 @@ import logging
 import os
 import uuid
 from datetime import datetime, timedelta
+from enum import Enum
 from pathlib import Path
 from typing import Any, Literal, Optional
 
