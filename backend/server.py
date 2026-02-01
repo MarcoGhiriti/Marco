@@ -2728,9 +2728,24 @@ async def route_join(route_id: str, current_user: dict = Depends(get_current_use
             detail="You must verify your motorcycle license before joining routes."
         )
     
-    res = await db.routes.update_one({"_id": _as_object_id(route_id)}, {"$addToSet": {"participants": uid}})
-    if res.matched_count == 0:
+    route = await db.routes.find_one({"_id": _as_object_id(route_id)})
+    if not route:
         raise HTTPException(status_code=404, detail="Route not found")
+
+    min_cc = route.get("min_engine_cc")
+    user_cc = None
+    try:
+        user_cc = (user.get("bike") or {}).get("cc")
+    except Exception:
+        user_cc = None
+
+    if isinstance(min_cc, int) and min_cc > 0:
+        if not isinstance(user_cc, int):
+            raise HTTPException(status_code=403, detail="Set your bike CC to join this route")
+        if user_cc < min_cc:
+            raise HTTPException(status_code=403, detail=f"Minimum {min_cc}cc required")
+
+    res = await db.routes.update_one({"_id": _as_object_id(route_id)}, {"$addToSet": {"participants": uid}})
     return {"ok": True}
 
 
