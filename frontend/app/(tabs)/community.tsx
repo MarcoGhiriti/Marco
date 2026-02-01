@@ -261,13 +261,6 @@ function GroupsTab() {
     setGroups(data);
   }, [headers]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        await loadGroups();
-      } catch (e) {
-
   const searchGroups = useCallback(async () => {
     if (!headers) return;
     const term = groupQ.trim();
@@ -307,6 +300,12 @@ function GroupsTab() {
     [headers, loadGroups]
   );
 
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        await loadGroups();
+      } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load groups");
       } finally {
         setLoading(false);
