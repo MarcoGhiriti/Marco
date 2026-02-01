@@ -934,26 +934,132 @@ async def me(current_user: dict = Depends(get_current_user)):
     return UserPublic(**current_user)
 
 
+async def verify_license_with_ai(image_base64: str) -> dict:
+    """Use AI to verify if the image is a valid driver's license."""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    
+    emergent_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not emergent_key:
+        logger.warning("EMERGENT_LLM_KEY not configured, skipping AI verification")
+        return {"is_valid": True, "reason": "AI verification not configured", "confidence": 0}
+    
+    try:
+        # Clean base64 string (remove data URL prefix if present)
+        clean_base64 = image_base64
+        if "," in clean_base64:
+            clean_base64 = clean_base64.split(",")[1]
+        
+        chat = LlmChat(
+            api_key=emergent_key,
+            session_id=f"license-verify-{uuid.uuid4()}",
+            system_message="""You are an expert at verifying driver's licenses. 
+Your task is to determine if an image shows a valid driver's license or motorcycle license.
+
+Respond ONLY with a JSON object in this exact format:
+{
+    "is_license": true/false,
+    "confidence": 0-100,
+    "reason": "brief explanation"
+}
+
+A valid license should show:
+- An official government-issued document
+- Photo of the holder
+- Text with name, dates, categories
+- Official stamps or holograms
+
+Reject images that are:
+- Random photos (people, objects, landscapes)
+- Screenshots of other apps
+- Blank or corrupted images
+- Obviously fake or edited documents"""
+        ).with_model("openai", "gpt-4o")
+        
+        image_content = ImageContent(image_base64=clean_base64)
+        
+        user_message = UserMessage(
+            text="Is this image a valid driver's license or motorcycle license? Analyze carefully and respond with JSON only.",
+            file_contents=[image_content]
+        )
+        
+        response = await chat.send_message(user_message)
+        logger.info(f"AI license verification response: {response}")
+        
+        # Parse the JSON response
+        import json
+        import re
+        
+        # Try to extract JSON from response
+        json_match = re.search(r'\{[^}]+\}', response, re.DOTALL)
+        if json_match:
+            result = json.loads(json_match.group())
+            return {
+                "is_valid": result.get("is_license", False),
+                "confidence": result.get("confidence", 0),
+                "reason": result.get("reason", "Unknown")
+            }
+        else:
+            # If no JSON found, check for positive keywords
+            is_valid = any(word in response.lower() for word in ["yes", "valid", "license", "true"])
+            return {
+                "is_valid": is_valid,
+                "confidence": 50,
+                "reason": response[:200]
+            }
+            
+    except Exception as e:
+        logger.error(f"AI license verification failed: {e}")
+        return {"is_valid": False, "reason": f"Verification error: {str(e)}", "confidence": 0}
+
+
 @api_router.post("/me/license")
 async def upload_license(payload: LicenseUpload, current_user: dict = Depends(get_current_user)):
-    """Upload motorcycle license for verification - AUTO VERIFIED."""
+    """Upload motorcycle license for verification with AI check."""
     uid = current_user["id"]
     
-    # Auto-verify the license (in production, you might want manual review)
+    # Step 1: Verify with AI that it's actually a license
+    ai_result = await verify_license_with_ai(payload.license_photo_base64)
+    
+    if not ai_result.get("is_valid", False):
+        # Save the attempt but mark as not verified
+        await db.users.update_one(
+            {"_id": _as_object_id(uid)},
+            {
+                "$set": {
+                    "license_type": payload.license_type,
+                    "license_photo_base64": payload.license_photo_base64,
+                    "license_verified": False,
+                    "license_rejection_reason": ai_result.get("reason", "Invalid image"),
+                    "license_submitted_at": datetime.utcnow(),
+                }
+            }
+        )
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid license image: {ai_result.get('reason', 'The uploaded image does not appear to be a valid driver license.')}"
+        )
+    
+    # Step 2: AI confirmed it's a license - verify it
     await db.users.update_one(
         {"_id": _as_object_id(uid)},
         {
             "$set": {
                 "license_type": payload.license_type,
                 "license_photo_base64": payload.license_photo_base64,
-                "license_verified": True,  # Auto-verified!
+                "license_verified": True,
+                "license_verification_confidence": ai_result.get("confidence", 0),
                 "license_submitted_at": datetime.utcnow(),
                 "license_verified_at": datetime.utcnow(),
             }
         }
     )
     
-    return {"ok": True, "message": "License verified successfully!", "verified": True}
+    return {
+        "ok": True, 
+        "message": "License verified successfully!", 
+        "verified": True,
+        "confidence": ai_result.get("confidence", 0)
+    }
 
 
 @api_router.get("/me/license-status")
