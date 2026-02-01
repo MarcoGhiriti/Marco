@@ -188,12 +188,10 @@ function ChatsTab() {
           {friends.length === 0 ? (
             <Text style={styles.mutedText}>No friends yet.</Text>
           ) : (
-            <FlashList
-              data={friends}
-              estimatedItemSize={64}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item: f }) => (
+            <View style={{ gap: 10 }}>
+              {friends.map((f) => (
                 <Pressable
+                  key={f.id}
                   onPress={() => router.push(`/profile/${f.id}`)}
                   style={styles.rowCard}
                 >
@@ -224,8 +222,8 @@ function ChatsTab() {
                     <Ionicons name="chatbubble-outline" size={18} color={Colors.accent} />
                   </Pressable>
                 </Pressable>
-              )}
-            />
+              ))}
+            </View>
           )}
         </View>
       </Pressable>
