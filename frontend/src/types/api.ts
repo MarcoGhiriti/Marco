@@ -106,7 +106,7 @@ export type RideSessionOut = {
   id: string;
   user_id: string;
   route_id: string;
-  status: "active" | "completed" | "cancelled";
+  status: "active" | "paused" | "completed" | "cancelled";
   start_time: string;
   end_time?: string | null;
   km_tracked: number;
