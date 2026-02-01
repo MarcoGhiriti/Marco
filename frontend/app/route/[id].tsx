@@ -122,7 +122,27 @@ export default function RouteDetailScreen() {
 
   const handleEdit = () => {
     if (!route) return;
-    router.push(`/create/route?edit=${route.id}`);
+    setEditTitle(route.title);
+    setEditDescription(route.description || "");
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!headers || !route) return;
+    setEditSaving(true);
+    try {
+      await apiPut(`/api/routes/${route.id}`, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+      }, headers);
+      setShowEditModal(false);
+      await loadRoute();
+      Alert.alert("Success", "Route updated successfully!");
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Could not update route");
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const isCreator = me?.id && route?.created_by === me.id;
