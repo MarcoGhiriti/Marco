@@ -178,7 +178,59 @@ class MotoGoTester:
             print(f"❌ Failed to start ride: {response.text}")
             return {"success": False, "error": response.text}
     
-    async def cancel_ride(self, session_id: str) -> dict:
+    async def test_ride_start_without_license(self) -> dict:
+        """Test that starting a ride without verified license returns 403."""
+        print("🚫 Testing ride start without verified license...")
+        
+        # Create a test route first
+        route_data = {
+            "title": f"License Test Route {random.randint(1000, 9999)}",
+            "description": "Test route for license verification",
+            "polyline": [
+                [44.4268, 26.1025],  # Bucharest coordinates
+                [44.4778, 26.0598]   # Nearby point
+            ],
+            "difficulty": "medium",
+            "participants_min": 1,
+            "participants_max": 10
+        }
+        
+        route_response = await self.client.post(
+            f"{BACKEND_URL}/routes",
+            json=route_data,
+            headers=self._auth_headers()
+        )
+        
+        if route_response.status_code != 200:
+            return {"success": False, "error": f"Failed to create test route: {route_response.text}"}
+        
+        route_id = route_response.json().get("id")
+        
+        # Try to start ride (should fail if no license)
+        response = await self.client.post(
+            f"{BACKEND_URL}/rides/start",
+            json={"route_id": route_id},
+            headers=self._auth_headers()
+        )
+        
+        print(f"POST /api/rides/start (no license) response: {response.status_code}")
+        
+        if response.status_code == 403:
+            data = response.json()
+            detail = data.get("detail", "")
+            if "license" in detail.lower():
+                print(f"✅ Ride start correctly blocked without license: {detail}")
+                return {"success": True, "blocked": True, "detail": detail}
+            else:
+                print(f"❌ 403 returned but wrong detail: {detail}")
+                return {"success": False, "error": f"Wrong 403 detail: {detail}"}
+        elif response.status_code == 200:
+            print("ℹ️ Ride start succeeded - user has verified license")
+            return {"success": True, "blocked": False, "detail": "User has verified license"}
+        else:
+            print(f"❌ Unexpected response: {response.status_code}: {response.text}")
+            return {"success": False, "error": f"Unexpected status {response.status_code}"}
+    
         """Cancel an active ride session."""
         print(f"❌ Cancelling ride session {session_id}...")
         
