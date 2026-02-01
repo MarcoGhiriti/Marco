@@ -23,6 +23,8 @@ export type RouteOut = {
   is_joined: boolean;
   created_by: string;
   start_date?: string | null;
+  start_city?: string | null;
+  end_city?: string | null;
   created_at: string;
 };
 
