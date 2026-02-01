@@ -2416,6 +2416,9 @@ class RouteUpdate(BaseModel):
     description: Optional[str] = None
     difficulty: Optional[str] = None
     is_private: Optional[bool] = None
+    rules: Optional[str] = None
+    participants_min: Optional[int] = None
+    participants_max: Optional[int] = None
 
 
 @api_router.put("/routes/{route_id}")
@@ -2437,6 +2440,12 @@ async def update_route(route_id: str, payload: RouteUpdate, current_user: dict =
         update_data["difficulty"] = payload.difficulty
     if payload.is_private is not None:
         update_data["is_private"] = payload.is_private
+    if payload.rules is not None:
+        update_data["rules"] = payload.rules.strip()
+    if payload.participants_min is not None:
+        update_data["participants_min"] = payload.participants_min
+    if payload.participants_max is not None:
+        update_data["participants_max"] = payload.participants_max
     
     if update_data:
         update_data["updated_at"] = datetime.utcnow()
