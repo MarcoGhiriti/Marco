@@ -231,6 +231,7 @@ class MotoGoTester:
             print(f"❌ Unexpected response: {response.status_code}: {response.text}")
             return {"success": False, "error": f"Unexpected status {response.status_code}"}
     
+    async def cancel_ride(self, session_id: str) -> dict:
         """Cancel an active ride session."""
         print(f"❌ Cancelling ride session {session_id}...")
         
