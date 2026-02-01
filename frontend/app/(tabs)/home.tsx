@@ -373,7 +373,7 @@ export default function HomeScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.activeRideTitle}>
-                {activeRide.status === "paused" ? "⏸️ Ride Paused" : "🏍️ Ride in Progress"}
+                {activeRide.status === "paused" ? "Ride Paused" : "Ride in Progress"}
               </Text>
               <Text style={styles.activeRideSub}>
                 Tap to {activeRide.status === "paused" ? "resume" : "view progress"}
