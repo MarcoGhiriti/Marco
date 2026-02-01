@@ -1468,6 +1468,37 @@ async def event_leave(event_id: str, current_user: dict = Depends(get_current_us
     return {"ok": True}
 
 
+@api_router.post("/events/{event_id}/invite")
+async def event_invite(event_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    """Invite a user to an event (sends notification)."""
+    uid = current_user["id"]
+    inviter_username = current_user.get("username", "Someone")
+    
+    event = await db.events.find_one({"_id": _as_object_id(event_id)})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
+    # Check if target user exists
+    target_user = await db.users.find_one({"_id": _as_object_id(user_id)})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    event_title = event.get("title", "an event")
+    await create_notification(
+        user_id=user_id,
+        notif_type="event_invite",
+        title="Event Invitation",
+        message=f"{inviter_username} invited you to '{event_title}'",
+        data={"event_id": event_id, "event_title": event_title, "inviter_id": uid}
+    )
+    
+    return {"ok": True}
+
+
 @api_router.post("/dm/{other_user_id}/messages", response_model=MessageOut)
 async def dm_send_rest(other_user_id: str, payload: MessageCreate, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
