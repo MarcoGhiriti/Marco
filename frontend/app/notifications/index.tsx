@@ -441,4 +441,31 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent,
     marginTop: 4,
   },
+  actionBtns: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  acceptBtn: {
+    backgroundColor: Colors.accent,
+  },
+  rejectBtn: {
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  actionBtnText: {
+    color: "#FFF",
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
 });
