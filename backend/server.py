@@ -1965,6 +1965,8 @@ async def create_route(payload: RouteCreate, current_user: dict = Depends(get_cu
         "participants": [uid],  # Creator automatically joins
         "created_by": uid,
         "start_date": payload.start_date,
+        "start_city": None,
+        "end_city": None,
         "created_at": now,
     }
 
