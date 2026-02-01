@@ -109,9 +109,11 @@ export default function ProfileScreen() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [myRoutes, setMyRoutes] = useState<RouteOut[]>([]);
+  const [myEvents, setMyEvents] = useState<EventOut[]>([]);
   const [activeRide, setActiveRide] = useState<RideSessionOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"routes" | "events">("routes");
   
   // License verification state
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
