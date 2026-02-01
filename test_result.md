@@ -256,6 +256,17 @@
 ##   - task: "Map Reports API (police/hazard/radar/accident reports with voting)"
 ##     implemented: true
 ##     working: true
+##   - task: "Group Search (public groups) + Join flow"
+##     implemented: true
+##     working: true
+##     file: "backend/server.py, frontend/app/(tabs)/community.tsx"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Implemented GET /api/groups/search?q=... (public only) with pagination + ensured Mongo indexes for scale. Added Community → Groups UI section 'Descoperă grupuri' with search bar and Join button that calls /api/groups/{id}/join."
 ##     file: "backend/server.py"
 ##     stuck_count: 0
 ##     priority: "high"
