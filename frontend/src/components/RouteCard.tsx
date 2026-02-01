@@ -30,6 +30,23 @@ export function RouteCard({
     return Colors.danger;
   }, [item.difficulty]);
 
+  const startDateText = useMemo(() => {
+    if (!item.start_date) return null;
+    try {
+      const d = new Date(item.start_date);
+      if (isNaN(d.getTime())) return null;
+      return d.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return null;
+    }
+  }, [item.start_date]);
+
   const isCreator = currentUserId && item.created_by === currentUserId;
   const hasActiveRide = activeRideRouteId === item.id;
 
