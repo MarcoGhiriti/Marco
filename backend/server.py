@@ -2203,6 +2203,15 @@ async def delete_report(report_id: str, current_user: dict = Depends(get_current
 @api_router.post("/routes/{route_id}/join")
 async def route_join(route_id: str, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
+    
+    # Check if user has verified license
+    user = await db.users.find_one({"_id": _as_object_id(uid)})
+    if not user or not user.get("license_verified", False):
+        raise HTTPException(
+            status_code=403, 
+            detail="You must verify your motorcycle license before joining routes."
+        )
+    
     res = await db.routes.update_one({"_id": _as_object_id(route_id)}, {"$addToSet": {"participants": uid}})
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Route not found")
