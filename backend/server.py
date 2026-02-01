@@ -2427,18 +2427,19 @@ async def end_ride(payload: RideSessionEnd, current_user: dict = Depends(get_cur
 
 @api_router.post("/rides/cancel")
 async def cancel_ride(payload: dict, current_user: dict = Depends(get_current_user)):
-    """Cancel an active ride session."""
+    """Cancel an active or paused ride session."""
     uid = current_user["id"]
     session_id = payload.get("session_id")
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id is required")
     
+    # Allow cancelling both active AND paused rides
     res = await db.ride_sessions.update_one(
-        {"_id": _as_object_id(session_id), "user_id": uid, "status": "active"},
+        {"_id": _as_object_id(session_id), "user_id": uid, "status": {"$in": ["active", "paused"]}},
         {"$set": {"status": "cancelled", "end_time": datetime.utcnow()}}
     )
     if res.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Active ride session not found")
+        raise HTTPException(status_code=404, detail="Active or paused ride session not found")
     return {"ok": True}
 
 
