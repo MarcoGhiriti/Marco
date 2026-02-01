@@ -128,6 +128,10 @@ export default function RouteDetailScreen() {
     if (!route) return;
     setEditTitle(route.title);
     setEditDescription(route.description || "");
+    setEditDifficulty(route.difficulty);
+    setEditRules(route.rules || "");
+    setEditParticipantsMin(String(route.participants_min || 1));
+    setEditParticipantsMax(String(route.participants_max || 10));
     setShowEditModal(true);
   };
 
@@ -138,6 +142,10 @@ export default function RouteDetailScreen() {
       await apiPut(`/api/routes/${route.id}`, {
         title: editTitle.trim(),
         description: editDescription.trim(),
+        difficulty: editDifficulty,
+        rules: editRules.trim(),
+        participants_min: parseInt(editParticipantsMin) || 1,
+        participants_max: parseInt(editParticipantsMax) || 10,
       }, headers);
       setShowEditModal(false);
       await loadRoute();
