@@ -551,6 +551,9 @@ class RouteCreate(BaseModel):
     end_point: Optional[list[float]] = Field(default=None, min_length=2, max_length=2)
     waypoints: list[WaypointIn] = Field(default_factory=list)
 
+    # Minimum engine size requirement (cc) to join
+    min_engine_cc: Optional[int] = Field(default=None, ge=50, le=3000)
+
     rules: str = Field(default="", max_length=800)
     difficulty: Difficulty = "medium"
     participants_min: int = Field(default=1, ge=1, le=99)
@@ -593,6 +596,8 @@ class RouteOut(BaseModel):
     start_point: Optional[list[float]] = None
     end_point: Optional[list[float]] = None
     waypoints: list[WaypointOut] = Field(default_factory=list)
+
+    min_engine_cc: Optional[int] = None
 
     distance_km: float
     duration_min: int
@@ -2828,6 +2833,11 @@ class RouteUpdate(BaseModel):
     rules: Optional[str] = None
     participants_min: Optional[int] = None
     participants_max: Optional[int] = None
+    start_date: Optional[datetime] = None
+    start_point: Optional[list[float]] = None
+    end_point: Optional[list[float]] = None
+    waypoints: Optional[list[WaypointIn]] = None
+    min_engine_cc: Optional[int] = None
 
 
 @api_router.put("/routes/{route_id}")
