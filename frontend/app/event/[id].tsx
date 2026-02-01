@@ -471,8 +471,17 @@ export default function EventDetailScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Bottom Action Button */}
+      {/* Bottom Action Bar */}
       <View style={styles.bottomBar}>
+        <View style={styles.bottomActions}>
+          <Pressable onPress={handleOpenInvite} style={styles.actionIconBtn}>
+            <Ionicons name="person-add-outline" size={22} color={Colors.accent} />
+          </Pressable>
+          <Pressable onPress={handleShare} style={styles.actionIconBtn}>
+            <Ionicons name="share-outline" size={22} color={Colors.accent} />
+          </Pressable>
+        </View>
+
         <Pressable
           onPress={handleJoin}
           style={[styles.joinButton, event.is_joined && styles.joinButtonJoined]}
@@ -487,6 +496,19 @@ export default function EventDetailScreen() {
           </Text>
         </Pressable>
       </View>
+
+      <InviteFriendsModal
+        visible={showInviteModal}
+        title="Invită prieteni la eveniment"
+        friends={friends}
+        loading={loadingFriends}
+        onClose={() => setShowInviteModal(false)}
+        onInvite={async (friendId) => {
+          await handleInviteToEvent(friendId);
+        }}
+        emptyTitle="Nu ai prieteni de invitat"
+        emptySubtitle="Adaugă prieteni ca să îi poți invita la eveniment."
+      />
 
       {/* Edit Modal */}
       <Modal
