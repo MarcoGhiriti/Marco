@@ -188,33 +188,44 @@ function ChatsTab() {
           {friends.length === 0 ? (
             <Text style={styles.mutedText}>No friends yet.</Text>
           ) : (
-            friends.map((f) => (
-              <Pressable 
-                key={f.id} 
-                onPress={() => router.push(`/profile/${f.id}`)} 
-                style={styles.rowCard}
-              >
-                <View style={styles.friendInfo}>
-                  <View style={styles.friendAvatar}>
-                    {f.avatar ? (
-                      <Image
-                        source={{ uri: f.avatar.startsWith('data:') ? f.avatar : `data:image/jpeg;base64,${f.avatar}` }}
-                        style={styles.friendAvatarImage}
-                      />
-                    ) : (
-                      <Ionicons name="person" size={18} color={Colors.muted} />
-                    )}
-                  </View>
-                  <Text style={styles.rowTitle}>{f.username}</Text>
-                </View>
-                <Pressable 
-                  onPress={(e) => { e.stopPropagation(); openChat(f.id); }} 
-                  style={styles.chatIconBtn}
+            <FlashList
+              data={friends}
+              estimatedItemSize={64}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item: f }) => (
+                <Pressable
+                  onPress={() => router.push(`/profile/${f.id}`)}
+                  style={styles.rowCard}
                 >
-                  <Ionicons name="chatbubble-outline" size={18} color={Colors.accent} />
+                  <View style={styles.friendInfo}>
+                    <View style={styles.friendAvatar}>
+                      {f.profile_photo_base64 ? (
+                        <Image
+                          source={{
+                            uri: f.profile_photo_base64.startsWith("data:")
+                              ? f.profile_photo_base64
+                              : `data:image/jpeg;base64,${f.profile_photo_base64}`,
+                          }}
+                          style={styles.friendAvatarImage}
+                        />
+                      ) : (
+                        <Ionicons name="person" size={18} color={Colors.muted} />
+                      )}
+                    </View>
+                    <Text style={styles.rowTitle}>{f.username}</Text>
+                  </View>
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      openChat(f.id);
+                    }}
+                    style={styles.chatIconBtn}
+                  >
+                    <Ionicons name="chatbubble-outline" size={18} color={Colors.accent} />
+                  </Pressable>
                 </Pressable>
-              </Pressable>
-            ))
+              )}
+            />
           )}
         </View>
       </Pressable>
