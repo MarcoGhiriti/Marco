@@ -514,6 +514,32 @@ class PlaceDetailsResult(BaseModel):
 
 
 # -----------------
+# Notifications Models
+# -----------------
+
+class NotificationType(str, Enum):
+    FRIEND_REQUEST = "friend_request"
+    FRIEND_ACCEPTED = "friend_accepted"
+    ROUTE_INVITE = "route_invite"
+    EVENT_INVITE = "event_invite"
+    GROUP_INVITE = "group_invite"
+    ROUTE_REMINDER = "route_reminder"
+    EVENT_REMINDER = "event_reminder"
+    ROUTE_UPDATED = "route_updated"
+    EVENT_UPDATED = "event_updated"
+
+
+class NotificationOut(BaseModel):
+    id: str
+    type: str
+    title: str
+    message: str
+    data: dict = {}  # Additional data (route_id, event_id, user_id, etc.)
+    read: bool = False
+    created_at: datetime
+
+
+# -----------------
 # Stories Models
 # -----------------
 
