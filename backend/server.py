@@ -419,7 +419,23 @@ async def ensure_route_city_fields(doc: dict) -> dict:
         if not end_city and isinstance(end, list) and len(end) == 2:
             end_city = await google_reverse_geocode_city(float(end[0]), float(end[1]))
 
-async def _enrich_waypoints_with_city(waypoints: list[dict], max_geocodes: int = 12) -> list[dict]:
+        # update local doc
+        if start_city:
+            doc["start_city"] = start_city
+        if end_city:
+            doc["end_city"] = end_city
+
+    except Exception:
+        # best-effort only
+        return doc
+
+    return doc
+
+
+async def _enrich_waypoints_with_city(
+    waypoints: list[dict],
+    max_geocodes: int = 12,
+) -> list[dict]:
     """Best-effort: add `city` field to waypoint dicts using reverse geocoding.
 
     To keep API usage under control, we cap the number of geocoding calls.
@@ -436,19 +452,6 @@ async def _enrich_waypoints_with_city(waypoints: list[dict], max_geocodes: int =
                 pass
         out.append(wp2)
     return out
-
-
-        # update local doc
-        if start_city:
-            doc["start_city"] = start_city
-        if end_city:
-            doc["end_city"] = end_city
-
-    except Exception:
-        # best-effort only
-        return doc
-
-    return doc
 
 
 # -----------------
