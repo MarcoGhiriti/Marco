@@ -32,6 +32,21 @@ type UnreadCountResponse = {
   count: number;
 };
 
+type RideProgress = {
+  ride_id: string;
+  route_id: string;
+  route_title: string;
+  creator_id: string;
+  creator_username: string;
+  status: string;
+  progress_percent: number;
+  distance_km: number;
+  elapsed_minutes: number;
+  participants: string[];
+  is_creator: boolean;
+  current_location?: { lat: number; lng: number } | null;
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
