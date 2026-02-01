@@ -133,16 +133,18 @@ export default function ProfileScreen() {
     setLoading(true);
     try {
       await refreshMe();
-      const [statsData, friendsData, routesData, rideData, licenseData] = await Promise.all([
+      const [statsData, friendsData, routesData, eventsData, rideData, licenseData] = await Promise.all([
         apiGet<Stats>("/api/stats", headers),
         apiGet<Friend[]>("/api/friends", headers),
         apiGet<RouteOut[]>("/api/routes/my", headers),
+        apiGet<EventOut[]>("/api/events/my", headers),
         apiGet<RideSessionOut | null>("/api/rides/active", headers).catch(() => null),
         apiGet<LicenseStatus>("/api/me/license-status", headers).catch(() => null),
       ]);
       setStats(statsData);
       setFriends(friendsData);
       setMyRoutes(routesData);
+      setMyEvents(eventsData);
       setActiveRide(rideData);
       setLicenseStatus(licenseData);
     } catch (e) {
