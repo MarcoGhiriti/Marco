@@ -318,7 +318,7 @@
 ##   run_ui: false
 ## test_plan:
 ##   current_focus:
-##     - "Places Autocomplete and Directions API (Google Maps integration)"
+##     - "Routes City Detection (start_city/end_city fields)"
 ##   stuck_tasks: []
 ##   test_all: false
 ##   test_priority: "high_first"
