@@ -2076,6 +2076,7 @@ async def create_route(payload: RouteCreate, current_user: dict = Depends(get_cu
         "start_point": payload.start_point,
         "end_point": payload.end_point,
         "waypoints": [wp.model_dump() for wp in payload.waypoints],
+        "min_engine_cc": payload.min_engine_cc,
         "cost_estimate": cost,
         "rules": payload.rules,
         "difficulty": payload.difficulty,
