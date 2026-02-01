@@ -325,6 +325,9 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "🎉 CITY ROUTES BACKEND TESTING COMPLETE! All 4 test scenarios from review request passed with 100% success rate: ✅ Authentication with user1@example.com/Password123 successful ✅ POST /api/routes creates NEW route with 2-point polyline (Bucharest area) and response contains start_city='București' and end_city='București' (both populated as strings) ✅ GET /api/routes (list) confirms same route has start_city/end_city populated correctly ✅ GET /api/routes/my also shows start_city/end_city populated correctly ✅ Regression test: existing endpoints (health, auth, events) still working perfectly. City detection feature fully functional using Google Geocoding API. New routes automatically get city names populated while old routes remain with null values as per requirement. Routes city detection ready for production use."
+##       - working: true
+##         agent: "testing"
+##         comment: "🇷🇴 ROUTE WAYPOINTS/CITIES TESTING COMPLETE! All test scenarios from Romanian review request passed with 100% success rate: ✅ 1) Login user1@example.com/Password123 successful ✅ 2) POST /api/routes creates route with title, description, polyline (2-3 points), start_point, end_point, waypoints (1-2 objects with name, address, lat, lng), start_date ✅ 3) Response includes all required fields: start_point, end_point, waypoints[], start_city, end_city ✅ 4) GET /api/routes returns same fields with waypoints properly populated ✅ 5) Waypoints enriched with city information via Google Geocoding API (cities can be null as acceptable per requirements) ✅ 6) Both route creation and list endpoints working correctly with waypoints structure. Route waypoints/cities functionality fully operational and production-ready."
 ##   - task: "Group Search + Join Feature"
 ##     implemented: true
 ##     working: true
