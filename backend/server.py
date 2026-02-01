@@ -3034,11 +3034,11 @@ async def get_active_ride(current_user: dict = Depends(get_current_user)):
     
     # Find active OR paused rides (both are "in progress")
     # Prefer latest session if somehow multiple exist
-    session = await db.ride_sessions.find({
+    cursor = db.ride_sessions.find({
         "user_id": uid,
         "status": {"$in": ["active", "paused"]},
     }).sort("start_time", -1).limit(1)
-    items = await session.to_list(length=1)
+    items = await cursor.to_list(length=1)
     session = items[0] if items else None
     if not session:
         return None
