@@ -465,6 +465,119 @@ export default function HomeScreen() {
         onClose={() => setStoryViewerVisible(false)}
         onDeleteStory={handleDeleteStory}
       />
+
+      {/* Ride Progress Modal */}
+      <Modal
+        visible={showRideModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowRideModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.rideModal}>
+            <View style={styles.rideModalHeader}>
+              <Text style={styles.rideModalTitle}>Ride Progress</Text>
+              <Pressable onPress={() => setShowRideModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.text} />
+              </Pressable>
+            </View>
+
+            {loadingRideProgress ? (
+              <View style={styles.rideModalLoading}>
+                <ActivityIndicator color={Colors.accent} />
+                <Text style={styles.rideModalLoadingText}>Loading progress...</Text>
+              </View>
+            ) : rideProgress ? (
+              <View style={styles.rideModalContent}>
+                {/* Route Info */}
+                <Text style={styles.rideRouteTitle}>{rideProgress.route_title}</Text>
+                <Text style={styles.rideCreator}>
+                  Started by {rideProgress.creator_username}
+                </Text>
+
+                {/* Progress Circle */}
+                <View style={styles.progressCircleContainer}>
+                  <View style={styles.progressCircle}>
+                    <Text style={styles.progressPercent}>
+                      {Math.round(rideProgress.progress_percent)}%
+                    </Text>
+                    <Text style={styles.progressLabel}>Complete</Text>
+                  </View>
+                </View>
+
+                {/* Stats Row */}
+                <View style={styles.rideStatsRow}>
+                  <View style={styles.rideStat}>
+                    <Ionicons name="speedometer-outline" size={20} color={Colors.accent} />
+                    <Text style={styles.rideStatValue}>{rideProgress.distance_km} km</Text>
+                    <Text style={styles.rideStatLabel}>Distance</Text>
+                  </View>
+                  <View style={styles.rideStat}>
+                    <Ionicons name="time-outline" size={20} color={Colors.accent} />
+                    <Text style={styles.rideStatValue}>{Math.round(rideProgress.elapsed_minutes)} min</Text>
+                    <Text style={styles.rideStatLabel}>Elapsed</Text>
+                  </View>
+                  <View style={styles.rideStat}>
+                    <Ionicons name="people-outline" size={20} color={Colors.accent} />
+                    <Text style={styles.rideStatValue}>{rideProgress.participants.length}</Text>
+                    <Text style={styles.rideStatLabel}>Riders</Text>
+                  </View>
+                </View>
+
+                {/* Status Badge */}
+                <View style={[
+                  styles.statusBadge,
+                  rideProgress.status === "paused" ? styles.statusPaused : styles.statusActive
+                ]}>
+                  <Ionicons 
+                    name={rideProgress.status === "paused" ? "pause" : "play"} 
+                    size={16} 
+                    color="#FFF" 
+                  />
+                  <Text style={styles.statusBadgeText}>
+                    {rideProgress.status === "paused" ? "PAUSED" : "ACTIVE"}
+                  </Text>
+                </View>
+
+                {/* Action Buttons (only for creator) */}
+                {rideProgress.is_creator && (
+                  <View style={styles.rideActionBtns}>
+                    {rideProgress.status === "paused" ? (
+                      <Pressable onPress={handleResumeRide} style={styles.resumeBtn}>
+                        <Ionicons name="play" size={20} color="#FFF" />
+                        <Text style={styles.actionBtnText}>Resume Ride</Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable onPress={handlePauseRide} style={styles.pauseBtn}>
+                        <Ionicons name="pause" size={20} color="#FFF" />
+                        <Text style={styles.actionBtnText}>Pause Ride</Text>
+                      </Pressable>
+                    )}
+                    <Pressable onPress={handleCancelRide} style={styles.cancelBtn}>
+                      <Ionicons name="close-circle" size={20} color={Colors.danger} />
+                      <Text style={[styles.actionBtnText, { color: Colors.danger }]}>Cancel</Text>
+                    </Pressable>
+                  </View>
+                )}
+
+                {/* Not creator info */}
+                {!rideProgress.is_creator && (
+                  <View style={styles.notCreatorInfo}>
+                    <Ionicons name="information-circle-outline" size={18} color={Colors.muted} />
+                    <Text style={styles.notCreatorText}>
+                      Only the ride creator can pause or stop the ride.
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View style={styles.rideModalLoading}>
+                <Text style={styles.rideModalLoadingText}>Could not load progress</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
