@@ -1079,4 +1079,10 @@ const styles = StyleSheet.create({
   difficultyBtnText: { color: Colors.text, fontSize: 13, fontFamily: "Inter_700Bold" },
   difficultyBtnTextActive: { color: Colors.bg },
   errorTextSmall: { color: Colors.danger, fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
+  formHint: {
+    color: Colors.muted,
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 6,
+  },
 });
