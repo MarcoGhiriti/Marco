@@ -2331,13 +2331,21 @@ async def start_ride(payload: RideSessionStart, current_user: dict = Depends(get
     """Start a ride session for a route."""
     uid = current_user["id"]
     
+    # Check if user has verified license
+    user = await db.users.find_one({"_id": _as_object_id(uid)})
+    if not user or not user.get("license_verified", False):
+        raise HTTPException(
+            status_code=403, 
+            detail="You must verify your motorcycle license before starting a ride."
+        )
+    
     # Check if route exists
     route = await db.routes.find_one({"_id": _as_object_id(payload.route_id)})
     if not route:
         raise HTTPException(status_code=404, detail="Route not found")
     
-    # Check if user already has an active ride
-    active = await db.ride_sessions.find_one({"user_id": uid, "status": "active"})
+    # Check if user already has an active or paused ride
+    active = await db.ride_sessions.find_one({"user_id": uid, "status": {"$in": ["active", "paused"]}})
     if active:
         raise HTTPException(status_code=400, detail="You already have an active ride. End it first.")
     
