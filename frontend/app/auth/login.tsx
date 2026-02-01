@@ -55,7 +55,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t("auth.email")}</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
