@@ -1509,6 +1509,26 @@ async def add_group_member(group_id: str, payload: dict, current_user: dict = De
     if owner_id != uid:
         raise HTTPException(status_code=403, detail="Only the group creator can add members")
     
+    # Check member limit
+    current_members = g.get("members", [])
+    max_members = g.get("max_members", 100)  # Default to 100 for old groups
+    
+    if len(current_members) >= max_members:
+        # Check if owner has premium for upgrade message
+        owner = await db.users.find_one({"_id": _as_object_id(owner_id)})
+        has_premium = owner.get("has_subscription", False) if owner else False
+        
+        if has_premium:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Group has reached the maximum of {max_members} members."
+            )
+        else:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Group has reached the maximum of {max_members} members. Upgrade to Premium for up to 1000 members!"
+            )
+    
     user_id = payload.get("user_id")
     if not user_id:
         raise HTTPException(status_code=400, detail="user_id is required")
@@ -1517,6 +1537,10 @@ async def add_group_member(group_id: str, payload: dict, current_user: dict = De
     target_user = await db.users.find_one({"_id": _as_object_id(user_id)})
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if user is already a member
+    if user_id in current_members:
+        raise HTTPException(status_code=400, detail="User is already a member of this group")
     
     await db.groups.update_one({"_id": _as_object_id(group_id)}, {"$addToSet": {"members": user_id}})
     
