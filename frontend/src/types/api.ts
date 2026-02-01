@@ -28,6 +28,12 @@ export type RouteOut = {
   created_at: string;
 };
 
+export type UserSearchOut = {
+  id: string;
+  username: string;
+  profile_photo_base64?: string | null;
+};
+
 export type EventOut = {
   id: string;
   title: string;
