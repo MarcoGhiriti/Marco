@@ -787,6 +787,22 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 30,
   },
+  bottomActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  actionIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   joinButton: {
     flexDirection: "row",
     alignItems: "center",
