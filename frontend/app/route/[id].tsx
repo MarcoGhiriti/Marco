@@ -170,6 +170,34 @@ export default function RouteDetailScreen() {
     }
   };
 
+  const loadFriends = async () => {
+    if (!headers) return;
+    setLoadingFriends(true);
+    try {
+      const data = await apiGet<Friend[]>("/api/friends", headers);
+      setFriends(data);
+    } catch (e) {
+      console.error("Failed to load friends:", e);
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
+
+  const handleOpenInvite = () => {
+    loadFriends();
+    setShowInviteModal(true);
+  };
+
+  const handleInviteToRoute = async (friendId: string) => {
+    if (!headers || !route) return;
+    try {
+      await apiPost(`/api/routes/${route.id}/invite`, { user_id: friendId }, headers);
+      Alert.alert("Success", "Invitation sent!");
+    } catch (e) {
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to send invitation");
+    }
+  };
+
   const isCreator = me?.id && route?.created_by === me.id;
 
   // SVG Map
