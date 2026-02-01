@@ -185,6 +185,13 @@ export default function CreateStoryScreen() {
                 <Ionicons name="trash-outline" size={20} color={Colors.danger} />
               </Pressable>
             </View>
+              {/* Story frame preview overlay */}
+              <View pointerEvents="none" style={styles.frameOverlay}>
+                <View style={styles.frameBorder} />
+                <View style={styles.frameTopFade} />
+                <View style={styles.frameBottomFade} />
+              </View>
+
           ) : (
             <View style={styles.placeholder}>
               <Ionicons
