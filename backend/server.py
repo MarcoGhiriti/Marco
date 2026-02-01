@@ -1,10 +1,11 @@
 import logging
 import os
 import uuid
+import math
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, List, Literal, Optional
 
 from email_validator import EmailNotValidError, validate_email
 
@@ -45,6 +46,22 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[db_name]
 
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
+
+
+def haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """Calculate distance in km between two points using Haversine formula."""
+    R = 6371  # Earth's radius in km
+    
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    delta_lat = math.radians(lat2 - lat1)
+    delta_lng = math.radians(lng2 - lng1)
+    
+    a = math.sin(delta_lat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lng / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    
+    return R * c
+
 
 fastapi_app = FastAPI()
 api_router = APIRouter(prefix="/api")
