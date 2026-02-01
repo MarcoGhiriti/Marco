@@ -80,7 +80,7 @@ export default function LoginScreen() {
             {/* Forgot Password Link */}
             <Link href="/auth/forgot-password" asChild>
               <Pressable style={styles.forgotPasswordRow}>
-                <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+                <Text style={styles.forgotPasswordText}>{t("auth.forgotPassword")}</Text>
               </Pressable>
             </Link>
 
