@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import "../src/lib/i18n";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
