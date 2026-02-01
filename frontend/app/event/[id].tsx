@@ -56,6 +56,12 @@ export default function EventDetailScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+
+  // Invite modal
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [friends, setFriends] = useState<UserSearchOut[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
+
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [editSaving, setEditSaving] = useState(false);
