@@ -192,6 +192,10 @@ export default function EventDetailScreen() {
     if (!event) return;
     setEditTitle(event.title);
     setEditDescription(event.description || "");
+    // Parse the date
+    const eventDate = new Date(event.start_time);
+    setEditDate(eventDate.toISOString().split('T')[0]); // YYYY-MM-DD
+    setEditTime(eventDate.toTimeString().slice(0, 5)); // HH:MM
     setShowEditModal(true);
   };
 
@@ -199,9 +203,15 @@ export default function EventDetailScreen() {
     if (!headers || !event) return;
     setEditSaving(true);
     try {
+      // Combine date and time
+      const eventDateTime = editDate && editTime 
+        ? new Date(`${editDate}T${editTime}:00`) 
+        : null;
+      
       await apiPut(`/api/events/${event.id}`, {
         title: editTitle.trim(),
         description: editDescription.trim(),
+        event_date: eventDateTime?.toISOString(),
       }, headers);
       setShowEditModal(false);
       await loadEvent();
