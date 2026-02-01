@@ -339,9 +339,9 @@ export default function HomeScreen() {
             >
               <Ionicons name="storefront" size={18} color={Colors.bg} />
             </Pressable>
-            <View style={styles.iconBtn}>
+            <Pressable onPress={() => router.push("/search/routes")} style={styles.iconBtn}>
               <Ionicons name="search-outline" size={20} color={Colors.text} />
-            </View>
+            </Pressable>
             <Pressable 
               onPress={() => router.push("/notifications")} 
               style={styles.iconBtn}
