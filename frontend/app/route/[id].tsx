@@ -407,8 +407,8 @@ export default function RouteDetailScreen() {
               </Pressable>
             </View>
 
-            <View style={styles.editModalContent}>
-              <Text style={styles.inputLabel}>Title</Text>
+            <ScrollView style={styles.editModalContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.inputLabel}>Title *</Text>
               <TextInput
                 style={styles.textInput}
                 value={editTitle}
@@ -425,8 +425,68 @@ export default function RouteDetailScreen() {
                 placeholder="Description (optional)"
                 placeholderTextColor={Colors.muted}
                 multiline
-                numberOfLines={4}
+                numberOfLines={3}
               />
+
+              <Text style={styles.inputLabel}>Difficulty</Text>
+              <View style={styles.difficultyPicker}>
+                {(["easy", "medium", "hard"] as const).map((diff) => (
+                  <Pressable
+                    key={diff}
+                    onPress={() => setEditDifficulty(diff)}
+                    style={[
+                      styles.difficultyOption,
+                      editDifficulty === diff && styles.difficultyOptionActive,
+                      diff === "easy" && editDifficulty === diff && { backgroundColor: Colors.success },
+                      diff === "medium" && editDifficulty === diff && { backgroundColor: Colors.warning },
+                      diff === "hard" && editDifficulty === diff && { backgroundColor: Colors.danger },
+                    ]}
+                  >
+                    <Text style={[
+                      styles.difficultyOptionText,
+                      editDifficulty === diff && { color: "#FFF" }
+                    ]}>
+                      {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.inputLabel}>Rules</Text>
+              <TextInput
+                style={[styles.textInput, styles.textAreaInput]}
+                value={editRules}
+                onChangeText={setEditRules}
+                placeholder="Route rules (optional)"
+                placeholderTextColor={Colors.muted}
+                multiline
+                numberOfLines={3}
+              />
+
+              <Text style={styles.inputLabel}>Participants</Text>
+              <View style={styles.participantsRow}>
+                <View style={styles.participantInput}>
+                  <Text style={styles.participantLabel}>Min</Text>
+                  <TextInput
+                    style={styles.numberInput}
+                    value={editParticipantsMin}
+                    onChangeText={setEditParticipantsMin}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                  />
+                </View>
+                <Text style={styles.participantDash}>—</Text>
+                <View style={styles.participantInput}>
+                  <Text style={styles.participantLabel}>Max</Text>
+                  <TextInput
+                    style={styles.numberInput}
+                    value={editParticipantsMax}
+                    onChangeText={setEditParticipantsMax}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                  />
+                </View>
+              </View>
 
               <Pressable
                 onPress={handleSaveEdit}
@@ -445,7 +505,9 @@ export default function RouteDetailScreen() {
                   </>
                 )}
               </Pressable>
-            </View>
+              
+              <View style={{ height: 40 }} />
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
