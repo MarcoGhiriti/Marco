@@ -112,6 +112,14 @@ export function StoryViewer({
       setViewers(data.viewers.map(v => ({ user_id: v.user_id, username: v.username, profile_photo: v.profile_photo })));
     } catch (e) {
       // silent
+
+  // Mark view and (if own story) refresh analytics on each story change
+  useEffect(() => {
+    if (!visible || !currentStory) return;
+    markViewed();
+    loadViews();
+  }, [visible, ownerIndex, storyIndex, currentStory?.id, markViewed, loadViews]);
+
     } finally {
       setLoadingViews(false);
     }
