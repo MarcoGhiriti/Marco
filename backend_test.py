@@ -847,15 +847,223 @@ async def test_profile_settings_readiness():
         print("=" * 60)
         return True
 
+async def test_group_search_join():
+    """Test Group Search + Join feature as per Romanian review request"""
+    print("🔍 Testing Group Search + Join Feature")
+    print("=" * 60)
+    
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        
+        # 1) Login with user1@example.com / Password123
+        print("\n1️⃣ Testing Login with user1@example.com")
+        
+        login_payload = {
+            "email": "user1@example.com",
+            "password": "Password123"
+        }
+        
+        try:
+            login_response = await client.post("https://motogo-dash.preview.emergentagent.com/api/auth/login", json=login_payload)
+            print(f"   Status: {login_response.status_code}")
+            
+            if login_response.status_code != 200:
+                print(f"   ❌ Login failed: {login_response.text}")
+                return False
+                
+            login_data = login_response.json()
+            token = login_data.get("access_token")
+            
+            if not token:
+                print("   ❌ No access token received from login")
+                return False
+                
+            print(f"   ✅ Login successful, token received")
+            
+        except Exception as e:
+            print(f"   ❌ Login failed with exception: {e}")
+            return False
+        
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        # 2) Create Group A: name="Moto GO Public Test", is_private=false
+        print("\n2️⃣ Creating Group A (Public)")
+        
+        group_a_payload = {
+            "name": "Moto GO Public Test",
+            "description": "Test group for Group Search + Join feature testing",
+            "is_private": False
+        }
+        
+        try:
+            group_a_response = await client.post("https://motogo-dash.preview.emergentagent.com/api/groups", json=group_a_payload, headers=headers)
+            print(f"   Status: {group_a_response.status_code}")
+            
+            if group_a_response.status_code != 200:
+                print(f"   ❌ Group A creation failed: {group_a_response.text}")
+                return False
+                
+            group_a_data = group_a_response.json()
+            group_a_id = group_a_data.get("id")
+            
+            print(f"   ✅ Group A created successfully")
+            print(f"   ID: {group_a_id}")
+            print(f"   Name: {group_a_data.get('name')}")
+            print(f"   Private: {group_a_data.get('is_private')}")
+            
+        except Exception as e:
+            print(f"   ❌ Group A creation failed with exception: {e}")
+            return False
+        
+        # 3) Create Group B: name="Moto GO Private Test", is_private=true
+        print("\n3️⃣ Creating Group B (Private)")
+        
+        group_b_payload = {
+            "name": "Moto GO Private Test",
+            "description": "Private test group for Group Search + Join feature testing",
+            "is_private": True
+        }
+        
+        try:
+            group_b_response = await client.post("https://motogo-dash.preview.emergentagent.com/api/groups", json=group_b_payload, headers=headers)
+            print(f"   Status: {group_b_response.status_code}")
+            
+            if group_b_response.status_code != 200:
+                print(f"   ❌ Group B creation failed: {group_b_response.text}")
+                return False
+                
+            group_b_data = group_b_response.json()
+            group_b_id = group_b_data.get("id")
+            
+            print(f"   ✅ Group B created successfully")
+            print(f"   ID: {group_b_id}")
+            print(f"   Name: {group_b_data.get('name')}")
+            print(f"   Private: {group_b_data.get('is_private')}")
+            
+        except Exception as e:
+            print(f"   ❌ Group B creation failed with exception: {e}")
+            return False
+        
+        # 4) Test GET /api/groups/search?q=Moto (limit 20)
+        print("\n4️⃣ Testing Group Search with 'Moto'")
+        
+        search_params = {
+            "q": "Moto",
+            "limit": 20
+        }
+        
+        try:
+            search_response = await client.get("https://motogo-dash.preview.emergentagent.com/api/groups/search", params=search_params, headers=headers)
+            print(f"   Status: {search_response.status_code}")
+            
+            if search_response.status_code != 200:
+                print(f"   ❌ Group search failed: {search_response.text}")
+                return False
+                
+            search_results = search_response.json()
+            print(f"   ✅ Search successful, found {len(search_results)} groups")
+            
+            # Check if Group A (public) is in results
+            group_a_found = False
+            group_b_found = False
+            
+            for group in search_results:
+                print(f"   Found group: {group.get('name')} (ID: {group.get('id')}, Private: {group.get('is_private')})")
+                
+                if group.get("id") == group_a_id:
+                    group_a_found = True
+                elif group.get("id") == group_b_id:
+                    group_b_found = True
+            
+            # Verify search results
+            print(f"\n   🔍 Search Results Verification:")
+            if group_a_found:
+                print(f"   ✅ Group A (public) found in search results - CORRECT")
+            else:
+                print(f"   ❌ Group A (public) NOT found in search results - INCORRECT")
+                return False
+            
+            if not group_b_found:
+                print(f"   ✅ Group B (private) NOT found in search results - CORRECT")
+            else:
+                print(f"   ❌ Group B (private) found in search results - INCORRECT (private groups should not appear)")
+                return False
+            
+        except Exception as e:
+            print(f"   ❌ Group search failed with exception: {e}")
+            return False
+        
+        # 5) Test join on Group A with POST /api/groups/{id}/join
+        print("\n5️⃣ Testing Join Group A")
+        
+        try:
+            join_response = await client.post(f"https://motogo-dash.preview.emergentagent.com/api/groups/{group_a_id}/join", headers=headers)
+            print(f"   Status: {join_response.status_code}")
+            
+            if join_response.status_code != 200:
+                print(f"   ❌ Join Group A failed: {join_response.text}")
+                return False
+                
+            join_data = join_response.json()
+            print(f"   ✅ Successfully joined Group A")
+            print(f"   Response: {join_data}")
+            
+        except Exception as e:
+            print(f"   ❌ Join Group A failed with exception: {e}")
+            return False
+        
+        # 6) Verify GET /api/groups shows Group A in user1's list
+        print("\n6️⃣ Verifying Group A appears in user's groups")
+        
+        try:
+            user_groups_response = await client.get("https://motogo-dash.preview.emergentagent.com/api/groups", headers=headers)
+            print(f"   Status: {user_groups_response.status_code}")
+            
+            if user_groups_response.status_code != 200:
+                print(f"   ❌ Get user groups failed: {user_groups_response.text}")
+                return False
+                
+            user_groups = user_groups_response.json()
+            print(f"   ✅ Retrieved {len(user_groups)} user groups")
+            
+            # Check if Group A is in user's groups
+            group_a_in_list = False
+            for group in user_groups:
+                print(f"   User group: {group.get('name')} (ID: {group.get('id')})")
+                if group.get("id") == group_a_id:
+                    group_a_in_list = True
+            
+            if group_a_in_list:
+                print(f"   ✅ Group A found in user's groups list - CORRECT")
+            else:
+                print(f"   ❌ Group A NOT found in user's groups list - INCORRECT")
+                return False
+            
+        except Exception as e:
+            print(f"   ❌ Get user groups failed with exception: {e}")
+            return False
+        
+        print("\n🎉 ALL GROUP SEARCH + JOIN TESTS PASSED!")
+        print("=" * 60)
+        print("✅ Group A (public) correctly appears in search")
+        print("✅ Group B (private) correctly does NOT appear in search")
+        print("✅ Join Group A functionality working")
+        print("✅ Group A appears in user's groups after joining")
+        print("=" * 60)
+        return True
+
 async def main():
     """Main test execution"""
-    success = await test_profile_settings_readiness()
+    print("🚀 Starting Group Search + Join Feature Testing")
+    print("Testing specific Romanian review request scenarios")
+    print("=" * 80)
+    
+    success = await test_group_search_join()
     
     if success:
-        print("\n✅ Backend Profile/Settings Readiness: PASSED")
+        print("\n✅ Group Search + Join Feature: PASSED")
         return 0
     else:
-        print("\n❌ Backend Profile/Settings Readiness: FAILED")
+        print("\n❌ Group Search + Join Feature: FAILED")
         return 1
 
 
