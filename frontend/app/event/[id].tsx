@@ -259,15 +259,6 @@ export default function EventDetailScreen() {
     }
   };
 
-      await loadEvent();
-      Alert.alert("Success", "Event updated successfully!");
-    } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Could not update event");
-    } finally {
-      setEditSaving(false);
-    }
-  };
-
   const openInMaps = () => {
     if (!event || event.start_point.length < 2) return;
     const lat = event.start_point[0];
