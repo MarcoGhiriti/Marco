@@ -1397,6 +1397,12 @@ async def friends_reject(payload: FriendAccept, current_user: dict = Depends(get
 async def groups_create(payload: GroupCreate, current_user: dict = Depends(get_current_user)):
     now = datetime.utcnow()
     owner_id = current_user["id"]
+    
+    # Check if owner has premium subscription for higher member limit
+    owner = await db.users.find_one({"_id": _as_object_id(owner_id)})
+    has_premium = owner.get("has_subscription", False) if owner else False
+    max_members = 1000 if has_premium else 100
+    
     doc = {
         "name": payload.name.strip(),
         "description": payload.description.strip(),
@@ -1405,6 +1411,7 @@ async def groups_create(payload: GroupCreate, current_user: dict = Depends(get_c
         "owner_id": owner_id,
         "admins": [owner_id],
         "members": [owner_id],
+        "max_members": max_members,
         "created_at": now,
     }
     res = await db.groups.insert_one(doc)
