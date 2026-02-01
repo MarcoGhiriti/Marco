@@ -1971,6 +1971,19 @@ async def create_route(payload: RouteCreate, current_user: dict = Depends(get_cu
     }
 
     res = await db.routes.insert_one(doc)
+
+    # City labels (only for new routes; best-effort)
+    try:
+        doc = await ensure_route_city_fields(doc)
+        # Persist only if we found anything
+        if doc.get("start_city") or doc.get("end_city"):
+            await db.routes.update_one(
+                {"_id": res.inserted_id},
+                {"$set": {"start_city": doc.get("start_city"), "end_city": doc.get("end_city")}},
+            )
+    except Exception:
+        pass
+
     out = RouteOut(
         id=_oid_str(res.inserted_id),
         title=doc["title"],
@@ -1988,6 +2001,8 @@ async def create_route(payload: RouteCreate, current_user: dict = Depends(get_cu
         is_joined=True,
         created_by=uid,
         start_date=doc.get("start_date"),
+        start_city=doc.get("start_city"),
+        end_city=doc.get("end_city"),
         created_at=doc["created_at"],
     )
     return out
