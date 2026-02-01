@@ -2,232 +2,264 @@
 <original_problem_statement>
 The user wants to build a premium mobile application for motorcyclists called **Moto GO**.
 
-**PRODUCT REQUIREMENTS (from initial state + this session):**
--   **Core App Language:** The entire application must be in English.
--   **Routes vs. Events Distinction:**
-    -   **Routes:** A path from a start point to an end point, with optional intermediate waypoints. Locations are selected via a Google Maps-like search bar (autocomplete), not manual coordinates. The UI must show pins and a polyline.
-    -   **Events:** A single-location gathering for motorcyclists (e.g., meetup, show). The location is selected via a single search bar.
--   **Home Page:**
-    -   Should display a list of routes.
-    -   **Filtering:** Only show routes that are geographically close to the user's current location.
-    -   **Route Cards:** Each route card should be clickable to view details and include a share button.
--   **Route Management:**
-    -   **Creation:** A dedicated screen allows users to create routes with a title, description, difficulty, start point, end point, and multiple intermediate waypoints. A start date and time must also be specified.
-    -   **Lifecycle:** Routes created by a user should appear on their profile. After a Ride Session for a route is completed, the route itself should be deleted from the database to prevent re-use.
--   **Profile Screen:**
-    -   Must include a My Routes section listing all routes created by the user, with a Start Ride button on each.
-    -   Clicking the user's level should display a modal or screen showing all available levels and the KM required for each.
--   **Community & Chat:**
-    -   **Friend Requests:** Sending a friend request should not automatically add the friend. The recipient must be able to see the request and choose to Accept or Reject it.
-    -   **Group Creation:** Users can create groups with a name, description, and a group profile picture (image upload).
-    -   **Chat UI:** Both Direct Message (DM) and Group Chat screens should have a dark theme, with a custom background or empty state placeholder featuring a motorcycle icon.
-    -   **DM Header:** The header of a DM conversation must show the other user's profile picture and name, and the three-dot menu should be removed.
--   **Gamification & Rankings:**
-    -   The Rankings tab should contain a comprehensive list of all available badges in the app, with descriptions on how to unlock them.
--   **Authentication:** JWT-based custom auth (email + password).
+**Initial Product Requirements were extensive (see previous summary). The user provided a new, detailed PRD mid-session which now defines the upcoming work:**
+
+**NEW PRODUCT REQUIREMENTS (PRD):**
+
+-   **🔔 NOTIFICATIONS HUB:**
+    -   Friend requests MUST appear in a centralized Notifications hub (accessible from the Home screen icon), NOT in the chat/community section.
+    -   This hub should be the central place for all alerts: friend requests, route/event/group invitations, and automated reminders (e.g., Event starts in 1h).
+
+-   **👥 GROUPS (Control & Clarity):**
+    -   When creating a group, the creator MUST be able to set a maximum number of members.
+    -   In the group chat, every message bubble MUST display the sender's username.
+
+-   **🧑 PROFILE (Content Management):**
+    -   In the user's own profile, they MUST be able to **✏️ Edit** and **🗑️ Delete** the routes and events they have created. The profile should be a content management hub.
+
+-   **🛑 RIDES – ADVANCED FUNCTIONS:**
+    -   During an active ride session, there MUST be a **PAUSE** button that allows the user to temporarily stop and later resume the ride. Kilometer tracking should only happen when the ride is active (not paused).
+
+-   **🗺️ MINI-MAP UX:**
+    -   The mini-map preview on Home/Route cards must be an intelligent zoom-out (like a GPS preview).
+    -   It must display the main route polyline highlighted, adjacent streets in gray, and text labels for the **start and end city names** directly on the map.
+    -   It must be purely visual, with no raw coordinates shown to the user.
+
+-   **🎯 CORE UX GOALS:**
+    -   The app must feel intuitive and map-oriented.
+    -   Key actions should take a maximum of 1-2 clicks.
+
+-   **🔑 CORE CONSTRAINTS:**
+    -   Routes (start to end path) and Events (single location meetup) remain distinct concepts.
+    -   All locations must be selected via a search bar (Google Maps-like), not manual coordinate entry.
+
 </original_problem_statement>
-<User's_preferred_language>
-Romanian (română). The next agent MUST respond in Romanian.
-</User's_preferred_language>
-<what_currently_exists?>
-The application is feature-rich. In this session, a massive number of features and changes were implemented based on user feedback.
+
+**User's preferred language**: Romanian (română). The next agent MUST respond in Romanian.
+
+**what currently exists?**
+The application is a feature-rich, full-stack Expo/FastAPI app. In this session, the agent addressed multiple user requests and bug fixes, significantly expanding functionality.
 -   **Backend (FastAPI/MongoDB):**
-    -   Endpoints for Google Places autocomplete have been added.
-    -   Route logic now supports waypoints, a , and location-based filtering ().
-    -   The  logic now correctly deletes the completed route.
-    -   An endpoint  was added to fetch routes created by the current user.
-    -   The Group creation endpoint now accepts a  (base64 string).
-    -   An endpoint  was added to fetch public user profiles.
-    -   Friend request logic was updated with a  endpoint.
+    -   An **Event Details** flow was implemented by adding  to Event models and endpoints.
+    -   **DELETE endpoints** for routes () and events () were created.
+    -   **Group Management endpoints** (, ) were created and later fixed to correctly identify the group owner.
+    -   A **License Verification** system was added. The User model was updated with , , . An endpoint () was created that accepts a photo and automatically marks the user as verified.
+    -   A **Notifications system** has been started. New Pydantic models (, ) and a  collection were added. Endpoints (, ) were created, and the friend request logic was updated to generate a notification.
 -   **Frontend (Expo/React Native):**
-    -   **Full English Translation:** The entire app's UI has been translated from Romanian to English.
-    -   **Route/Event Creation:** The creation screens were completely refactored to use a Google Places-powered search component (), with support for waypoints and a start date/time picker on the route creation screen.
-    -   **Home Screen:** Now fetches and displays only nearby routes. Route cards are clickable, navigate to a new route details screen (), and have a share button.
-    -   **Profile Screen:** A My Routes section has been added, which lists the user's created routes and allows them to start a ride session from there.
-    -   **Community:** The friend request system now has Accept and Reject buttons. The group creation modal now includes an image picker for a group photo.
-    -   **Chat UI:** Both DM () and Group () chat screens have been redesigned with a dark theme and a motorcycle icon for the empty state. The DM chat header now correctly displays the recipient's photo and name.
-    -   **Rankings Screen:** The old Store tab has been replaced with a comprehensive Rankings screen () that includes tabs for the Leaderboard, a list of all available Badges, and all Levels.
-</what_currently_exists?>
-<Last_working_item>
--   Last item agent was working: A full-app translation to English and the implementation of a proper friend request system with Accept and Reject options.
--   Status: IN PROGRESS
+    -   A new **Event Details Screen** () was created, showing a map, location name, distance, and participant info. The  screen was also translated to English.
+    -   **Edit/Delete Buttons** have been added to the Route and Event detail screens. The Delete functionality works (using a  check for web confirmation). The Edit button UI exists, but is not functional.
+    -   **Friend Profile Navigation**: The friends list in  now navigates to a detailed user profile screen () on click, with a separate button for initiating a chat.
+    -   **Shop Relocation**: The Store tab was removed from the bottom tab bar. A new file  was created, and a Shop icon button that links to it was added to the  header.
+    -   **Group Management UI**: The group chat screen () was completely rewritten. It now features a modal (opened via a 3-dot menu) that shows the member list. The group creator sees Add Member and Remove Member buttons, while other members see a Leave Group button.
+    -   **License Verification UI**: The Profile screen () now has a Verify Your License section and a modal to upload a license photo and select the category (A1, A2, A).
+    -   **Route Gating**: The Home screen () and Create Route screen () now block access/functionality and show a verification prompt if the user's license is not verified.
+    -   **Animated Splash Screen**: A new component  was created and integrated into  to show a loading animation on app start.
+    -   **Forgot Password UI**: A Forgot your password? link was added to  which navigates to a new  screen with a form to request a reset link. The backend functionality is missing.
+
+**Last working item**:
+-   Last item agent was working: The agent began implementing the **Notifications Hub** as per the user's new high-priority PRD.
+    -   It created the backend models and endpoints for notifications and updated the friend request flow to generate a notification.
+    -   It created the basic frontend files for the notifications screen ( and ).
+    -   The agent was in the process of linking the home screen's notification bell icon to this new screen and implementing logic to show a notification count badge.
+-   Status: **IN PROGRESS**
 -   Agent Testing Done: N
--   Which testing method agent to use?: both. The frontend needs to be checked to ensure all text is translated and the new 'Reject' button appears and works. The backend needs to be tested to confirm the  endpoint functions correctly.
+-   Which testing method agent to use?: both. The backend needs testing to ensure notifications are created correctly for different actions. The frontend needs testing to verify the UI of the new notifications screen, the badge count on the home screen, and the read/unread logic.
 -   User Testing Done: N
-</Last_working_item>
-<All_Pending/In_progress_Issue_list>
-  - Issue 1: Verify the friend request flow and full English translation. (P0)
-  - Issue 2: A user-reported bug about Stories potentially showing the wrong profile picture needs verification. (P2)
+
+**All Pending/In progress Issue list**:
+  - Issue 1: Finish the **Notifications Hub**. (P0)
+  - Issue 2: Implement functionality for the **Edit buttons** on routes and events. (P1)
+  - Issue 3: Implement the backend logic for the **Forgot Password** flow. (P1)
+  - Issue 4: The user reported in a previous session that a friend's **Story might show the wrong avatar**. This was never verified or fixed. (P2)
 
   Issues Detail:
   - Issue 1:
-     - Description: The agent performed a massive number of file edits to translate the app to English and implement the Accept/Reject friend request flow. However, no verification (screenshots or testing) was done after these final changes.
-     - Attempted fixes: The agent successfully edited  to add a reject endpoint and edited  to add the UI and logic. It also used  on many files for translation.
-     - Next debug checklist:
-        1.  Navigate to the Community tab.
-        2.  Check that all UI elements (titles, buttons, placeholders) are in English.
-        3.  Send a friend request from  to .
-        4.  Log in as , go to the Community tab, and verify that the pending request is shown with both Accept and Reject buttons.
-        5.  Test the Reject button and confirm the request is removed.
-        6.  Test the Accept button and confirm the user is added as a friend.
-     - Why fix this issue and what will be achieved with the fix?: To confirm the successful implementation of the user's latest, critical requests before moving on.
-     - Status:  NOT STARTED
+     - Description: Implement the full Notifications Hub as per the new PRD. This is the user's highest priority.
+     - Where to resume:
+        1.  **Frontend**: Build the UI in  to list notifications with different layouts based on .
+        2.  **Frontend**: Implement logic to fetch notifications from . Add a badge to the bell icon in  showing the unread count.
+        3.  **Frontend**: Implement  for notifications (e.g., clicking a friend request notification should show an Accept/Reject prompt or navigate to the community tab).
+        4.  **Backend**: Modify other actions (group invites, event invites, etc.) to also create notifications.
+     - Why fix this issue and what will be achieved with the fix?: Fulfills the user's top priority from their new PRD, centralizing all app alerts into one intuitive place.
+     - Status: IN PROGRESS
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix?: both
-     - Blocked on other issue: None
 
   - Issue 2:
-     - Description: The user reported that when a friend posts a story, it might be showing the current user's avatar instead of the friend's. This was reported in a previous session and was never fully verified.
-     - Attempted fixes: The agent in the previous session reviewed the code and concluded it appeared correct, but no end-to-end test was performed.
+     - Description: The Edit buttons on the route () and event () detail screens were added, but they have no functionality. Clicking them does nothing.
+     - Next debug checklist:
+        1.  Create new frontend screens for editing a route () and event (), pre-filled with existing data.
+        2.  Create backend  or  endpoints (e.g., , ) to handle updates.
+        3.  Wire the Edit buttons to navigate to these new screens.
+     - Why fix this issue and what will be achieved with the fix?: Fulfills a direct user request for content management from their profile.
+     - Status: NOT STARTED
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix?: both
+
+  - Issue 3:
+     - Description: The Forgot Password UI () was created, but there is no backend implementation to handle the password reset request. Clicking Send Reset Link does nothing.
+     - Next debug checklist:
+        1.  Implement a backend endpoint (e.g., ) that takes an email, generates a unique reset token, stores it, and sends a reset email to the user (this may require an email service integration).
+        2.  Create a new frontend screen for the user to enter their new password after clicking the link in the email.
+        3.  Implement a backend endpoint to validate the token and update the user's password.
+     - Why fix this issue and what will be achieved with the fix?: Implements a critical, standard authentication feature.
+     - Status: NOT STARTED
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix?: backend
+
+  - Issue 4:
+     - Description: A bug reported in a much earlier session about the  on the home screen potentially showing the current user's avatar instead of the friend's avatar who posted the story. This was never verified.
      - Next debug checklist:
         1. As , add  as a friend.
         2. Log in as  and post a story.
         3. Log in as  and view the  on the home screen.
-        4. Verify that the story circle shows 's avatar.
-     - Why fix this issue and what will be achieved with the fix?: To resolve a previously reported bug and ensure core social functionality is correct.
-     - Status:  NOT STARTED
-     - Is recurring issue? N
+        4. Verify that the story circle shows 's avatar, not 's.
+     - Why fix this issue and what will be achieved with the fix?: Resolves a lingering, user-reported bug related to a core social feature.
+     - Status: NOT STARTED
+     - Is recurring issue? Y
      - Should Test frontend/backend/both after fix?: frontend
-     - Blocked on other issue: None
-</All_Pending/In_progress_Issue_list>
-<In_progress_Task_List>
-  - None. All active development tasks from this session have been completed, but are pending verification.
-</In_progress_Task_List>
-<Upcoming_and_Future_Tasks>
-    Upcoming Tasks:
-    - **Test on Expo Go (P0):** This is the highest priority. The user has requested multiple features (nearby routes, map interactions) that can only be properly tested on a physical device using the Expo Go app. A full regression test is needed.
-    - **UI Polish and Animations (P1):** This was a request from the initial project scope that has not been addressed. With the core functionality now in place, adding subtle animations with  would fulfill the premium feel requirement.
 
-    Future Tasks:
-    - **Push Notifications:** Expand the notification system for new messages, friend requests, and event invites.
-</Upcoming_and_Future_Tasks>
-<Completed_work_in_this_session>
--   List of all completed tasks with file and method name:
-    -   **Full English Translation:** Translated the entire app from Romanian to English across all components and screens.
-    -   **Friend Request Flow:** Implemented  logic (, UI in ).
-    -   **DM Chat Header Redesign:** Updated  to show the recipient's name/photo and removed the menu.
-    -   **Group Photos:** Added image picker to group creation () and updated backend (, ) to store group photos.
-    -   **Gamification Details:** Rebuilt  into a Rankings screen with lists for all Badges and Levels.
-    -   **Chat UI Redesign:** Overhauled  and  with a dark theme and custom empty-state icon.
-    -   **My Routes on Profile:** Added a new section to  to list user-created routes, fetched from .
-    -   **Nearby Routes Filter:** Updated  to use device location to fetch routes from .
-    -   **Route Lifecycle:** Added  to routes (, ) and logic to delete routes upon completion ( in ).
-    -   **Route Waypoints:** Implemented UI () and backend () support for intermediate stops.
-    -   **Route/Event Creation UX:** Refactored  and  to use a Google Places-powered search component instead of manual inputs.
-    -   **Route Details:** Created a new screen  and made route cards on  clickable.
+**In progress Task List**:
+- Task 1: Complete the Notifications Hub
+    - Where to resume: The agent has laid the groundwork. The next step is to build the UI on the frontend in , connect it to the new backend endpoints, and add the notification badge logic to .
+    - What will be achieved with this?: A centralized, user-friendly system for all app alerts, as requested.
+    - Status: IN PROGRESS
+    - Should Test frontend/backend/both after fix?: both
+    - Blocked on something: None
 
--   Recently completed:
-  - Friend request system with Accept/Reject functionality (DONE - PENDING VERIFICATION)
-  - Full app-wide translation to English (DONE - PENDING VERIFICATION)
-  - Redesigned chat UI and added group photos (DONE)
-  - Implemented My Routes on profile and nearby filtering on home (DONE)
-  - Added waypoints and start dates to routes (DONE)
-</Completed_work_in_this_session>
-<Earlier_issues_found/mentioned_but_not_fixed>
-   - Issue 1: Story avatar bug. As detailed in the All Pending/In progress Issue list. It was mentioned in the previous fork and never fully verified as fixed.
-</Earlier_issues_found/mentioned_but_not_fixed>
-<Known_issue_recurrence_from_previous_fork>
+**Upcoming and Future Tasks**
+Upcoming Tasks (from the new PRD):
+-   **Group Member Limit (P1)**: Add a field during group creation to set a maximum number of members and enforce it on the backend.
+-   **Display Sender in Group Chat (P1)**: Modify the group chat UI to show the sender's username above or next to each message bubble.
+-   **Pause/Resume Ride (P2)**: Implement a Pause button on the active ride screen and adjust the backend logic to stop/resume km tracking.
+-   **Improved Mini-Map UI (P2)**: Refactor the  component to display city name labels for start/end points and show surrounding streets, as per the PRD.
+
+**Completed work in this session**
+- List of all completed tasks with file and method name:
+    -   **Event Details & Location Fix**: Created  and updated backend () to save/show event location names.
+    -   **Delete Functionality**: Added working Delete buttons to  and  with backend  endpoints.
+    -   **Friend Profile Navigation**: Updated  to link to a new detailed profile screen .
+    -   **Shop UI Refactor**: Moved the Shop link from the tab bar to an icon in the  header.
+    -   **Group Member Management**: Rewrote  and added backend endpoints to allow group owners to add/remove members.
+    -   **License Verification System**: Implemented a full-stack flow for users to upload a license on  and have the backend verify it.
+    -   **Route Gating**: Blocked route creation () and interaction () for unverified users.
+    -   **Animated Splash Screen**: Added a custom animated splash screen using  in .
+    -   **Forgot Password UI**: Added the UI for a password reset flow in  and .
+
+- Recently completed:
+  - License Verification and Route Gating (DONE)
+  - Animated Splash Screen & Forgot Password UI (DONE - Functionality Pending)
+  - Group Member Management (Bugs fixed, DONE)
+  - Edit/Delete button UI and Delete functionality (DONE - Edit Functionality Pending)
+  - Event Details screen and location fix (DONE)
+
+**Earlier issues found/mentioned but not fixed**
+   - Issue 1: **Story Avatar Bug** (Detailed in All Pending/In progress Issue list).
+   - Issue 2: **Edit Functionality**: Edit buttons were added to route/event detail screens, but they are not functional. No backend or frontend editing logic exists.
+
+**Known issue recurrence from previous fork**
   - Issue recurrence in previous fork: The Story avatar bug was mentioned in the initial handover summary and remains unverified.
-  - Recurrence count: 1
+  - Recurrence count: 2
   - Status: NOT STARTED
-</Known_issue_recurrence_from_previous_fork>
-<Code_Architecture>
 
-</Code_Architecture>
-<Key_Technical_Concepts>
--   **Frontend:** React Native, Expo, Expo Router, TypeScript, Zustand, , , , , .
--   **Backend:** FastAPI, Python, MongoDB (), Pydantic, , Google Maps API Client.
--   **APIs:** Google Places API for autocomplete, Google Directions API for routing with waypoints.
--   **Authentication:** JWT with .
--   **Real-time:** WebSockets via Socket.IO.
--   **Platform Specificity:** Using  checks for native-only modules.
-</Key_Technical_Concepts>
-<key_DB_schema>
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Frontend:** React Native, Expo, Expo Router, TypeScript, Zustand, , , .
+-   **Backend:** FastAPI, Python, MongoDB (), Pydantic.
+-   **APIs:** Google Places API, Google Directions API.
+-   **Authentication:** JWT.
+-   **Platform Specificity:** Using  to provide a  dialog fallback for delete actions.
+
+**key DB schema**
 -   : 
 -   : 
 -   : 
 -   root: 
 -   : **(NEW)** 
--   : 
--   : 
--   : 
-</key_DB_schema>
-<changes_in_tech_stack>
--    was used for group photo uploads.
--    was used for selecting the route start date/time.
--   The backend now heavily relies on the Google Maps API client for directions and geocoding.
-</changes_in_tech_stack>
-<All_files_of_reference>
--   : Massively updated with new endpoints for nearby routes, user-specific routes, user profiles, friend request rejection, and updated logic for route/group creation and ride completion.
--   : Overhauled to implement the Accept/Reject friend request flow, add an image picker for group creation, and translate all text.
--   : Updated to include a My Routes section.
--   : Updated to filter routes by user's location.
--   : Completely rewritten to be a Rankings page with tabs for Badges and Levels.
--   : Completely rewritten to use Google Places search, add waypoints, include a start date/time picker, and translate to English.
--   : Rewritten to redesign the UI and header.
--   : New reusable component for location search.
--   : New screen to display route details.
-</All_files_of_reference>
-<Areas_that_need_refactoring>
--   **Backend :** This file has grown even larger and more monolithic. Splitting it into separate FastAPI  instances is now critical for maintainability.
--   **Frontend Translation:** While the text has been translated, it's all hardcoded. Introducing a localization library like  would make future language additions or text changes much more manageable.
-</Areas_that_need_refactoring>
-<key_api_endpoints>
+
+**changes in tech stack**
+-    was added and used for the animated splash screen.
+
+**All files of reference**
+-   : Heavily modified with new endpoints for delete, group management, license verification, and notifications.
+-   : Modified to add Shop icon, license gate banner, and disabled route cards.
+-   : Heavily modified to add the entire license verification flow.
+-   : Completely rewritten to implement the group member management modal.
+-   : New file for event details.
+-   : New file for viewing other users' profiles.
+-   : Modified to integrate the new  component.
+-   : New file, part of the in-progress Notifications Hub.
+
+**Areas that need refactoring**:
+-   **Backend :** This file is now critically oversized. It urgently needs to be split into multiple  files (e.g., , , ) for maintainability.
+-   **Hardcoded Text**: The app has been translated to English, but all UI strings are hardcoded. A localization library like  should be introduced to manage translations effectively.
+
+**key api endpoints**
+-    (DELETE - NEW)
+-    (DELETE - NEW)
 -    (NEW)
 -    (NEW)
 -    (NEW)
--    (NEW)
--    (NEW)
--    (NEW)
--    (Updated to accept )
--    (Updated to accept  and )
--    (Updated to delete the route)
-</key_api_endpoints>
-<Critical_Info_for_New_Agent>
+-    (GET - NEW)
+-    (POST - NEW)
+
+**Critical Info for New Agent**
 -   **User Language:** The user communicates in **Romanian**. All responses must be in Romanian.
--   **Massive Changes, Verification Needed:** The app underwent a huge number of changes in one session. The immediate priority is to verify the last batch of work (friend requests, full English translation) is working correctly.
--   **Expo Go Testing is CRITICAL:** The next step after verification MUST be a full test on a physical device using Expo Go. Features like nearby routes will not work otherwise.
--   **Backend Refactoring:** The  file is extremely large. Proposing a refactor is highly recommended for long-term project health.
-</Critical_Info_for_New_Agent>
-<documents_created_in_this_job>
--   : New component for location searching.
--   , : New files for the route details screen.
-</documents_created_in_this_job>
-<Last_10_User_Messages_and_any_pending_HUMAN_messages>
--   : Request for friend requests to be accept/reject and for the entire app to be in English. (Implemented, pending verification)
--   : Request to fix the DM chat header to show user info and remove the menu. (Implemented)
--   : User reported not seeing chat changes, asked where to add group photo, and requested screens for level/badge details. (Implemented)
--   : A large request for English translation, My Routes on profile, deleting routes on completion, adding a start date, and filtering by nearby routes. (Implemented)
--   : User reported missing share button and unclickable route cards, and requested waypoints for routes. (Implemented)
--   : User confirmed the agent's plan to start work.
--   : Detailed clarification from the user on the difference between Routes and Events and the required UX. (Implemented)
-</Last_10_User_Messages_and_any_pending_HUMAN_messages>
-<Project_Health_Check>
--   **Working:** Most features have been implemented as per user requests.
--   **Incomplete:**
-    -   Friend request flow needs verification.
-    -   Full English translation needs verification.
--   **Not Started (but required):** Full end-to-end testing on a physical device (Expo Go). UI Polish/Animations.
--   **Mocked:** None.
--   **Broken:** Features relying on device location () or  will not function correctly in the web preview; this is expected.
-</Project_Health_Check>
-<3rd_Party_Integrations>
--   **Google Maps Platform:** Heavily used for Places Autocomplete, Place Details, and Directions API (with waypoints).
--   **Expo Push Notification Service:** Integration started in a previous session but no progress made in this one.
-</3rd_Party_Integrations>
-<Testing_status>
-  - Testing agent used after significant changes: YES, the agent used the backend testing agent once.
-  - Troubleshoot agent used after agent stuck in loop: NO.
-  - Test files created: None.
-  - Known regressions: None identified, but high risk due to the volume of changes.
-</Testing_status>
-<Credentials_to_test_flow>
--   **User 1:**  / 
--   **User 2:**  / 
-</Credentials_to_test_flow>
-<What_agent_forgot_to_execute>
--   The agent did not verify the final, large batch of changes (friend request flow, full translation) before summarizing its work.
--   The agent did not perform the high-priority P0 task from the initial summary: **Test on Expo Go**. This is critical for location and map features.
--   The agent did not re-verify the **Story avatar bug** from the initial summary, leaving an old user concern unresolved.
-</What_agent_forgot_to_execute>
+-   **New PRD is King**: The user provided a detailed list of new requirements mid-session. This is the new source of truth for upcoming work. The highest priority is the **Notifications Hub**.
+-   **Incomplete Features**: Be aware that Edit for routes/events and the Forgot Password flow are UI-only at this point and lack backend functionality. These are pending tasks.
+-   **Backend Refactor Needed**: The  file is extremely large and difficult to manage. Proposing a refactor into smaller, organized router files is highly recommended.
+
+**documents created in this job**
+-   /app/frontend/app/event/_layout.tsx
+-   /app/frontend/app/event/[id].tsx
+-   /app/frontend/app/profile/_layout.tsx
+-   /app/frontend/app/profile/[userId].tsx
+-   /app/frontend/app/(tabs)/shop.tsx
+-   /app/frontend/app/auth/forgot-password.tsx
+-   /app/frontend/src/components/AnimatedSplash.tsx
+-   /app/frontend/app/notifications/_layout.tsx
+-   /app/frontend/app/notifications/index.tsx
+
+**Last 10 User Messages and any pending HUMAN messages**
+-   : User wants to test the app on Expo Go. (Done)
+-   : User confirms the agent's proposed priority list for the new PRD. (Actioned)
+-   A large, detailed PRD message was sent by the user, outlining many new features. (Received, work started)
+-   : Request to block routes for unverified users and asked if verification is automatic. (Implemented)
+-   : Request for an animated splash screen and a Forgot Password link. (Implemented - UI only for forgot password)
+-   : Reported that Add member button is missing for group creators and confirmed to proceed with license verification. (Bug fixed, feature implemented)
+-   : Reported that group management, delete buttons, and edit buttons were not working or missing. (Bugs fixed, Edit still pending functionality)
+-   : Multiple requests: move Shop to Home header, implement group member management, and add license verification. (Implemented)
+-   : Request for Edit/Delete buttons, friend profile navigation, and restoring the Shop page. (Implemented - Edit pending functionality)
+-   : User asked to test previous work and reported a bug with event locations. (Bug Fixed)
+
+**Project Health Check:**
+-   **Working**: Core functionalities, license verification, group management, delete actions, splash screen.
+-   **Incomplete**:
+    -   **Notifications Hub**: Backend/Frontend started but far from complete.
+    -   **Edit Functionality**: UI buttons exist, but no edit screens or backend logic.
+    -   **Forgot Password**: UI exists, but no backend logic.
+-   **Not Started (but required)**: Most items from the new PRD (Group member limits, Pause/Resume ride, Mini-map UX improvements).
+-   **Broken**: None identified, but regressions are possible given the volume of changes.
+
+**3rd Party Integrations**
+-   **Google Maps Platform**: Used for Places Autocomplete, Place Details, and Directions API.
+-   **Expo**: Core framework, including  and .
+-   **react-native-reanimated**: Used for the splash screen animation.
+
+**Testing status**
+- Testing agent used after significant changes: NO, agent primarily used the  for visual verification.
+- Troubleshoot agent used after agent stuck in loop: NO.
+- Test files created: None.
+- Known regressions: None identified.
+
+**Credentials to test flow:**
+-   **User 1 (Verified License):**  / 
+-   **User 2 (Unverified License):**  / 
+
+**What agent forgot to execute**
+-   The agent added Edit buttons for routes and events but never implemented the corresponding edit screens or backend endpoints to make them functional.
+-   The agent created the Forgot Password UI but did not implement any backend logic to handle the password reset process.
+-   The agent still has not verified or fixed the long-standing Story avatar bug mentioned in the very first handover summary.
 </analysis>

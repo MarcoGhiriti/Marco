@@ -18,7 +18,7 @@ import socketio
 class BackendTester:
     def __init__(self):
         # Use the production URL from frontend/.env
-        self.base_url = "https://bikerapp.preview.emergentagent.com"
+        self.base_url = "https://motoalerts.preview.emergentagent.com"
         self.api_url = f"{self.base_url}/api"
         self.socket_url = self.base_url
         
@@ -662,7 +662,7 @@ async def test_profile_settings_readiness():
         }
         
         try:
-            register_response = await client.post("https://bikerapp.preview.emergentagent.com/api/auth/register", json=register_payload)
+            register_response = await client.post("https://motoalerts.preview.emergentagent.com/api/auth/register", json=register_payload)
             print(f"   ✅ Register Status: {register_response.status_code}")
             
             if register_response.status_code != 200:
@@ -689,7 +689,7 @@ async def test_profile_settings_readiness():
         }
         
         try:
-            login_response = await client.post("https://bikerapp.preview.emergentagent.com/api/auth/login", json=login_payload)
+            login_response = await client.post("https://motoalerts.preview.emergentagent.com/api/auth/login", json=login_payload)
             print(f"   ✅ Login Status: {login_response.status_code}")
             
             if login_response.status_code != 200:
@@ -729,7 +729,7 @@ async def test_profile_settings_readiness():
         }
         
         try:
-            patch_response = await client.patch("https://bikerapp.preview.emergentagent.com/api/me", json=update_payload, headers=headers)
+            patch_response = await client.patch("https://motoalerts.preview.emergentagent.com/api/me", json=update_payload, headers=headers)
             print(f"   ✅ PATCH /api/me Status: {patch_response.status_code}")
             
             if patch_response.status_code != 200:
@@ -751,7 +751,7 @@ async def test_profile_settings_readiness():
         print("\n3️⃣ Testing Profile Retrieval (GET /api/me)")
         
         try:
-            get_me_response = await client.get("https://bikerapp.preview.emergentagent.com/api/me", headers=headers)
+            get_me_response = await client.get("https://motoalerts.preview.emergentagent.com/api/me", headers=headers)
             print(f"   ✅ GET /api/me Status: {get_me_response.status_code}")
             
             if get_me_response.status_code != 200:
@@ -806,7 +806,7 @@ async def test_profile_settings_readiness():
         print("\n4️⃣ Testing Stats Endpoint (GET /api/stats)")
         
         try:
-            stats_response = await client.get("https://bikerapp.preview.emergentagent.com/api/stats", headers=headers)
+            stats_response = await client.get("https://motoalerts.preview.emergentagent.com/api/stats", headers=headers)
             print(f"   ✅ GET /api/stats Status: {stats_response.status_code}")
             
             if stats_response.status_code != 200:
