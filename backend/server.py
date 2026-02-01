@@ -478,6 +478,10 @@ class RouteOut(BaseModel):
     participants_max: int
     
     start_date: Optional[datetime] = None
+    
+    # City names for mini-map labels
+    start_city: Optional[str] = None
+    end_city: Optional[str] = None
 
     created_at: datetime
 
