@@ -60,6 +60,9 @@ export default function HomeScreen() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [showRideModal, setShowRideModal] = useState(false);
+  const [rideProgress, setRideProgress] = useState<RideProgress | null>(null);
+  const [loadingRideProgress, setLoadingRideProgress] = useState(false);
   
   // Story viewer state
   const [storyViewerVisible, setStoryViewerVisible] = useState(false);
