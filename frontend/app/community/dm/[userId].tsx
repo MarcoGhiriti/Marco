@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Colors } from "../../src/theme/colors";
+import { Colors } from "../../../src/theme/colors";
 import { apiGet } from "../../../src/lib/api";
 import { getSocket } from "../../../src/lib/realtime";
 import { useAuthStore } from "../../../src/state/authStore";
