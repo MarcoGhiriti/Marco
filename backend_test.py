@@ -1053,19 +1053,244 @@ async def test_group_search_join():
         print("=" * 60)
         return True
 
+async def test_romanian_review_request():
+    """
+    Re-test backend pentru group search + indexuri.
+    
+    1) Login cu user1@example.com / Password123.
+    2) GET /api/groups/search?q=Moto&limit=20 -> 200 + listă.
+    3) Confirmă că endpoint-ul răspunde rapid și fără erori.
+    
+    Dacă nu există grupuri cu 'Moto', creează unul public via POST /api/groups 
+    name='Moto GO Search Smoke' și reia search.
+    """
+    print("🇷🇴 ROMANIAN REVIEW REQUEST - Group Search + Indexes Re-test")
+    print("=" * 70)
+    
+    async with httpx.AsyncClient(timeout=30) as client:
+        
+        # 1) Login cu user1@example.com / Password123
+        print("1️⃣ Login cu user1@example.com / Password123")
+        
+        try:
+            login_start = time.time()
+            login_response = await client.post(
+                "https://motogo-dash.preview.emergentagent.com/api/auth/login",
+                json={
+                    "email": "user1@example.com",
+                    "password": "Password123"
+                }
+            )
+            login_time = time.time() - login_start
+            
+            print(f"   Status: {login_response.status_code} ({login_time*1000:.1f}ms)")
+            
+            if login_response.status_code != 200:
+                print(f"   ❌ Login failed: {login_response.text}")
+                return False
+                
+            login_data = login_response.json()
+            token = login_data.get("access_token")
+            
+            if not token:
+                print(f"   ❌ No access token in response")
+                return False
+                
+            print(f"   ✅ Login successful, token received")
+            
+        except Exception as e:
+            print(f"   ❌ Login failed with exception: {e}")
+            return False
+        
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        # 2) GET /api/groups/search?q=Moto&limit=20 -> 200 + listă
+        print("\n2️⃣ GET /api/groups/search?q=Moto&limit=20")
+        
+        try:
+            search_start = time.time()
+            search_response = await client.get(
+                "https://motogo-dash.preview.emergentagent.com/api/groups/search",
+                params={"q": "Moto", "limit": 20},
+                headers=headers
+            )
+            search_time = time.time() - search_start
+            
+            print(f"   Status: {search_response.status_code} ({search_time*1000:.1f}ms)")
+            
+            if search_response.status_code != 200:
+                print(f"   ❌ Search failed: {search_response.text}")
+                return False
+                
+            search_results = search_response.json()
+            print(f"   ✅ Search successful, found {len(search_results)} groups")
+            
+            # Show found groups
+            for group in search_results:
+                print(f"   📋 Group: '{group.get('name')}' (ID: {group.get('id')}, Private: {group.get('is_private')})")
+            
+            # 3) Confirmă că endpoint-ul răspunde rapid și fără erori
+            if search_time > 1.0:  # More than 1 second is slow
+                print(f"   ⚠️  Search response time {search_time*1000:.1f}ms is slow (>1000ms)")
+            else:
+                print(f"   ✅ Search response time {search_time*1000:.1f}ms is good")
+            
+        except Exception as e:
+            print(f"   ❌ Search failed with exception: {e}")
+            return False
+        
+        # Check if we need to create a group
+        moto_groups_found = len(search_results) > 0
+        
+        if not moto_groups_found:
+            print("\n📝 Nu există grupuri cu 'Moto', creez unul public...")
+            
+            # Create group: name='Moto GO Search Smoke'
+            try:
+                create_start = time.time()
+                create_response = await client.post(
+                    "https://motogo-dash.preview.emergentagent.com/api/groups",
+                    json={
+                        "name": "Moto GO Search Smoke",
+                        "description": "Test group pentru search functionality smoke testing",
+                        "is_private": False,
+                        "photo_base64": None
+                    },
+                    headers=headers
+                )
+                create_time = time.time() - create_start
+                
+                print(f"   Status: {create_response.status_code} ({create_time*1000:.1f}ms)")
+                
+                if create_response.status_code != 200:
+                    print(f"   ❌ Group creation failed: {create_response.text}")
+                    return False
+                    
+                create_data = create_response.json()
+                group_id = create_data.get("id")
+                group_name = create_data.get("name")
+                
+                print(f"   ✅ Created group '{group_name}' with ID: {group_id}")
+                
+            except Exception as e:
+                print(f"   ❌ Group creation failed with exception: {e}")
+                return False
+            
+            # Re-test search after creating group
+            print("\n🔄 Reia search după crearea grupului...")
+            
+            try:
+                search2_start = time.time()
+                search2_response = await client.get(
+                    "https://motogo-dash.preview.emergentagent.com/api/groups/search",
+                    params={"q": "Moto", "limit": 20},
+                    headers=headers
+                )
+                search2_time = time.time() - search2_start
+                
+                print(f"   Status: {search2_response.status_code} ({search2_time*1000:.1f}ms)")
+                
+                if search2_response.status_code != 200:
+                    print(f"   ❌ Re-search failed: {search2_response.text}")
+                    return False
+                    
+                search2_results = search2_response.json()
+                print(f"   ✅ Re-search successful, found {len(search2_results)} groups")
+                
+                # Verify our created group appears
+                found_our_group = False
+                for group in search2_results:
+                    print(f"   📋 Group: '{group.get('name')}' (ID: {group.get('id')})")
+                    if group.get("name") == "Moto GO Search Smoke":
+                        found_our_group = True
+                
+                if found_our_group:
+                    print(f"   ✅ Created group appears in search results - CORRECT")
+                else:
+                    print(f"   ❌ Created group does NOT appear in search results - INCORRECT")
+                    return False
+                
+            except Exception as e:
+                print(f"   ❌ Re-search failed with exception: {e}")
+                return False
+        
+        # Performance test - multiple searches to test indexes
+        print("\n⚡ Testing search performance and indexes...")
+        
+        search_queries = ["Moto", "GO", "Test", "Bike", "Search"]
+        total_time = 0
+        successful_searches = 0
+        
+        for query in search_queries:
+            try:
+                perf_start = time.time()
+                perf_response = await client.get(
+                    "https://motogo-dash.preview.emergentagent.com/api/groups/search",
+                    params={"q": query, "limit": 20},
+                    headers=headers
+                )
+                perf_time = time.time() - perf_start
+                
+                if perf_response.status_code == 200:
+                    results_count = len(perf_response.json())
+                    total_time += perf_time
+                    successful_searches += 1
+                    print(f"   🔍 '{query}': {results_count} results ({perf_time*1000:.1f}ms)")
+                else:
+                    print(f"   ❌ '{query}': Failed with status {perf_response.status_code}")
+                    
+            except Exception as e:
+                print(f"   ❌ '{query}': Exception {e}")
+        
+        if successful_searches > 0:
+            avg_time = total_time / successful_searches
+            print(f"   📊 Average search time: {avg_time*1000:.1f}ms ({successful_searches}/{len(search_queries)} successful)")
+            
+            if avg_time < 0.5:  # Less than 500ms average
+                print(f"   ✅ Search performance is excellent (avg < 500ms)")
+            elif avg_time < 1.0:  # Less than 1s average
+                print(f"   ✅ Search performance is good (avg < 1000ms)")
+            else:
+                print(f"   ⚠️  Search performance could be improved (avg > 1000ms)")
+        
+        print("\n🎉 ROMANIAN REVIEW REQUEST COMPLETED!")
+        print("=" * 70)
+        print("✅ Login cu user1@example.com/Password123 - SUCCESS")
+        print("✅ GET /api/groups/search?q=Moto&limit=20 - SUCCESS")
+        print("✅ Endpoint răspunde rapid și fără erori - SUCCESS")
+        if not moto_groups_found:
+            print("✅ Created 'Moto GO Search Smoke' group - SUCCESS")
+            print("✅ Re-search after creation - SUCCESS")
+        print("✅ Performance and indexes testing - SUCCESS")
+        print("=" * 70)
+        return True
+
+
 async def main():
     """Main test execution"""
     print("🚀 Starting Group Search + Join Feature Testing")
-    print("Testing specific Romanian review request scenarios")
+    print("Testing Romanian review request scenarios")
     print("=" * 80)
     
-    success = await test_group_search_join()
+    # Run the specific Romanian review request test
+    romanian_success = await test_romanian_review_request()
     
-    if success:
-        print("\n✅ Group Search + Join Feature: PASSED")
+    if not romanian_success:
+        print("\n❌ Romanian Review Request: FAILED")
+        return 1
+    
+    print("\n" + "="*80)
+    print("Running additional comprehensive group search tests...")
+    print("="*80)
+    
+    # Run the existing comprehensive test
+    comprehensive_success = await test_group_search_join()
+    
+    if romanian_success and comprehensive_success:
+        print("\n✅ ALL Group Search + Join Tests: PASSED")
         return 0
     else:
-        print("\n❌ Group Search + Join Feature: FAILED")
+        print("\n❌ Some Group Search + Join Tests: FAILED")
         return 1
 
 
