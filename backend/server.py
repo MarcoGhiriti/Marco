@@ -992,6 +992,7 @@ async def auth_login(payload: AuthLogin):
 
     user = await db.users.find_one({"email": email})
     if not user:
+        # Keep generic for security, but frontend maps this to friendly message
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     if not verify_password(payload.password, user.get("password_hash", "")):
