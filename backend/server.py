@@ -1589,6 +1589,39 @@ async def add_group_member(group_id: str, payload: dict, current_user: dict = De
     return {"ok": True}
 
 
+class GroupUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    photo_base64: Optional[str] = None
+
+
+@api_router.put("/groups/{group_id}")
+async def update_group(group_id: str, payload: GroupUpdate, current_user: dict = Depends(get_current_user)):
+    """Update a group (only creator can update)."""
+    uid = current_user["id"]
+    g = await db.groups.find_one({"_id": _as_object_id(group_id)})
+    if not g:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    owner_id = g.get("owner_id") or g.get("created_by", "")
+    if owner_id != uid:
+        raise HTTPException(status_code=403, detail="Only the group creator can update this group")
+    
+    update_data = {}
+    if payload.name is not None:
+        update_data["name"] = payload.name.strip()
+    if payload.description is not None:
+        update_data["description"] = payload.description.strip()
+    if payload.photo_base64 is not None:
+        update_data["photo_base64"] = payload.photo_base64
+    
+    if update_data:
+        update_data["updated_at"] = datetime.utcnow()
+        await db.groups.update_one({"_id": _as_object_id(group_id)}, {"$set": update_data})
+    
+    return {"ok": True}
+
+
 @api_router.post("/groups/{group_id}/remove-member")
 async def remove_group_member(group_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
     """Remove a member from a group (only creator can remove, or user can leave)."""
