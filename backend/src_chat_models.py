@@ -43,6 +43,7 @@ class MessageOut(BaseModel):
     thread_id: str
     kind: Literal["dm", "group"]
     from_user_id: str
+    from_username: Optional[str] = None
     to_user_id: Optional[str] = None
     group_id: Optional[str] = None
     text: str
