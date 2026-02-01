@@ -108,11 +108,24 @@ export function StoryViewer({
     if (!isOwnStory) return;
     try {
       setLoadingViews(true);
-      const data = await apiGet<StoryViewsOut>(`/api/stories/${currentStory.id}/views`, authHeader);
+      const data = await apiGet<StoryViewsOut>(
+        `/api/stories/${currentStory.id}/views`,
+        authHeader
+      );
       setViewsCount(data.views_count);
-      setViewers(data.viewers.map(v => ({ user_id: v.user_id, username: v.username, profile_photo: v.profile_photo })));
+      setViewers(
+        data.viewers.map((v) => ({
+          user_id: v.user_id,
+          username: v.username,
+          profile_photo: v.profile_photo,
+        }))
+      );
     } catch (e) {
       // silent
+    } finally {
+      setLoadingViews(false);
+    }
+  }, [authHeader, currentStory, isOwnStory]);
 
   // Mark view and (if own story) refresh analytics on each story change
   useEffect(() => {
@@ -120,11 +133,6 @@ export function StoryViewer({
     markViewed();
     loadViews();
   }, [visible, ownerIndex, storyIndex, currentStory?.id, markViewed, loadViews]);
-
-    } finally {
-      setLoadingViews(false);
-    }
-  }, [authHeader, currentStory, isOwnStory]);
 
 
   const goNext = () => {
