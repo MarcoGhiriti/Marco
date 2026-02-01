@@ -102,7 +102,7 @@ export default function LoginScreen() {
             </Pressable>
 
             <View style={styles.row}>
-              <Text style={styles.muted}>No account?</Text>
+              <Text style={styles.muted}>{t("auth.noAccount")}</Text>
               <Link href="/auth/register" asChild>
                 <Pressable>
                   <Text style={styles.link}>Create one</Text>
