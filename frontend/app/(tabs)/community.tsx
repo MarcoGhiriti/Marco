@@ -552,6 +552,7 @@ function GroupsTab() {
             return (
               <Pressable key={g.id} onPress={() => openGroup(g.id)} style={styles.groupCard}>
                 <View style={styles.groupIcon}>
+                  {groupIds.includes(g.id) ? <UnreadDot /> : null}
                   {g.photo_base64 ? (
                     <Image source={{ uri: g.photo_base64 }} style={styles.groupPhoto} />
                   ) : (
