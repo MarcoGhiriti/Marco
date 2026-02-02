@@ -151,7 +151,7 @@ export default function LeaderboardScreen() {
           <Text
             style={[
               styles.levelText,
-              item.km_total > 0 && { color: getLeaderboardLevelColor(item.level) },
+              item.km_total > 0 && { color: getLevelColor(item.level) },
             ]}
           >
             Lvl {item.level} · {LEVEL_TITLES[item.level - 1] || "Rookie"}
