@@ -19,6 +19,24 @@ import { apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { LeaderboardEntry, BadgeOut } from "../../src/types/api";
 
+const LEVEL_COLORS: Record<number, { accent: string; bg: string }> = {
+  1: { accent: "#22C55E", bg: "rgba(34, 197, 94, 0.16)" },
+  2: { accent: "#3B82F6", bg: "rgba(59, 130, 246, 0.16)" },
+  3: { accent: "#8B5CF6", bg: "rgba(139, 92, 246, 0.16)" },
+  4: { accent: "#F97316", bg: "rgba(249, 115, 22, 0.16)" },
+  5: { accent: "#EF4444", bg: "rgba(239, 68, 68, 0.16)" },
+};
+
+function getLevelColors(level: number) {
+  return (
+    LEVEL_COLORS[level] || {
+      accent: Colors.accent,
+      bg: "rgba(208, 255, 0, 0.15)",
+    }
+  );
+}
+
+
 // All levels with their requirements
 const ALL_LEVELS = [
   { level: 1, title: "Rookie", minKm: 0, maxKm: 100, icon: "bicycle" },
