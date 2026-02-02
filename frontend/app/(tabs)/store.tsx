@@ -285,8 +285,8 @@ export default function LeaderboardScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
           <View style={styles.currentLevelCard}>
-            <View style={styles.currentLevelIcon}>
-              <Ionicons name={myLevel.icon as any} size={32} color={Colors.accent} />
+            <View style={[styles.currentLevelIcon, { backgroundColor: getLevelColors(myLevel.level).bg }]}>
+              <Ionicons name={myLevel.icon as any} size={32} color={getLevelColors(myLevel.level).accent} />
             </View>
             <View style={styles.currentLevelInfo}>
               <Text style={styles.currentLevelTitle}>Your Level</Text>
