@@ -298,16 +298,16 @@ export default function LeaderboardScreen() {
         </ScrollView>
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
-          <View style={styles.currentLevelCard}>
-            <View style={styles.currentLevelIcon}>
-              <Ionicons name={myLevel.icon as any} size={32} color={Colors.accent} />
+          <View style={[styles.currentLevelCard, { borderColor: getLevelColor(myLevel.level) }]}>
+            <View style={[styles.currentLevelIcon, { backgroundColor: `${getLevelColor(myLevel.level)}20` }]}>
+              <Ionicons name={myLevel.icon as any} size={32} color={getLevelColor(myLevel.level)} />
             </View>
             <View style={styles.currentLevelInfo}>
               <Text style={styles.currentLevelTitle}>Your Level</Text>
-              <Text style={styles.currentLevelName}>
+              <Text style={[styles.currentLevelName, { color: getLevelColor(myLevel.level) }]}>
                 Level {myLevel.level} · {myLevel.title}
               </Text>
-              <Text style={styles.currentLevelKm}>
+              <Text style={[styles.currentLevelKm, { color: getLevelColor(myLevel.level) }]}>
                 {Math.round(myKm)} km / {myLevel.maxKm === Infinity ? "∞" : myLevel.maxKm} km
               </Text>
             </View>
@@ -317,34 +317,42 @@ export default function LeaderboardScreen() {
           {ALL_LEVELS.map((level) => {
             const isCurrentLevel = level.level === myLevel.level;
             const isUnlocked = myKm >= level.minKm;
+            const levelColor = getLevelColor(level.level);
             return (
               <View 
                 key={level.level} 
                 style={[
                   styles.levelCard, 
-                  isCurrentLevel && styles.levelCardCurrent,
+                  isCurrentLevel && { borderColor: levelColor, borderWidth: 2 },
                   !isUnlocked && styles.levelCardLocked
                 ]}
               >
-                <View style={[styles.levelIconBox, isCurrentLevel && styles.levelIconBoxCurrent]}>
+                <View style={[
+                  styles.levelIconBox, 
+                  { backgroundColor: isUnlocked ? `${levelColor}20` : Colors.card2 }
+                ]}>
                   <Ionicons
                     name={level.icon as any}
                     size={22}
-                    color={isUnlocked ? Colors.accent : Colors.muted}
+                    color={isUnlocked ? levelColor : Colors.muted}
                   />
                 </View>
                 <View style={styles.levelInfo}>
                   <View style={styles.levelHeader}>
-                    <Text style={[styles.levelName, !isUnlocked && styles.levelNameLocked]}>
+                    <Text style={[
+                      styles.levelName, 
+                      isUnlocked && { color: levelColor },
+                      !isUnlocked && styles.levelNameLocked
+                    ]}>
                       Level {level.level} · {level.title}
                     </Text>
                     {isCurrentLevel && (
-                      <View style={styles.currentBadge}>
+                      <View style={[styles.currentBadge, { backgroundColor: levelColor }]}>
                         <Text style={styles.currentBadgeText}>YOU</Text>
                       </View>
                     )}
                     {isUnlocked && !isCurrentLevel && (
-                      <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                      <Ionicons name="checkmark-circle" size={18} color={levelColor} />
                     )}
                   </View>
                   <Text style={styles.levelReq}>
