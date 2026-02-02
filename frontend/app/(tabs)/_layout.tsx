@@ -2,9 +2,6 @@ import React from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../src/theme/colors";
-import { useAuthStore } from "../../src/state/authStore";
-import { apiGet } from "../../src/lib/api";
-import React, { useEffect, useMemo, useState } from "react";
 
 
 function TabIcon({
