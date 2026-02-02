@@ -19,22 +19,7 @@ import { apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { LeaderboardEntry, BadgeOut } from "../../src/types/api";
 
-const LEVEL_COLORS: Record<number, { accent: string; bg: string }> = {
-  1: { accent: "#22C55E", bg: "rgba(34, 197, 94, 0.16)" },
-  2: { accent: "#3B82F6", bg: "rgba(59, 130, 246, 0.16)" },
-  3: { accent: "#8B5CF6", bg: "rgba(139, 92, 246, 0.16)" },
-  4: { accent: "#F97316", bg: "rgba(249, 115, 22, 0.16)" },
-  5: { accent: "#EF4444", bg: "rgba(239, 68, 68, 0.16)" },
-};
-
-function getLevelColors(level: number) {
-  return (
-    LEVEL_COLORS[level] || {
-      accent: Colors.accent,
-      bg: "rgba(208, 255, 0, 0.15)",
-    }
-  );
-}
+// NOTE: Level coloring customization is applied only in Leaderboard rows, not in Levels tab.
 
 
 // All levels with their requirements
@@ -291,8 +276,8 @@ export default function LeaderboardScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
           <View style={styles.currentLevelCard}>
-            <View style={[styles.currentLevelIcon, { backgroundColor: getLevelColors(myLevel.level).bg }]}>
-              <Ionicons name={myLevel.icon as any} size={32} color={getLevelColors(myLevel.level).accent} />
+            <View style={styles.currentLevelIcon}>
+              <Ionicons name={myLevel.icon as any} size={32} color={Colors.accent} />
             </View>
             <View style={styles.currentLevelInfo}>
               <Text style={styles.currentLevelTitle}>Your Level</Text>
@@ -318,21 +303,11 @@ export default function LeaderboardScreen() {
                   !isUnlocked && styles.levelCardLocked
                 ]}
               >
-                <View
-                  style={[
-                    styles.levelIconBox,
-                    {
-                      backgroundColor: isUnlocked
-                        ? getLevelColors(level.level).bg
-                        : Colors.card2,
-                    },
-                    isCurrentLevel && { borderWidth: 1, borderColor: getLevelColors(level.level).accent },
-                  ]}
-                >
+                <View style={[styles.levelIconBox, isCurrentLevel && styles.levelIconBoxCurrent]}>
                   <Ionicons
                     name={level.icon as any}
                     size={22}
-                    color={isUnlocked ? getLevelColors(level.level).accent : Colors.muted}
+                    color={isUnlocked ? Colors.accent : Colors.muted}
                   />
                 </View>
                 <View style={styles.levelInfo}>
