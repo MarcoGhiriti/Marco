@@ -34,6 +34,7 @@ export default function DmChatScreen() {
   const [otherUser, setOtherUser] = useState<{ username: string; photo: string | null }>({ username: "", photo: null });
 
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
+  const listRef = useRef<FlatList<MessageOut> | null>(null);
 
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
