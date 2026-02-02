@@ -142,7 +142,12 @@ export default function LeaderboardScreen() {
         
         <View style={styles.userInfo}>
           <Text style={styles.username}>{item.username}</Text>
-          <Text style={styles.levelText}>
+          <Text
+            style={[
+              styles.levelText,
+              item.km_total > 0 && { color: getLeaderboardLevelColor(item.level) },
+            ]}
+          >
             Lvl {item.level} · {LEVEL_TITLES[item.level - 1] || "Rookie"}
           </Text>
         </View>
