@@ -571,9 +571,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  levelIconBoxCurrent: {
-    backgroundColor: "rgba(208, 255, 0, 0.15)",
-  },
   levelInfo: { flex: 1 },
   levelHeader: {
     flexDirection: "row",
