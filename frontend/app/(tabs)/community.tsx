@@ -25,6 +25,11 @@ import { useUnreadStore } from "../../src/state/unreadStore";
 
 const TopTabs = createMaterialTopTabNavigator();
 
+function UnreadDot() {
+  return <View style={styles.unreadDot} />;
+}
+
+
 function ChatsTab() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
