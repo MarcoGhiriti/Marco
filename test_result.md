@@ -153,7 +153,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 3
   run_ui: false
 
 # NOTE(main): Am început implementarea pentru ride banner vizibil și participanților.
@@ -163,8 +163,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Mesaje: trimitere DM + Group (WebSocket) + auto-scroll (regression test)"
-    - "Badge dot Community tab + dots in lists (visual)"
+    - "Ride banner pentru participanți (view-only)"
+    - "Switch limbă RO/EN & traducere EN"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
