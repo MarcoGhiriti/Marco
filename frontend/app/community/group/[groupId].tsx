@@ -145,21 +145,6 @@ export default function GroupChatScreen() {
 
     const onGroupNew = (payload: any) => {
       if (!payload || payload.kind !== "group") return;
-
-  // Mark group thread as read when entering screen
-  useEffect(() => {
-    if (!authHeader || !gid) return;
-    const threadId = `group:${gid}`;
-    fetch("/api/messages/mark-read", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeader,
-      },
-      body: JSON.stringify({ thread_id: threadId }),
-    }).catch(() => {});
-  }, [authHeader, gid]);
-
       if (payload.group_id !== gid) return;
 
       setMessages((prev) => {
