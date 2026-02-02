@@ -98,6 +98,7 @@ export default function GroupChatScreen() {
     try {
       const data = await apiGet<MessageOut[]>(`/api/groups/${gid}/messages`, authHeader);
       setMessages(data);
+      scrollToBottom(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load messages");
     } finally {
