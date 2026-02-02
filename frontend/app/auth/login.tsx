@@ -177,10 +177,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
   },
-  primaryBtn: {
-    marginTop: 16,
-    height: 48,
-    borderRadius: 14,
   notice: {
     marginTop: 12,
     padding: 14,
@@ -195,7 +191,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontFamily: "Inter_500Medium",
   },
-
+  primaryBtn: {
+    marginTop: 16,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
