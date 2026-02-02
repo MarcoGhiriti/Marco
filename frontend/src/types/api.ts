@@ -123,6 +123,9 @@ export type RideSessionOut = {
   status: "active" | "paused" | "completed" | "cancelled";
   start_time: string;
   end_time?: string | null;
+  km_tracked: number;
+  is_validated: boolean;
+};
 
 export type ActiveRideForHomeOut = {
   ride_id: string;
@@ -131,8 +134,4 @@ export type ActiveRideForHomeOut = {
   creator_id: string;
   started_at: string;
   updated_at: string;
-};
-
-  km_tracked: number;
-  is_validated: boolean;
 };
