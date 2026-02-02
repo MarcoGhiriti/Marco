@@ -18,7 +18,7 @@ import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
-import type { RouteOut, StoryOwner, RideSessionOut } from "../../src/types/api";
+import type { RouteOut, StoryOwner, RideSessionOut, ActiveRideForHomeOut } from "../../src/types/api";
 import { RouteCard } from "../../src/components/RouteCard";
 import { StoriesBar } from "../../src/components/StoriesBar";
 import { StoryViewer } from "../../src/components/StoryViewer";
