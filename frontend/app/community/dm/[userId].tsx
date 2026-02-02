@@ -74,23 +74,8 @@ export default function DmChatScreen() {
         });
       } catch {
         // Fallback: get username from messages
-        const otherMsg = data.find(m => m.from_user_id === otherUserId);
+        const otherMsg = data.find((m) => m.from_user_id === otherUserId);
         if (otherMsg?.from_username) {
-
-  // Mark DM as read when entering screen
-  useEffect(() => {
-    if (!authHeader || !me?.id || !otherUserId) return;
-    const threadId = `dm:${[me.id, otherUserId].sort().join(":")}`;
-    fetch("/api/messages/mark-read", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeader,
-      },
-      body: JSON.stringify({ thread_id: threadId }),
-    }).catch(() => {});
-  }, [authHeader, me?.id, otherUserId]);
-
           setOtherUser({ username: otherMsg.from_username, photo: null });
         }
       }
@@ -119,27 +104,6 @@ export default function DmChatScreen() {
 
       setMessages((prev) => {
         if (prev.some((m) => m.id === payload.id)) return prev;
-
-  // Mark DM as read when a new message arrives and user is in this chat
-  useEffect(() => {
-    if (!authHeader || !me?.id || !otherUserId) return;
-    if (messages.length === 0) return;
-
-    const last = messages[messages.length - 1];
-    if (!last) return;
-    if (last.from_user_id === me.id) return;
-
-    const threadId = `dm:${[me.id, otherUserId].sort().join(":")}`;
-    fetch("/api/messages/mark-read", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeader,
-      },
-      body: JSON.stringify({ thread_id: threadId }),
-    }).catch(() => {});
-  }, [authHeader, me?.id, otherUserId, messages]);
-
         return [...prev, payload as MessageOut];
       });
       scrollToBottom();

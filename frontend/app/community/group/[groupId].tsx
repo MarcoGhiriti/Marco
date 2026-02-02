@@ -126,21 +126,6 @@ export default function GroupChatScreen() {
       const data = await apiGet<GroupMember[]>("/api/friends", authHeader);
       setFriends(data);
     } catch (e) {
-
-  // Mark group thread as read when entering screen
-  useEffect(() => {
-    if (!authHeader || !gid) return;
-    const threadId = `group:${gid}`;
-    fetch("/api/messages/mark-read", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeader,
-      },
-      body: JSON.stringify({ thread_id: threadId }),
-    }).catch(() => {});
-  }, [authHeader, gid]);
-
       console.error("Failed to load friends:", e);
     }
   }, [authHeader]);
@@ -168,25 +153,6 @@ export default function GroupChatScreen() {
       });
       scrollToBottom();
     };
-
-  // Mark group as read when a new message arrives and user is in this chat
-  useEffect(() => {
-    if (!authHeader || !gid || messages.length === 0) return;
-    const last = messages[messages.length - 1];
-    if (!last) return;
-    if (last.from_user_id === me?.id) return;
-
-    const threadId = `group:${gid}`;
-    fetch("/api/messages/mark-read", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeader,
-      },
-      body: JSON.stringify({ thread_id: threadId }),
-    }).catch(() => {});
-  }, [authHeader, gid, messages, me?.id]);
-
 
     s.on("group:new", onGroupNew);
 
