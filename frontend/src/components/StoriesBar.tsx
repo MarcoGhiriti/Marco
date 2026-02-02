@@ -25,7 +25,9 @@ export function StoriesBar({
   onAddStory,
   onViewStory,
 }: StoriesBarProps) {
-  const hasOwnStory = stories.some((s) => s.user_id === currentUserId);
+  const ownIndex = stories.findIndex((s) => s.user_id === currentUserId);
+  const hasOwnStory = ownIndex >= 0;
+  const ownStory = hasOwnStory ? stories[ownIndex] : undefined;
 
   return (
     <View style={styles.container}>
@@ -34,29 +36,31 @@ export function StoriesBar({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {/* Add Story Button */}
-        <Pressable onPress={onAddStory} style={styles.storyItem}>
-          <View style={styles.addCircle}>
-            {hasOwnStory ? (
-              <Image
-                source={{
-                  uri:
-                    stories.find((s) => s.user_id === currentUserId)
-                      ?.profile_photo || undefined,
-                }}
-                style={styles.avatar}
-              />
-            ) : (
-              <Ionicons name="person" size={24} color={Colors.muted} />
-            )}
-            <View style={styles.plusBadge}>
-              <Ionicons name="add" size={14} color={Colors.bg} />
+        {/* My Story (Instagram-like): open story if exists, plus badge to add */}
+        <View style={styles.storyItem}>
+          <Pressable
+            onPress={() => {
+              if (hasOwnStory) onViewStory(ownIndex);
+              else onAddStory();
+            }}
+            style={styles.myStoryPressable}
+          >
+            <View style={styles.addCircle}>
+              {ownStory?.profile_photo ? (
+                <Image source={{ uri: ownStory.profile_photo }} style={styles.avatar} />
+              ) : (
+                <Ionicons name="person" size={24} color={Colors.muted} />
+              )}
+              <Pressable onPress={onAddStory} style={styles.plusBadge} hitSlop={8}>
+                <Ionicons name="add" size={14} color={Colors.bg} />
+              </Pressable>
             </View>
-          </View>
+          </Pressable>
+
           <Text style={styles.username} numberOfLines={1}>
             Your story
           </Text>
-        </Pressable>
+        </View>
 
         {/* Friends' Stories */}
         {stories
@@ -112,6 +116,10 @@ const styles = StyleSheet.create({
   storyItem: {
     alignItems: "center",
     width: 72,
+  },
+  myStoryPressable: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   addCircle: {
     width: 64,

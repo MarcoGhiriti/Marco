@@ -6,6 +6,7 @@ import {
   Modal,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -53,7 +54,9 @@ export function StoryViewer({
   const isOwnStory = currentOwner?.user_id === currentUserId;
   const [viewsCount, setViewsCount] = useState<number>(0);
   const [showViewsModal, setShowViewsModal] = useState(false);
-  const [viewers, setViewers] = useState<Array<{ user_id: string; username: string; profile_photo?: string | null }>>([]);
+  const [viewers, setViewers] = useState<
+    Array<{ user_id: string; username: string; profile_photo?: string | null }>
+  >([]);
   const [loadingViews, setLoadingViews] = useState(false);
 
 
@@ -324,25 +327,19 @@ export function StoryViewer({
                   <Text style={styles.viewsEmptyText}>No views yet</Text>
                 </View>
               ) : (
-                <View style={styles.viewsList}>
+                <ScrollView
+                  style={styles.viewsList}
+                  contentContainerStyle={styles.viewsListContent}
+                  showsVerticalScrollIndicator={false}
+                >
                   {viewers.map((v) => (
                     <View key={v.user_id} style={styles.viewerRow}>
-                      <View style={styles.viewerAvatar}>
-                        {v.profile_photo ? (
-                          <Image
-                            source={{ uri: v.profile_photo }}
-                            style={styles.viewerAvatarImg}
-                          />
-                        ) : (
-                          <Ionicons name="person" size={16} color={Colors.muted} />
-                        )}
-                      </View>
                       <Text style={styles.viewerName} numberOfLines={1}>
                         {v.username}
                       </Text>
                     </View>
                   ))}
-                </View>
+                </ScrollView>
               )}
             </View>
           </View>
@@ -541,39 +538,23 @@ const styles = StyleSheet.create({
   viewsList: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  viewsListContent: {
+    paddingBottom: 20,
     gap: 10,
   },
   viewerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.card,
   },
-  viewerAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: Colors.card2,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  viewerAvatarImg: {
-    width: "100%",
-    height: "100%",
-  },
   viewerName: {
     color: Colors.text,
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
-    flex: 1,
   },
 
 });
