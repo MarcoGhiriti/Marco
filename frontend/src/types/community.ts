@@ -33,3 +33,10 @@ export type MessageOut = {
   text: string;
   created_at: string;
 };
+
+export type UnreadSummaryOut = {
+  has_unread: boolean;
+  dm_user_ids: string[];
+  group_ids: string[];
+};
+
