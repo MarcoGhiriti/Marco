@@ -3376,6 +3376,15 @@ async def get_ride_progress(ride_id: str, current_user: dict = Depends(get_curre
         route_id=session.get("route_id", ""),
         route_title=route.get("title", "Unknown Route"),
         creator_id=creator_id,
+        creator_username=creator_username,
+        status=session.get("status", "unknown"),
+        progress_percent=round(progress_percent, 1),
+        distance_km=route.get("distance_km", 0),
+        elapsed_minutes=round(elapsed_minutes, 1),
+        participants=participants,
+        is_creator=(uid == creator_id),
+        current_location=current_loc,
+    )
 
 
 @api_router.get("/rides/active-for-home", response_model=Optional[ActiveRideForHomeOut])
