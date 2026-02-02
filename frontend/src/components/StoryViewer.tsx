@@ -295,9 +295,8 @@ export function StoryViewer({
               }}
               style={styles.viewsBtn}
             >
-              <Ionicons name="eye-outline" size={18} color={Colors.text} />
               <Text style={styles.viewsText}>
-                {loadingViews ? "…" : String(viewsCount)}
+                {loadingViews ? "…" : `Views ${String(viewsCount)}`}
               </Text>
             </Pressable>
           </View>
