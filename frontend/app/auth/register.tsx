@@ -35,7 +35,7 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       await register(email.trim(), username.trim(), password);
-      router.replace("/(tabs)/community");
+      router.replace("/(tabs)/home");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Register failed");
     } finally {
