@@ -104,6 +104,21 @@ backend:
         agent: "testing"
         comment: "✅ BACKEND TESTING COMPLETE: Toate endpoint-urile funcționează corect. GET /api/messages/unread-summary returnează {has_unread: bool, dm_user_ids: [], group_ids: []} conform specificației. POST /api/messages/mark-read acceptă thread_id format 'dm:a:b' sau 'group:id' și returnează {ok: true}. Validare autentificare OK (401 fără token). Validare input OK (400 pentru thread_id invalid). Limitare: DM-urile se trimit doar prin WebSocket 'dm:send', nu prin REST API, dar funcționalitatea mark-read funcționează perfect pentru thread-uri existente."
 
+  - task: "Active ride banner endpoint for participants"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Am implementat GET /api/rides/active-for-home endpoint. Dacă user are own ride activ/paused -> returnează ride_id, route_id, status, creator_id etc. Dacă user NU are ride, dar este participant la un route unde creatorul are ride activ/paused -> returnează acel ride (view-only). Necesită testare backend completă."
+      - working: true
+        agent: "testing"
+        comment: "✅ BACKEND TESTING COMPLET: Endpoint-ul GET /api/rides/active-for-home funcționează perfect conform specificației! Testare completă efectuată: 1) User creator: POST /api/rides/start -> GET active-for-home returnează status 'active' cu creator_id corect. 2) User participant: GET active-for-home returnează același ride cu status 'active' și creator_id corect (view-only). 3) POST /api/rides/pause -> ambii useri văd status 'paused'. 4) User outsider (non-participant) -> returnează null corect. Toate validările de autentificare, route membership și status transitions funcționează corect."
+
 frontend:
   - task: "Badge dot pe tab Community + dot pe conversații (DM/Groups)"
     implemented: true
