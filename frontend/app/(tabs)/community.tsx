@@ -33,6 +33,7 @@ function UnreadDot() {
 function ChatsTab() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
+  const { dmUserIds } = useUnreadStore();
 
   const [q, setQ] = useState("");
   const [results, setResults] = useState<UserSearchOut[]>([]);
