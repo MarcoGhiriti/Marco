@@ -71,6 +71,7 @@ export default function GroupChatScreen() {
   const [showInviteModal, setShowInviteModal] = useState(false);
 
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
+  const listRef = useRef<FlatList<MessageOut> | null>(null);
 
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
