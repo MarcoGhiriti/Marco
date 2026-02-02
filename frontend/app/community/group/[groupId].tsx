@@ -151,6 +151,7 @@ export default function GroupChatScreen() {
         if (prev.some((m) => m.id === payload.id)) return prev;
         return [...prev, payload as MessageOut];
       });
+      scrollToBottom();
     };
 
     s.on("group:new", onGroupNew);
