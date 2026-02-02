@@ -116,11 +116,21 @@ export default function HomeScreen() {
     if (!authHeader) return;
     try {
       const data = await apiGet<StoryOwner[]>("/api/stories", authHeader);
-      setStories(data);
+
+      // Ensure "my story" is always first (Instagram-like ordering)
+      let ordered = data;
+      if (me?.id) {
+        const ownIndex = data.findIndex((s) => s.user_id === me.id);
+        if (ownIndex >= 0) {
+          ordered = [data[ownIndex], ...data.filter((_, i) => i !== ownIndex)];
+        }
+      }
+
+      setStories(ordered);
     } catch (e) {
       console.error("Failed to load stories:", e);
     }
-  }, [authHeader]);
+  }, [authHeader, me?.id]);
 
   const loadActiveRide = useCallback(async () => {
     if (!authHeader) return;
