@@ -86,7 +86,7 @@
 # END - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
 
-user_problem_statement: "Moto GO - badge-uri pentru mesaje necitite (DM + Groups) + auto-scroll la trimitere mesaj."
+user_problem_statement: "Moto GO - Ride in progress banner pentru participanți (doar view, creator controlează) + (următor) switch limbă RO/EN & traducere EN."
 
 backend:
   - task: "Unread summary + mark-read endpoints for DM & Groups"
