@@ -1473,15 +1473,6 @@ async def unread_summary(current_user: dict = Depends(get_current_user)):
 
     return UnreadSummaryOut(has_unread=bool(dm_user_ids or group_ids), dm_user_ids=dm_user_ids, group_ids=group_ids)
 
-    uid = current_user["id"]
-    result = await db.notifications.update_one(
-        {"_id": _as_object_id(notif_id), "user_id": uid},
-        {"$set": {"read": True}}
-    )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Notification not found")
-    return {"ok": True}
-
 
 @api_router.post("/notifications/read-all")
 async def mark_all_notifications_read(current_user: dict = Depends(get_current_user)):
