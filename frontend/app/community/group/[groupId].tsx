@@ -166,9 +166,12 @@ export default function GroupChatScreen() {
     const s = socketRef.current ?? getSocket(accessToken);
     const trimmed = text.trim();
     if (!trimmed) return;
+
     setText("");
+    scrollToBottom();
+
     s.emit("group:send", { group_id: gid, text: trimmed });
-  }, [accessToken, gid, text]);
+  }, [accessToken, gid, text, scrollToBottom]);
 
   const handleOpenMembers = () => {
     loadGroupInfo();
