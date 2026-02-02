@@ -54,6 +54,7 @@ export default function HomeScreen() {
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [stories, setStories] = useState<StoryOwner[]>([]);
   const [activeRide, setActiveRide] = useState<RideSessionOut | null>(null);
+  const [activeRideForHome, setActiveRideForHome] = useState<ActiveRideForHomeOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
