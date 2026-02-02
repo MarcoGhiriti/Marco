@@ -34,7 +34,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      router.replace("/(tabs)/community");
+      router.replace("/(tabs)/home");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
       if (msg.toLowerCase().includes("invalid credentials")) {
@@ -60,6 +60,19 @@ export default function LoginScreen() {
             <Text style={styles.h1}>{t("auth.signIn")}</Text>
             <Text style={styles.sub}>{t("auth.welcomeBack")}</Text>
           </View>
+
+            <View style={styles.notice}>
+              <Text style={styles.noticeText}>
+                Right now, our main focus is on building solid core features and a great riding experience.
+                {"\n\n"}
+                Some communication and social features are still evolving — and that’s intentional.
+                {"\n\n"}
+                We’re improving MotoGO step by step, with frequent updates that will make everything smoother, faster, and more powerful over time.
+                {"\n\n"}
+                Thanks for riding with us from the beginning 🏍️
+              </Text>
+            </View>
+
 
           <View style={styles.form}>
             <Text style={styles.label}>{t("auth.email")}</Text>
