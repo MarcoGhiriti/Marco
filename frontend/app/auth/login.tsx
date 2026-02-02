@@ -181,6 +181,21 @@ const styles = StyleSheet.create({
     marginTop: 16,
     height: 48,
     borderRadius: 14,
+  notice: {
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card2,
+  },
+  noticeText: {
+    color: Colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "Inter_500Medium",
+  },
+
     backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
