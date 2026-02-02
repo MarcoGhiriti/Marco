@@ -19,6 +19,8 @@ import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { FriendRequestOut, GroupOut, UserSearchOut } from "../../src/types/community";
+import { useUnreadStore } from "../../src/state/unreadStore";
+
 
 
 const TopTabs = createMaterialTopTabNavigator();
