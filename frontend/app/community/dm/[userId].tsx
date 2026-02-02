@@ -123,12 +123,15 @@ export default function DmChatScreen() {
     const trimmed = text.trim();
     if (!trimmed) return;
 
+    // Clear input and scroll immediately so user sees what they sent.
     setText("");
+    scrollToBottom();
+
     s.emit("dm:send", {
       to_user_id: otherUserId,
       text: trimmed,
     });
-  }, [accessToken, otherUserId, text]);
+  }, [accessToken, otherUserId, text, scrollToBottom]);
 
   const renderMessage = ({ item: m }: { item: MessageOut }) => {
     const mine = m.from_user_id === me?.id;
