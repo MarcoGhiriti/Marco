@@ -312,11 +312,21 @@ export default function LeaderboardScreen() {
                   !isUnlocked && styles.levelCardLocked
                 ]}
               >
-                <View style={[styles.levelIconBox, isCurrentLevel && styles.levelIconBoxCurrent]}>
-                  <Ionicons 
-                    name={level.icon as any} 
-                    size={22} 
-                    color={isUnlocked ? Colors.accent : Colors.muted} 
+                <View
+                  style={[
+                    styles.levelIconBox,
+                    {
+                      backgroundColor: isUnlocked
+                        ? getLevelColors(level.level).bg
+                        : Colors.card2,
+                    },
+                    isCurrentLevel && { borderWidth: 1, borderColor: getLevelColors(level.level).accent },
+                  ]}
+                >
+                  <Ionicons
+                    name={level.icon as any}
+                    size={22}
+                    color={isUnlocked ? getLevelColors(level.level).accent : Colors.muted}
                   />
                 </View>
                 <View style={styles.levelInfo}>
