@@ -157,7 +157,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Mesaje: eroare la trimitere (DM + Groups)"
+    - "Mesaje: trimitere DM + Group (WebSocket) + auto-scroll (regression test)"
+    - "Badge dot Community tab + dots in lists (visual)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
