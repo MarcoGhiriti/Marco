@@ -30,6 +30,15 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
 from starlette.middleware.cors import CORSMiddleware
 
+# -----------------
+# Unread Messages (DM + Groups)
+# -----------------
+
+class UnreadSummaryOut(BaseModel):
+    has_unread: bool
+    dm_user_ids: list[str]
+    group_ids: list[str]
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 # Re-read env after loading .env
