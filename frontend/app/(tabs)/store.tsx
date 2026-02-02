@@ -578,9 +578,4 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(208, 255, 0, 0.15)",
   },
 
-  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
-  centerText: { color: Colors.muted, fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  empty: { alignItems: "center", paddingVertical: 60, gap: 12 },
-  emptyTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_700Bold" },
-  emptyText: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
 });
