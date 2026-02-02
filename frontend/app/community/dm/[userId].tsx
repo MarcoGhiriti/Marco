@@ -61,6 +61,7 @@ export default function DmChatScreen() {
       // Load messages
       const data = await apiGet<MessageOut[]>(`/api/dm/${otherUserId}/messages`, authHeader);
       setMessages(data);
+      scrollToBottom(false);
       
       // Try to get user info
       try {
