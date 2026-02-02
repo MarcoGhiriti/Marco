@@ -78,6 +78,17 @@ export default function GroupChatScreen() {
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
+  const scrollToBottom = useCallback((animated = true) => {
+    requestAnimationFrame(() => {
+      try {
+        listRef.current?.scrollToEnd({ animated });
+      } catch {
+        // ignore
+      }
+    });
+  }, []);
+
+
   const isCreator = groupInfo?.created_by === me?.id;
 
   const loadHistory = useCallback(async () => {
