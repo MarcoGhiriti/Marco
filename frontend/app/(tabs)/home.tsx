@@ -190,7 +190,7 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [authHeader, loadRoutes, loadStories, loadActiveRide, loadLicenseStatus, loadUnreadNotifCount]);
+  }, [authHeader, loadRoutes, loadStories, loadActiveRide, loadActiveRideForHome, loadLicenseStatus, loadUnreadNotifCount]);
 
   useEffect(() => {
     load();
