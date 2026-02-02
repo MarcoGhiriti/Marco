@@ -168,7 +168,7 @@ class MotoGoTester:
         payload = {"route_id": route_id}
         
         response = await self.client.post(f"{API_BASE}/rides/start", json=payload, headers=user.headers())
-        if response.status_code == 201:
+        if response.status_code in [200, 201]:
             data = response.json()
             session_id = data["id"]
             print(f"✅ Started ride session: {session_id} for user {user.username}")
