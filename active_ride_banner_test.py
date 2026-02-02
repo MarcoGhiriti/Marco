@@ -74,7 +74,7 @@ class MotoGoTester:
         }
         
         response = await self.client.post(f"{API_BASE}/auth/register", json=payload)
-        if response.status_code == 201:
+        if response.status_code in [200, 201]:
             data = response.json()
             user.token = data["access_token"]
             print(f"✅ Registered user: {user.username}")
