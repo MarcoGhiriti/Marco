@@ -310,6 +310,7 @@ function GroupsTab() {
     [headers, loadGroups]
   );
 
+  // Load groups on initial mount
   useEffect(() => {
     (async () => {
       try {
@@ -322,6 +323,13 @@ function GroupsTab() {
       }
     })();
   }, [loadGroups]);
+
+  // Refresh groups when screen comes back into focus (e.g., after leaving a group)
+  useFocusEffect(
+    useCallback(() => {
+      loadGroups();
+    }, [loadGroups])
+  );
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
