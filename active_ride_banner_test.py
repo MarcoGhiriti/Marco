@@ -145,7 +145,7 @@ class MotoGoTester:
         }
         
         response = await self.client.post(f"{API_BASE}/routes", json=payload, headers=creator.headers())
-        if response.status_code == 201:
+        if response.status_code in [200, 201]:
             data = response.json()
             route_id = data["id"]
             print(f"✅ Created route: {route_id}")
