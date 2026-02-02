@@ -145,3 +145,5 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Am implementat unread badges (dot) pentru Community tab și pentru DM/Groups folosind endpoint-uri noi backend. Te rog rulează deep_testing_backend_v2 pe noile endpoint-uri."
+  - agent: "testing"
+    message: "✅ BACKEND TESTING COMPLET: Endpoint-urile pentru unread messages funcționează perfect! GET /api/messages/unread-summary returnează corect {has_unread: true, dm_user_ids: ['697e1e8c2e095a0a804545af'], group_ids: ['697f9e0151332ba99f47fe65', '697f9e0151332ba99f47fe66']}. POST /api/messages/mark-read funcționează pentru ambele formate thread_id ('dm:a:b' și 'group:id'). Validări de securitate OK (401 fără token, 400 pentru input invalid). Limitare: DM-urile se trimit doar prin WebSocket, nu REST API, dar funcționalitatea mark-read este completă."
