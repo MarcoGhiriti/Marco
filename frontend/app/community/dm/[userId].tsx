@@ -39,6 +39,7 @@ export default function DmChatScreen() {
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
+  }, [accessToken]);
 
   const scrollToBottom = useCallback((animated = true) => {
     // FlatList without inverted: last item is the bottom
@@ -50,8 +51,6 @@ export default function DmChatScreen() {
       }
     });
   }, []);
-
-  }, [accessToken]);
 
   const loadHistory = useCallback(async () => {
     if (!authHeader || !otherUserId) return;
