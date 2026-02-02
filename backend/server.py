@@ -1356,6 +1356,123 @@ async def get_unread_notification_count(current_user: dict = Depends(get_current
 @api_router.post("/notifications/{notif_id}/read")
 async def mark_notification_read(notif_id: str, current_user: dict = Depends(get_current_user)):
     """Mark a notification as read."""
+
+
+# -----------------
+# Unread Messages Endpoints (DM + Groups)
+# -----------------
+
+class MarkReadIn(BaseModel):
+    thread_id: str = Field(min_length=3, max_length=200)
+
+
+async def ensure_thread_reads_indexes():
+    try:
+        await db.thread_reads.create_index(
+            [("user_id", 1), ("thread_id", 1)],
+            unique=True,
+            name="thread_reads_user_thread_idx",
+            background=True,
+        )
+    except Exception:
+        pass
+
+
+def _parse_thread_id(thread_id: str) -> tuple[str, str]:
+    # returns (kind, id)
+    if thread_id.startswith("dm:"):
+        return ("dm", thread_id)
+    if thread_id.startswith("group:"):
+        return ("group", thread_id.split("group:", 1)[1])
+    return ("unknown", "")
+
+
+@api_router.post("/messages/mark-read")
+async def mark_thread_read(payload: MarkReadIn, current_user: dict = Depends(get_current_user)):
+    """Mark a thread as read for current user. Used for DM & group chats."""
+    await ensure_thread_reads_indexes()
+
+    uid = current_user["id"]
+    thread_id = payload.thread_id.strip()
+
+    kind, ident = _parse_thread_id(thread_id)
+    if kind == "dm":
+        # thread_id format: dm:<a>:<b>
+        parts = thread_id.split(":")
+        if len(parts) != 3:
+            raise HTTPException(status_code=400, detail="Invalid thread_id")
+        a, b = parts[1], parts[2]
+        if uid not in (a, b):
+            raise HTTPException(status_code=403, detail="Not allowed")
+    elif kind == "group":
+        group_id = ident
+        if not group_id:
+            raise HTTPException(status_code=400, detail="Invalid thread_id")
+        if not await is_group_member(group_id, uid):
+            raise HTTPException(status_code=403, detail="Not a group member")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid thread_id")
+
+    now = datetime.utcnow()
+    await db.thread_reads.update_one(
+        {"user_id": uid, "thread_id": thread_id},
+        {"$set": {"last_read_at": now}},
+        upsert=True,
+    )
+    return {"ok": True}
+
+
+@api_router.get("/messages/unread-summary", response_model=UnreadSummaryOut)
+async def unread_summary(current_user: dict = Depends(get_current_user)):
+    """Unread badge summary for Community tab and per-row dots.
+
+    Returns list of user_ids (DM) and group_ids (Groups) that have unread messages.
+    """
+    await ensure_thread_reads_indexes()
+
+    uid = current_user["id"]
+    dm_user_ids: list[str] = []
+    group_ids: list[str] = []
+
+    # DMs: check latest message per friend thread
+    friends = current_user.get("friends") or []
+    for fid in friends:
+        thread_id = dm_thread_id(uid, fid)
+        last_msg = await db.messages.find({"thread_id": thread_id}).sort("created_at", -1).limit(1).to_list(1)
+        if not last_msg:
+            continue
+        last_msg_doc = last_msg[0]
+        last_msg_at = last_msg_doc.get("created_at") or datetime.utcnow()
+        if last_msg_doc.get("from_user_id") == uid:
+            # your own last message doesn't count as unread
+            continue
+
+        read_doc = await db.thread_reads.find_one({"user_id": uid, "thread_id": thread_id}, {"last_read_at": 1})
+        last_read_at = read_doc.get("last_read_at") if read_doc else None
+        if not last_read_at or last_msg_at > last_read_at:
+            dm_user_ids.append(fid)
+
+    # Groups: check latest message per group thread
+    cursor = db.groups.find({"members": uid}, {"_id": 1})
+    groups = await cursor.to_list(length=300)
+    for g in groups:
+        gid = oid_str(g.get("_id"))
+        thread_id = f"group:{gid}"
+        last_msg = await db.messages.find({"thread_id": thread_id}).sort("created_at", -1).limit(1).to_list(1)
+        if not last_msg:
+            continue
+        last_msg_doc = last_msg[0]
+        last_msg_at = last_msg_doc.get("created_at") or datetime.utcnow()
+        if last_msg_doc.get("from_user_id") == uid:
+            continue
+
+        read_doc = await db.thread_reads.find_one({"user_id": uid, "thread_id": thread_id}, {"last_read_at": 1})
+        last_read_at = read_doc.get("last_read_at") if read_doc else None
+        if not last_read_at or last_msg_at > last_read_at:
+            group_ids.append(gid)
+
+    return UnreadSummaryOut(has_unread=bool(dm_user_ids or group_ids), dm_user_ids=dm_user_ids, group_ids=group_ids)
+
     uid = current_user["id"]
     result = await db.notifications.update_one(
         {"_id": _as_object_id(notif_id), "user_id": uid},
