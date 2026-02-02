@@ -3376,6 +3376,75 @@ async def get_ride_progress(ride_id: str, current_user: dict = Depends(get_curre
         route_id=session.get("route_id", ""),
         route_title=route.get("title", "Unknown Route"),
         creator_id=creator_id,
+
+
+@api_router.get("/rides/active-for-home", response_model=Optional[ActiveRideForHomeOut])
+async def get_active_ride_for_home(current_user: dict = Depends(get_current_user)):
+    """Return ride status for Home banner.
+
+    - If user has their own active/paused ride session, return that.
+    - Else, if user is joined to a route that has an active/paused ride session by the creator,
+      return that ride status (view-only).
+
+    This enables participants to see "Ride in progress/paused" for the route creator.
+    """
+    uid = current_user["id"]
+
+    # 1) Own active/paused session
+    own = await db.ride_sessions.find_one(
+        {"user_id": uid, "status": {"$in": ["active", "paused"]}},
+        sort=[("start_time", -1)],
+    )
+    if own and own.get("route_id"):
+        now = datetime.utcnow()
+        return ActiveRideForHomeOut(
+            ride_id=oid_str(own.get("_id")),
+            route_id=own.get("route_id"),
+            status=own.get("status", "active"),
+            creator_id=uid,
+            started_at=own.get("start_time") or now,
+            updated_at=own.get("location_updated_at")
+            or own.get("paused_at")
+            or own.get("start_time")
+            or now,
+        )
+
+    # 2) Participant view: find most recent ride session for any route where user is a participant
+    # We only consider rides with status active/paused
+    # Route membership stored in routes.participants array.
+    # We scan user's routes (usually small) then find latest matching ride session.
+    route_docs = await db.routes.find({"participants": uid}, {"_id": 1}).to_list(length=200)
+    if not route_docs:
+        return None
+
+    route_ids = [oid_str(r.get("_id")) for r in route_docs if r.get("_id")]
+    if not route_ids:
+        return None
+
+    cursor = (
+        db.ride_sessions.find({"route_id": {"$in": route_ids}, "status": {"$in": ["active", "paused"]}})
+        .sort("start_time", -1)
+        .limit(1)
+    )
+    items = await cursor.to_list(length=1)
+    s = items[0] if items else None
+    if not s:
+        return None
+
+    now = datetime.utcnow()
+    creator_id = s.get("user_id") or ""
+    return ActiveRideForHomeOut(
+        ride_id=oid_str(s.get("_id")),
+        route_id=s.get("route_id") or "",
+        status=s.get("status", "active"),
+        creator_id=creator_id,
+        started_at=s.get("start_time") or now,
+        updated_at=s.get("location_updated_at")
+        or s.get("paused_at")
+        or s.get("start_time")
+        or now,
+    )
+
         creator_username=creator_username,
         status=session.get("status", "unknown"),
         progress_percent=round(progress_percent, 1),
