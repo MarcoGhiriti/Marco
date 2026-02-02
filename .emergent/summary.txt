@@ -1,233 +1,212 @@
 <analysis>
 
 <original_problem_statement>
-The user wants to build a premium mobile application for motorcyclists called **Moto GO**. The work is guided by a detailed Product Requirements Document (PRD).
+The user wants to build a premium mobile application for motorcyclists called **Moto GO**. The work is guided by a detailed Product Requirements Document (PRD) and frequent user feedback.
 
-**PRODUCT REQUIREMENTS (PRD):**
+**Initial user requests from previous session:**
+-   **UI Bug - Dropdown Overlap:** A list/dropdown is rendering on top of other elements.
+-   **Story Feature Enhancements:**
+    -   User's own story should be visible in their .
+    -   Display a view count on the user's own stories.
+    -   Tapping the view count should show a list of viewers.
+-   **Home Screen Search:** A search button on the home screen is non-functional and needs a purpose.
+-   **Bug - Forgot Password:** The flow is a UI-only stub.
 
--   **🔔 NOTIFICATIONS HUB:**
-    -   A centralized Notifications hub for all alerts: friend requests, route/event/group invitations, and automated reminders.
--   **👥 GROUPS (Control & Clarity):**
-    -   Group creators must be able to set a maximum number of members.
-    -   Every message bubble in group chat must display the sender's username.
-    -   Group creators should be able to edit the group's name and picture.
-    -   A search function for public groups.
--   **🧑 PROFILE (Content Management):**
-    -   Users must be able to **✏️ Edit** and **🗑️ Delete** their own created routes and events from their profile. The user's 'bio' field should be removed.
--   **🛑 RIDES – ADVANCED FUNCTIONS:**
-    -   An active ride session must have a **PAUSE/RESUME** button.
-    -   The Active Ride banner should be visible to all participants and show the ride's progress and status (Active/Paused).
-    -   The creator should have quick access to Pause/Stop controls.
--   **🗺️ MINI-MAP UX:**
-    -   The mini-map preview on route cards must display the main route polyline highlighted, adjacent streets in gray, and text labels for the **start and end city names** directly on the map.
--   **🔗 CONNECTIVITY:**
-    -   Functionality should be interconnected. If there's a notification for an invitation, there must be a button in the UI to send that invitation.
+**New requests from the current session:**
+-   **Chat UX:**
+    -   Add a badge to the Community tab icon for total unread messages.
+    -   Add a dot badge to individual conversations (groups or DMs) with unread messages.
+    -   Mark a conversation as read upon opening it.
+    -   When sending a message, the chat list should automatically scroll to the bottom.
+-   **Ride Banner for Participants:**
+    -   When a route creator starts a ride, participants of that route should see an In Progress banner on their home screen.
+    -   Participants should *not* have the ability to pause or stop the ride; these controls are for the creator only.
+-   **Internationalization (i18n):**
+    -   Translate the entire application into English.
+    -   Add a language switcher.
+-   **UI/UX & Content:**
+    -   **Levels/Ranking:** In the leaderboard, each level should have a distinct color.
+    -   **Login Page:** Add a specific informational text block about the app's development status.
+    -   **Navigation:** After login or registration, the user should be redirected to the Home screen (), not the Community screen.
+-   **Bug Fixes (User Reported):**
+    -   An error alert appears when trying to send messages in DMs or groups (a regression).
 
 </original_problem_statement>
 
 **User's preferred language**: Romanian (română). The next agent MUST respond in Romanian.
 
 **what currently exists?**
-The application is a full-stack Expo/FastAPI app. In this session, the agent implemented a significant number of features and fixes based on user requests.
+The agent addressed a wide range of user requests, including significant features for chat, stories, and the active ride banner. However, this introduced a critical regression in the chat functionality.
 
--   **Backend (FastAPI/MongoDB):**
-    -   **Notifications Hub:** A full notification system was built with endpoints for fetching, reading, counting, and creating notifications for various types (, , , ).
-    -   **AI License Verification:** The license upload endpoint () was enhanced with OpenAI GPT-4o to validate that the uploaded image is a real driving license and not a random photo or a template.
-    -   **Advanced Ride Management:** The  model now includes a  field. Endpoints for , ,  (now works for paused rides), and  calculation were added. The  endpoint now correctly returns both active and paused rides.
-    -   **Content Management:**  endpoints for updating routes and events were created (, ). A new endpoint  was added to fetch events created by the user.
-    -   **Group Management:** A  endpoint () was added for editing group name/image. Group creation and member addition logic now enforce a member limit (100 for standard, 1000 for premium). A test endpoint for premium subscriptions was also added.
-    -   **Chat:** The  model and related endpoints were updated to include and return the  for every message.
-    -   **Gating:** License verification is now enforced on endpoints for joining () and starting () routes.
-
+-   **Backend (FastAPI):**
+    -   **Unread Messages:** New endpoints  and  were created. A  collection tracks read status per user per thread. The WebSocket logic was updated to push new messages.
+    -   **Ride Banner for Participants:** The  endpoint was heavily modified. It now returns an  object which includes an  flag. The endpoint checks for both rides created by the user and rides they have joined that are active, allowing participants to see the banner.
 -   **Frontend (Expo/React Native):**
-    -   **Notifications Hub:** A functional  screen was built, showing a list of notifications and allowing actions (Accept/Reject for friend requests). A notification badge with an unread count was added to the home screen bell icon.
-    -   **Advanced Ride Management:** The  screen now features a clickable Active Ride banner that opens a modal showing ride progress, status, and creator controls (Pause/Resume/Cancel). The banner correctly reflects the Paused state with a different color and text. The initial bug of a phantom active ride has been fixed.
-    -   **Full Edit Functionality:** The route () and event () detail screens now feature comprehensive Edit modals that allow updating all key details (difficulty, privacy, dates, etc.), not just title/description.
-    -   **Profile as Content Hub:** The user's profile screen () was redesigned with a tabbed view to list My Routes and My Events, allowing users to manage their created content directly. The user 'bio' field has been removed from the edit profile screen.
-    -   **Group Chat & Management:** Usernames are now displayed above messages in group chat. The group chat header now includes Edit Group and Invite buttons for the creator, which open corresponding modals.
-    -   **Mini-Map UI (Partial):** The  component was updated to display start/end city name labels and a gray grid pattern. However, the backend does not yet supply the city name data.
+    -   **Story UI:** The  now shows the user's own story first. The  has a scrollable list of viewers and a simplified view count text.
+    -   **Unread Message Badges:** A new Zustand store () and a  hook were created to manage unread counts via WebSockets. The  and  files were updated to display a total count badge on the tab and dot indicators on individual conversation items.
+    -   **Chat Auto-Scroll:**  in  and  was updated with a  and  logic to automatically scroll down on new messages.
+    -   **Participant Ride Banner:**  was updated to handle the new  flag from the API, conditionally rendering the Pause and Stop buttons.
+    -   **Login/Redirect:** The login screen () now displays the user-requested informational text. The post-registration redirect in  was changed from  to .
+    -   **Leaderboard Levels:** The  screen was modified. The Levels tab was removed. The leaderboard list now applies a different colored border to each rider's entry based on their level.
+    -   **Bug Fixes:**
+        -   A persistent Metro bundler cache issue was resolved by clearing the cache directory.
+        -   Critical Rules of Hooks violations (e.g.,  inside ) in the chat screens were identified and refactored.
 
 **Last working item**:
--   Last item agent was working: Implementing the Invite Friend functionality for Routes.
-    -   The agent was working on the  file. It had added the state, the Invite button to the UI, the modal structure for listing friends, and the  function to call the backend. The agent was about to add the necessary CSS styles for the new modal when the session ended.
--   Status: **IN PROGRESS**
+-   Last item agent was working: Refactoring the Levels feature. The user rejected the initial implementation of a separate Levels tab in the store. The agent then removed that tab and implemented the user's new request: applying different colors directly to the user items in the leaderboard/ranking list.
+-   Status: **USER VERIFICATION PENDING**
 -   Agent Testing Done: N
--   Which testing method agent to use?: frontend testing agent. The agent should verify that clicking the Invite button on the route details page opens a modal, the modal lists the user's friends, and clicking Invite next to a friend's name sends the correct API request and shows a confirmation.
--   User Testing Done: N
+-   Which testing method agent to use?: **screenshot tool**. Take a screenshot of the  tab to verify the leaderboard UI changes.
+-   User Testing Done: Y (User rejected the *previous* implementation, the current one is unverified).
 
 **All Pending/In progress Issue list**:
-  - Issue 1: **Username in Group Chat Not Visible for Old Messages** (P2)
-  - Issue 2: **Story Avatar Bug** (P2)
+  - Issue 1: **Message Sending Fails with Alert (Regression)** (P0)
+  - Issue 2: **Level Colors in Leaderboard** (P0)
+  - Issue 3: **Dropdown Overlap UI Bug** (P2)
+  - Issue 4: **Story Avatar Bug** (P3)
 
   Issues Detail:
   - Issue 1: 
-     - Description: The user reported that usernames were not showing up in group chat. The agent fixed the backend to include  in all new messages, and the frontend to display it. However, messages created *before* this fix do not have this field in the database and thus will not show the username.
-     - Attempted fixes: The core issue for new messages is fixed. No fix was attempted for historical data.
-     - Next debug checklist: This is a data migration issue. A one-time script could be run on the database to backfill the  for old messages, but this might be low priority. The agent should confirm with the user if this is necessary or if it's acceptable for only new messages to have usernames.
-     - Why fix this issue and what will be achieved with the fix?: To provide a consistent user experience where all messages, old and new, show who sent them.
-     - Status: NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix?: backend (if a migration script is run)
-  - Issue 2: 
-     - Description: A bug reported in a much earlier session about the  on the home screen potentially showing the current user's avatar instead of the friend's avatar who posted the story. This has never been verified or addressed.
-     - Attempted fixes: None.
+     - Description: After the agent fixed a Rules of Hooks violation in the chat screens, the user immediately reported a new error: Acm de am eroare la trimitere de mesaje (Now I have an error when sending messages), which appears as a code alert (Apare eroare la code alert). This is a critical regression.
+     - Attempted fixes: The agent fixed a  being nested inside a . However, this either didn't solve the root problem or introduced a new one. The agent added  blocks with  which is what the user is now seeing.
      - Next debug checklist:
-        1. As , add  as a friend.
-        2. Log in as  and post a story.
-        3. Log in as  and view the  on the home screen.
-        4. Verify that the story circle shows 's avatar, not 's.
-     - Why fix this issue and what will be achieved with the fix?: Resolves a long-standing, user-reported bug related to a core social feature.
+       1. Examine the  functions in  and .
+       2. Check the WebSocket  calls (, ) and their payloads.
+       3. Review the  block that is triggering the alert to understand what error is being caught.
+       4. Inspect the  library and the backend WebSocket event handlers for  and  in  to see why the client-side call might be failing.
+     - Why fix this issue and what will be achieved with the fix?: Core chat functionality is broken, making the Community feature unusable.
+     - Status: IN PROGRESS
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix?: both
+     - Blocked on other issue: None
+  - Issue 2: 
+     - Description: User wants colors applied to ranks in the leaderboard, not as a separate tab. Agent implemented this.
+     - Attempted fixes: Agent removed the Levels tab from  and added styling logic to the  function.
+     - Next debug checklist: 
+       1. Use the screenshot tool on the Store page to visually confirm the change.
+       2. Ask the user to verify if the new implementation meets their expectations.
+     - Why fix this issue and what will be achieved with the fix?: Fulfills a direct user UI/UX request.
+     - Status: USER VERIFICATION PENDING
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix?: frontend
+  - Issue 3: 
+     - Description: A list/dropdown (likely from a search input) renders on top of other elements below it. This was reported in a previous session and not addressed.
+     - Attempted fixes: None in this session.
+     - Next debug checklist:
+       1. Ask the user to specify which screen has the overlapping list.
+       2. Inspect the styles of the list container and its parents for  or  issues.
+     - Why fix this issue and what will be achieved with the fix?: Improves basic UI usability.
+     - Status: NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix?: frontend
+  - Issue 4: 
+     - Description: Long-standing bug where the  might show the current user's avatar on a friend's story.
+     - Attempted fixes: None.
      - Status: NOT STARTED
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix?: frontend
 
 **In progress Task List**:
-  - Task 1: **Complete the Invite to Activity Feature** (P0)
-     - Where to resume: 
-        1. In , add the styles for the Invite Friend modal (the styles were not added before the session ended).
-        2. Implement the same Invite Friend button and modal functionality on the event detail screen ().
-     - What will be achieved with this?: Fulfills the user's request for full connectivity, allowing users to invite friends to all types of activities (groups, routes, and events), which then generates notifications.
-     - Status: IN PROGRESS
-     - Should Test frontend/backend/both after fix?: frontend
-     - Blocked on something: None
+-   There are no multi-step tasks currently in progress. The focus is on fixing the chat regression and getting verification on the Levels UI.
 
 **Upcoming and Future Tasks**
-
--   **Upcoming Tasks:**
-    -   **P0: Implement Group Search**: Create a new UI section (likely in the Community tab) with a search bar to find and join public groups. This will require a new backend endpoint (e.g., ).
-    -   **P1: Implement Automatic City Name Extraction for Mini-Map**: The backend needs to be updated to populate the  and  fields on the  model. This will likely require using an external Geocoding API (like Google's) to reverse-geocode the route's start and end coordinates into city names when a route is created or fetched.
+-   **P0: Internationalization (i18n)**: Translate all hardcoded strings in the app to English using the existing  setup. Create a language switcher component, likely in the Profile or Settings screen.
+-   **P1: Home Screen Search Implementation**: The user de-prioritized this, but the feature is incomplete. The  screen needs to be built out with filter inputs (difficulty, distance, etc.) and a backend endpoint  must be created to handle the filtering logic.
+-   **P2: Backend Refactor**: User-approved task to refactor the monolithic  into smaller, more manageable router files for better maintainability.
+-   **BLOCKED: Forgot Password Flow**: This remains blocked until the user provides an email service API key.
 
 **Completed work in this session**
-- List of all completed tasks with file and method name:
-    -   **Notifications Hub**: Fully implemented backend and frontend UI, including badge count and in-notification actions. (, , ).
-    -   **AI License Verification**: Integrated GPT-4o to validate license uploads. ().
-    -   **Advanced Ride Management**: Implemented Pause/Resume/Cancel/Progress functionality for active rides. (, ).
-    -   **Group Member Limits**: Enforced member limits on group creation and member addition. ().
-    -   **Full Edit for Routes/Events**: Created comprehensive inline edit modals for all key route and event details. (, ).
-    -   **Profile as Content Hub**: Redesigned profile page to list and manage user-created routes and events. (, ).
-    -   **Username in Group Chat**: Backend and frontend updated to show sender's username in group chat messages. (, , ).
-    -   **Group Edit (Name/Photo)**: Added functionality for group creators to edit the group's name and image. (, ).
-    -   **License Gating**: Enforced license verification for joining and starting rides. ().
-    -   **Remove User Bio**: Removed the 'bio' field from the user profile edit screen. ().
-
-- Recently completed:
-  - Group Edit (Name/Photo) and Invite to Group functionality (DONE)
-  - Full, detailed Edit functionality for Routes and Events (DONE)
-  - Profile page redesigned as a Content Management hub (DONE)
-  - Username display in group chats (DONE for new messages)
-  - AI-powered License Verification (DONE)
-  - Advanced Ride Controls (Pause/Resume/Cancel/Progress) (DONE)
+- **Features & Enhancements:**
+  - **Unread Message Badges:** Implemented backend logic () and frontend UI (Zustand store, tab badges, conversation dots) for chat unread indicators.
+  - **Participant Ride Banner:** Backend () and frontend () logic implemented to show an In Progress banner to all route participants, with pause/stop controls hidden for non-creators.
+  - **Story UI/UX:**  now shows the current user's story. The viewer list is scrollable with simplified text.
+  - **Chat Auto-Scroll:** Implemented auto-scroll-to-bottom on new messages in DM and group chats.
+  - **Login Page Content:** Added the user-requested informational text to .
+  - **Post-Auth Redirect:** Changed the redirect after registration to point to the Home screen.
+  - **Leaderboard Level Colors:** Refactored the Levels feature to apply colors directly to user entries in the leaderboard on .
+- **Bug Fixes:**
+  - **Metro Bundler Cache:** Resolved a critical build error by clearing the Metro cache.
+  - **React Rules of Hooks Violations:** Fixed incorrect nesting of hooks ( inside ) in the chat screens (, ).
 
 **Earlier issues found/mentioned but not fixed**
-   - **Story Avatar Bug**: This was mentioned in the initial handover and is still pending verification and fix. See All Pending/In progress Issue list for details.
+   - **Story Avatar Bug**: A bug where the  might show the wrong avatar. Not addressed.
+   - **Old Chat Messages Lack Usernames**: A data migration task to backfill  for historical messages. Not addressed.
+   - **List Overlap UI Bug**: A z-index/positioning issue. Not addressed.
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: The Story avatar bug was mentioned in the initial handover summary and remains unverified.
-  - Recurrence count: 2
-  - Status: NOT STARTED
+  - **Chat Functionality:** Chat has been a recurring source of bugs. The fix for the Rules ofHooks violation was immediately followed by a new user report of errors, indicating instability in this feature. Recurrence: 2. Status: IN PROGRESS.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
 -   **Frontend:** React Native, Expo Router, TypeScript, Zustand, , .
--   **Backend:** FastAPI, Python, MongoDB (), Pydantic, Socket.IO.
--   **AI:** OpenAI GPT-4o via  library for image analysis (license verification).
--   **Authentication:** JWT.
--   **UI Patterns:** Heavy use of Modals for inline editing and actions (invites, ride progress) to avoid navigating to separate screens.
+-   **Backend:** FastAPI, Python, MongoDB (), Pydantic, WebSockets ().
+-   **Realtime:** WebSockets are used for chat and for pushing unread count updates.
 
 **key DB schema**
--   : 
--   root: 
--   : 
--   :  (Fields added to model, but not populated from DB yet)
--   :  (Field added for new messages)
+-   : No schema change, but the logic around querying it is now more complex.
+-   ** (NEW):** . Tracks when a user last viewed a chat thread.
 
 **changes in tech stack**
--   : Added for OpenAI integration.
+-   No new packages were added, but usage of  and  was deepened with the new .
 
 **All files of reference**
--   : Massively updated with numerous new and modified endpoints for all features.
--   : Major rewrite to include the ride progress modal and logic.
--   : Major rewrite for the content management hub.
--   : Major rewrite for group edit and invite features.
--   : Major rewrite for full route editing and invite features.
--   : Major rewrite for full event editing.
--   : Updated for new mini-map UX.
-
-**Areas that need refactoring**:
--   **:** This file is critically oversized and handles all application logic (auth, users, routes, events, groups, rides, notifications, chat). It urgently needs to be broken down into smaller, more manageable  files based on functionality (e.g., , , etc.).
--   **Hardcoded UI Strings:** All UI text is hardcoded in English/Romanian. This makes localization difficult. An i18n library should be considered.
--   **Redundant Invite Friend Modal**: The Invite Friend modal logic and UI is being duplicated across  and . This should be extracted into a reusable component.
-
-**key api endpoints**
--   **NEW:**
-    -   
-    -   
-    -   
-    -   
-    -   
-    -   
-    -   
-    -   
-    -   
-    -    (for testing)
--   **MODIFIED:**
-    -    (added AI verification)
-    -    (added limit check)
-    -    (now includes paused rides)
-    -    (now works on paused rides)
-    -    (now include )
+-   : Heavily modified for  and new notification endpoints.
+-   : Modified for unread badges.
+-   : Refactored hooks, added auto-scroll. **Source of current regression.**
+-   : Refactored hooks, added auto-scroll. **Source of current regression.**
+-   : Modified for participant ride banner.
+-   : Refactored to remove Levels tab and add colors to leaderboard.
+-   : New file for managing unread state.
+-   : Added static text.
+-   : Changed redirect.
 
 **Critical Info for New Agent**
--   **User Language:** The user communicates in **Romanian**. All responses must be in Romanian.
--   **Priorities**: The user wants full connectivity between features. The next logical steps are to finish the Invite flow (for Events), implement Group Search, and finish the Mini-Map city name feature (backend part).
--   **Incomplete Backend Logic**: The  and  fields for routes are defined in the models but are NOT populated by the backend. This will require a geocoding API integration to resolve coordinates to city names.
--   **Refactoring Needed**: Propose refactoring  into smaller router files. The current state is unsustainable.
--   **State Loss on Web**: Be aware that the web preview loses authentication state on direct URL navigation or page reloads. Test features through the app's internal navigation flow.
+-   **Language is Romanian.** All communication must be in Romanian.
+-   **CRITICAL REGRESSION:** The top priority is fixing the chat. The user is seeing an  when trying to send a message. This happened right after the agent fixed a Rules of Hooks error. Investigate the  blocks in the  functions on the DM and Group chat screens to find the source of the error.
+-   **Verify UI Changes:** The new Levels UI on the leaderboard needs to be confirmed with the user, preferably with a screenshot.
+-   **Next Task:** Once the chat is fixed and the Levels UI is approved, the next major task is Internationalization (i18n): translating the app to English and adding a language switcher.
+-   **User Feedback is Law:** The user frequently changes their mind or clarifies requests (e.g., the Levels feature). Confirm your plan before implementing, and be prepared to refactor based on feedback.
 
 **documents created in this job**
-- None. All changes were modifications to existing files or new  screens within the existing structure.
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-10. : User requested AI license verification. (DONE)
-9.  : User reported bug with active ride banner and requested progress/pause/stop features. (DONE)
-8.  : User requested the pause/resume modal to stay open. (DONE)
-7.  : User reported that the paused ride banner doesn't show and disappears when the modal is closed. (DONE)
-6.  : User reported being able to join routes without a verified license and that the cancel ride button was broken for paused rides. (DONE)
-5.  : User requested group member limits. (DONE)
-4.  : User asked to ignore subscription logic for now and continue with other tasks. (Actioned)
-3.  : User clarified they want a content management section on their profile and detailed Mini-Map improvements. (DONE/IN PROGRESS)
-2.  : User reported username in chat isn't working and requested edit functionality to be for *all* details. (DONE)
-1.  : User requested to remove 'bio', add group edit (name/photo), and critically, to connect all the features by adding Invite buttons and group search. (PARTIALLY DONE)
+10. : OK for levels, can each level be a different color, and add specific text to the login page. After login, the main page should be home with community. (Partially Addressed)
+9.  : Run some flows yourself and debug if needed. - User giving permission to debug. (Actioned)
+8.  : You test both with sending messages. - User confirming the agent should test the chat fix. (Actioned)
+7.  : A code alert error appears. - User clarifying the nature of the chat error. (Pending Fix)
+6.  : Now I have an error when sending messages. - **CRITICAL: User reporting the chat regression.** (Pending Fix)
+5.  : Check the app for ride banner errors, check each one and translate the whole app to English. (Partially Addressed, i18n is pending)
+4.  : Yes add that language switch and check if the in progress ride banner appears for other participants... (Actioned)
+3.  : Yes, continue. - User confirming the plan to work on the ride banner. (Actioned)
+2.  : User provides detailed specs for unread badges and requests auto-scroll in chat. (Actioned)
+1.  : well I see the search button on the home screen already works, move on to the next things with badges for dms and groups. (Actioned)
 
 **Project Health Check:**
--   **Working**: Core app, AI License Verification, Advanced Ride Management, Group Member Limits, Full Edit Modals, Profile Content Hub, Group Edit.
--   **Incomplete**:
-    -   **Invite Functionality**: Implemented for Groups and started for Routes. Missing for Events. The UI for Routes needs styling.
-    -   **Mini-Map UX**: Frontend is ready to display city names, but the backend doesn't provide them.
--   **Not Started (but required)**: Group Search functionality.
--   **Broken**: No known broken features, but old group chat messages will lack a username.
+-   **Broken**: Chat message sending is confirmed broken by the user. This is a high-priority regression.
+-   **Incomplete**: Internationalization (i18n), Home Screen Search.
+-   **Mocked**: Forgot Password flow remains a UI-only stub.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4o**: Used via  for AI license verification. Requires .
--   **Google Maps Platform**: Used for Places Autocomplete, Place Details, and Directions API. (Implicitly required for future Geocoding API task).
--   **Expo**: Core framework, including , .
+-   **OpenAI GPT-4o**: For AI license verification (uses ).
+-   **Google Maps Platform**: Used for Geocoding via a user-provided API key.
+-   **Socket.IO**: For real-time chat and notifications.
 
 **Testing status**
--   Testing agent used after significant changes: NO. Agent relied on manual testing via  and  with .
--   Troubleshoot agent used after agent stuck in loop: NO.
+-   Testing agent used after significant changes: YES, a backend test was run and a frontend regression test was run which passed, but it seems it did not catch the user-facing  error.
+-   Troubleshoot agent used after agent stuck in loop: NO, but the agent self-resolved a Metro cache issue.
 -   Test files created: None.
--   Known regressions: None identified.
+-   Known regressions: **Chat message sending is broken.**
 
 **Credentials to test flow:**
 -   **User 1 (Verified License):**  / 
 -   **User 2 (Unverified License):**  / 
--   **User 3 (Test user):**  / 
 
 **What agent forgot to execute**
--   The agent added the  and  fields to the  model but forgot to implement the backend logic to actually populate these fields (e.g., by calling a geocoding API).
--   The user requested căutare grupuri (group search), but the agent did not start implementing this feature.
--   The Invite functionality was implemented for Groups and started for Routes, but completely missed for Events.
+- The agent started the i18n task but it was immediately superseded by other user requests and never completed.
+- The agent did not address the pre-existing Dropdown Overlap UI bug.
+- The agent did not address the pre-existing Story Avatar bug.
 
 </analysis>
