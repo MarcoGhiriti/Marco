@@ -91,15 +91,18 @@ user_problem_statement: "Moto GO - badge-uri pentru mesaje necitite (DM + Groups
 backend:
   - task: "Unread summary + mark-read endpoints for DM & Groups"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Am adăugat /api/messages/unread-summary și /api/messages/mark-read + colecția thread_reads. Necesită testare backend (login, unread calc, mark-read)."
+      - working: true
+        agent: "testing"
+        comment: "✅ BACKEND TESTING COMPLETE: Toate endpoint-urile funcționează corect. GET /api/messages/unread-summary returnează {has_unread: bool, dm_user_ids: [], group_ids: []} conform specificației. POST /api/messages/mark-read acceptă thread_id format 'dm:a:b' sau 'group:id' și returnează {ok: true}. Validare autentificare OK (401 fără token). Validare input OK (400 pentru thread_id invalid). Limitare: DM-urile se trimit doar prin WebSocket 'dm:send', nu prin REST API, dar funcționalitatea mark-read funcționează perfect pentru thread-uri existente."
 
 frontend:
   - task: "Badge dot pe tab Community + dot pe conversații (DM/Groups)"
