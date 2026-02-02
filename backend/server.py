@@ -7,15 +7,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, List, Literal, Optional
 
-# -----------------
-# Unread Messages (DM + Groups)
-# -----------------
-
-class UnreadSummaryOut(BaseModel):
-    has_unread: bool
-    dm_user_ids: list[str]
-    group_ids: list[str]
-
 from email_validator import EmailNotValidError, validate_email
 
 from src_auth import create_access_token, decode_token, hash_password, oid_str, verify_password
