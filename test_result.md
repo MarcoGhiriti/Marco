@@ -123,6 +123,18 @@ frontend:
   - task: "Badge dot pe tab Community + dot pe conversații (DM/Groups)"
     implemented: true
     working: true
+
+  - task: "Login: text informativ + redirect post-login la Home"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/auth/login.tsx, /app/frontend/app/auth/register.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Am adăugat textul cerut pe Login și am schimbat redirect-ul după login/register către /(tabs)/home."
     file: "/app/frontend/app/(tabs)/_layout.tsx, /app/frontend/app/(tabs)/community.tsx, /app/frontend/src/state/unreadStore.ts"
     stuck_count: 0
     priority: "high"
