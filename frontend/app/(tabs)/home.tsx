@@ -381,25 +381,38 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Active Ride Banner */}
-        {activeRide && (
-          <Pressable onPress={handleOpenRideModal} style={[
-            styles.activeRideBanner,
-            activeRide.status === "paused" && styles.pausedRideBanner
-          ]}>
+        {/* Active Ride Banner (creator or participant view) */}
+        {activeRideForHome && (
+          <Pressable
+            onPress={() => {
+              // If you are the creator, keep existing modal behavior
+              if (activeRide) {
+                handleOpenRideModal();
+                return;
+              }
+              // Participant: open route details (view-only)
+              router.push(`/route/${activeRideForHome.route_id}`);
+            }}
+            style={[
+              styles.activeRideBanner,
+              activeRideForHome.status === "paused" && styles.pausedRideBanner,
+            ]}
+          >
             <View style={styles.activeRideIcon}>
               <Ionicons
-                name={activeRide.status === "paused" ? "pause" : "speedometer"}
+                name={activeRideForHome.status === "paused" ? "pause" : "speedometer"}
                 size={20}
                 color={Colors.bg}
               />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.activeRideTitle}>
-                {activeRide.status === "paused" ? "Ride Paused" : "Ride in Progress"}
+                {activeRideForHome.status === "paused" ? "Ride Paused" : "Ride in Progress"}
               </Text>
               <Text style={styles.activeRideSub}>
-                Tap to {activeRide.status === "paused" ? "resume" : "view progress"}
+                {activeRide
+                  ? `Tap to ${activeRideForHome.status === "paused" ? "resume" : "view progress"}`
+                  : "Tap to view route"}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={Colors.bg} />
