@@ -7,16 +7,6 @@ import { useAuthStore } from "../../src/state/authStore";
 import { useUnreadStore } from "../../src/state/unreadStore";
 
 
-function TabIcon({
-  name,
-  color,
-  size,
-  showDot,
-}: {
-  name: React.ComponentProps<typeof Ionicons>["name"];
-  color: string;
-  size: number;
-
 const stylesTab = StyleSheet.create({
   iconWrap: {
     width: 28,
@@ -37,6 +27,15 @@ const stylesTab = StyleSheet.create({
   },
 });
 
+function TabIcon({
+  name,
+  color,
+  size,
+  showDot,
+}: {
+  name: React.ComponentProps<typeof Ionicons>["name"];
+  color: string;
+  size: number;
   showDot?: boolean;
 }) {
   return (
