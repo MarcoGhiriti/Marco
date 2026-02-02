@@ -836,6 +836,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: 18,
     fontFamily: "Inter_700Bold",
+  },
   unreadDot: {
     position: "absolute",
     top: 0,
@@ -847,8 +848,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.bg,
     zIndex: 10,
-  },
-
   },
   createModalForm: {
     gap: 14,
