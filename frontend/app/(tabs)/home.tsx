@@ -136,10 +136,22 @@ export default function HomeScreen() {
   const loadActiveRide = useCallback(async () => {
     if (!authHeader) return;
     try {
+      // Creator's own ride session (used for controls)
       const data = await apiGet<RideSessionOut | null>("/api/rides/active", authHeader);
       setActiveRide(data);
     } catch (e) {
       console.error("Failed to load active ride:", e);
+    }
+  }, [authHeader]);
+
+  const loadActiveRideForHome = useCallback(async () => {
+    if (!authHeader) return;
+    try {
+      // For participants OR creators (view-only banner status)
+      const data = await apiGet<ActiveRideForHomeOut | null>("/api/rides/active-for-home", authHeader);
+      setActiveRideForHome(data);
+    } catch (e) {
+      console.error("Failed to load active ride for home:", e);
     }
   }, [authHeader]);
 
