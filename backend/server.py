@@ -3445,16 +3445,19 @@ async def get_active_ride_for_home(current_user: dict = Depends(get_current_user
 
     now = datetime.utcnow()
     creator_id = s.get("user_id") or ""
+    updated_at = (
+        s.get("location_updated_at")
+        or s.get("paused_at")
+        or s.get("start_time")
+        or now
+    )
     return ActiveRideForHomeOut(
         ride_id=oid_str(s.get("_id")),
         route_id=s.get("route_id") or "",
         status=s.get("status", "active"),
         creator_id=creator_id,
         started_at=s.get("start_time") or now,
-        updated_at=s.get("location_updated_at")
-        or s.get("paused_at")
-        or s.get("start_time")
-        or now,
+        updated_at=updated_at,
     )
 
 
