@@ -809,6 +809,17 @@ class RideSessionOut(BaseModel):
     is_validated: bool = False
 
 
+
+class ActiveRideForHomeOut(BaseModel):
+    ride_id: str
+    route_id: str
+    status: str
+    creator_id: str
+    started_at: datetime
+    updated_at: datetime
+
+
+
 # -----------------
 # Badges & Gamification Models
 # -----------------
