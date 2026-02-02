@@ -35,16 +35,22 @@ const ALL_LEVELS = [
   { level: 9, title: "God of Roads", minKm: 50000, maxKm: 100000, icon: "flame" },
   { level: 10, title: "Mythical", minKm: 100000, maxKm: Infinity, icon: "trophy" },
 ];
-const LEADERBOARD_LEVEL_COLORS: Record<number, string> = {
-  1: "#22C55E",
-  2: "#3B82F6",
-  3: "#8B5CF6",
-  4: "#F97316",
-  5: "#EF4444",
+// Colors for each level - used everywhere level is displayed
+const LEVEL_COLORS: Record<number, string> = {
+  1: "#22C55E",  // Green - Rookie
+  2: "#3B82F6",  // Blue - Explorer
+  3: "#8B5CF6",  // Purple - Adventurer
+  4: "#F97316",  // Orange - Road Warrior
+  5: "#EF4444",  // Red - Highway King
+  6: "#EC4899",  // Pink - Moto Master
+  7: "#F59E0B",  // Amber - Legend
+  8: "#06B6D4",  // Cyan - Immortal
+  9: "#DC2626",  // Deep Red - God of Roads
+  10: "#FFD700", // Gold - Mythical
 };
 
-function getLeaderboardLevelColor(level: number) {
-  return LEADERBOARD_LEVEL_COLORS[level] || Colors.accent;
+export function getLevelColor(level: number): string {
+  return LEVEL_COLORS[level] || Colors.accent;
 }
 
 
