@@ -575,3 +575,7 @@ const styles = StyleSheet.create({
   emptyTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_700Bold" },
   emptyText: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
 });
+
+  levelIconBoxCurrent: {
+    backgroundColor: "rgba(208, 255, 0, 0.15)",
+  },
