@@ -227,6 +227,7 @@ function ChatsTab() {
                     }}
                     style={styles.chatIconBtn}
                   >
+                    {dmUserIds.includes(f.id) ? <UnreadDot /> : null}
                     <Ionicons name="chatbubble-outline" size={18} color={Colors.accent} />
                   </Pressable>
                 </Pressable>
