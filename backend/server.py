@@ -3406,16 +3406,19 @@ async def get_active_ride_for_home(current_user: dict = Depends(get_current_user
     )
     if own and own.get("route_id"):
         now = datetime.utcnow()
+        updated_at = (
+            own.get("location_updated_at")
+            or own.get("paused_at")
+            or own.get("start_time")
+            or now
+        )
         return ActiveRideForHomeOut(
             ride_id=oid_str(own.get("_id")),
             route_id=own.get("route_id"),
             status=own.get("status", "active"),
             creator_id=uid,
             started_at=own.get("start_time") or now,
-            updated_at=own.get("location_updated_at")
-            or own.get("paused_at")
-            or own.get("start_time")
-            or now,
+            updated_at=updated_at,
         )
 
     # 2) Participant view: find most recent ride session for any route where user is a participant
