@@ -206,11 +206,16 @@ export default function DmChatScreen() {
             </View>
           ) : (
             <FlatList
+              ref={(r) => {
+                listRef.current = r;
+              }}
               data={messages}
               keyExtractor={(m) => m.id}
               renderItem={renderMessage}
               contentContainerStyle={styles.messagesList}
               showsVerticalScrollIndicator={false}
+              onContentSizeChange={() => scrollToBottom(false)}
+              onLayout={() => scrollToBottom(false)}
             />
           )}
         </View>
