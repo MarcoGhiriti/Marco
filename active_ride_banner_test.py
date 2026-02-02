@@ -35,9 +35,9 @@ class TestUser:
 class MotoGoTester:
     def __init__(self):
         self.client = httpx.AsyncClient(timeout=30.0)
-        self.user1 = TestUser("creator@test.com", "creator_user", "password123")
-        self.user2 = TestUser("participant@test.com", "participant_user", "password123")
-        self.user3 = TestUser("outsider@test.com", "outsider_user", "password123")
+        self.user1 = TestUser("creator@test.com", "creatoruser", "password123")
+        self.user2 = TestUser("participant@test.com", "participantuser", "password123")
+        self.user3 = TestUser("outsider@test.com", "outsideruser", "password123")
         self.route_id: Optional[str] = None
         self.ride_session_id: Optional[str] = None
         
