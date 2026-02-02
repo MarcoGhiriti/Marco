@@ -157,7 +157,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Active ride banner endpoint for participants"
+    - "Mesaje: eroare la trimitere (DM + Groups)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
