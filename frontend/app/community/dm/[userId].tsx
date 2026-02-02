@@ -77,6 +77,21 @@ export default function DmChatScreen() {
         // Fallback: get username from messages
         const otherMsg = data.find(m => m.from_user_id === otherUserId);
         if (otherMsg?.from_username) {
+
+  // Mark DM as read when entering screen
+  useEffect(() => {
+    if (!authHeader || !me?.id || !otherUserId) return;
+    const threadId = `dm:${[me.id, otherUserId].sort().join(":")}`;
+    fetch("/api/messages/mark-read", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader,
+      },
+      body: JSON.stringify({ thread_id: threadId }),
+    }).catch(() => {});
+  }, [authHeader, me?.id, otherUserId]);
+
           setOtherUser({ username: otherMsg.from_username, photo: null });
         }
       }
