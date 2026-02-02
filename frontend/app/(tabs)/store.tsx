@@ -35,6 +35,18 @@ const ALL_LEVELS = [
   { level: 9, title: "God of Roads", minKm: 50000, maxKm: 100000, icon: "flame" },
   { level: 10, title: "Mythical", minKm: 100000, maxKm: Infinity, icon: "trophy" },
 ];
+const LEADERBOARD_LEVEL_COLORS: Record<number, string> = {
+  1: "#22C55E",
+  2: "#3B82F6",
+  3: "#8B5CF6",
+  4: "#F97316",
+  5: "#EF4444",
+};
+
+function getLeaderboardLevelColor(level: number) {
+  return LEADERBOARD_LEVEL_COLORS[level] || Colors.accent;
+}
+
 
 // All available badges with unlock requirements
 const ALL_BADGES = [
