@@ -324,12 +324,12 @@ export default function LeaderboardScreen() {
                 style={[
                   styles.levelCard, 
                   isCurrentLevel && { borderColor: levelColor, borderWidth: 2 },
-                  !isUnlocked && styles.levelCardLocked
+                  { borderLeftWidth: 4, borderLeftColor: levelColor }
                 ]}
               >
                 <View style={[
                   styles.levelIconBox, 
-                  { backgroundColor: `${levelColor}20` }
+                  { backgroundColor: `${levelColor}25` }
                 ]}>
                   <Ionicons
                     name={level.icon as any}
@@ -341,7 +341,7 @@ export default function LeaderboardScreen() {
                   <View style={styles.levelHeader}>
                     <Text style={[
                       styles.levelName, 
-                      { color: isUnlocked ? levelColor : `${levelColor}80` }
+                      { color: levelColor }
                     ]}>
                       Level {level.level} · {level.title}
                     </Text>
@@ -352,6 +352,9 @@ export default function LeaderboardScreen() {
                     )}
                     {isUnlocked && !isCurrentLevel && (
                       <Ionicons name="checkmark-circle" size={18} color={levelColor} />
+                    )}
+                    {!isUnlocked && (
+                      <Ionicons name="lock-closed" size={16} color={Colors.muted} />
                     )}
                   </View>
                   <Text style={styles.levelReq}>
