@@ -39,6 +39,18 @@ export default function DmChatScreen() {
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
+
+  const scrollToBottom = useCallback((animated = true) => {
+    // FlatList without inverted: last item is the bottom
+    requestAnimationFrame(() => {
+      try {
+        listRef.current?.scrollToEnd({ animated });
+      } catch {
+        // ignore
+      }
+    });
+  }, []);
+
   }, [accessToken]);
 
   const loadHistory = useCallback(async () => {
