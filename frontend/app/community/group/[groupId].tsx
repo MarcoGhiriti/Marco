@@ -126,6 +126,21 @@ export default function GroupChatScreen() {
       const data = await apiGet<GroupMember[]>("/api/friends", authHeader);
       setFriends(data);
     } catch (e) {
+
+  // Mark group thread as read when entering screen
+  useEffect(() => {
+    if (!authHeader || !gid) return;
+    const threadId = `group:${gid}`;
+    fetch("/api/messages/mark-read", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader,
+      },
+      body: JSON.stringify({ thread_id: threadId }),
+    }).catch(() => {});
+  }, [authHeader, gid]);
+
       console.error("Failed to load friends:", e);
     }
   }, [authHeader]);
