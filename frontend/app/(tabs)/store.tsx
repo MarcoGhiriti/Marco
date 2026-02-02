@@ -329,20 +329,19 @@ export default function LeaderboardScreen() {
               >
                 <View style={[
                   styles.levelIconBox, 
-                  { backgroundColor: isUnlocked ? `${levelColor}20` : Colors.card2 }
+                  { backgroundColor: `${levelColor}20` }
                 ]}>
                   <Ionicons
                     name={level.icon as any}
                     size={22}
-                    color={isUnlocked ? levelColor : Colors.muted}
+                    color={levelColor}
                   />
                 </View>
                 <View style={styles.levelInfo}>
                   <View style={styles.levelHeader}>
                     <Text style={[
                       styles.levelName, 
-                      isUnlocked && { color: levelColor },
-                      !isUnlocked && styles.levelNameLocked
+                      { color: isUnlocked ? levelColor : `${levelColor}80` }
                     ]}>
                       Level {level.level} · {level.title}
                     </Text>
