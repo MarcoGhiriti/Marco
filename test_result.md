@@ -135,6 +135,11 @@ metadata:
   test_sequence: 1
   run_ui: false
 
+# NOTE(main): Am început implementarea pentru ride banner vizibil și participanților.
+# Endpoint nou: GET /api/rides/active-for-home
+# Frontend: Home folosește activeRideForHome pentru banner, iar controalele rămân doar pentru creator.
+
+
 test_plan:
   current_focus:
     - "Unread summary + mark-read endpoints for DM & Groups"
