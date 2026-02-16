@@ -1,1 +1,1 @@
-export { default } from "./_map.shared";
+export { default } from "../../src/screens/MapScreen";
