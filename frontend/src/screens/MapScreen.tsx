@@ -283,6 +283,8 @@ export default function MapScreen() {
           onReportPolice={handleReportPolice}
           onVotePolice={handleVotePolice}
           isFetching={isFetching}
+          userLocation={userLocation}
+          onEventPress={(eventId) => router.push(`/event/${eventId}`)}
         />
       </View>
 
