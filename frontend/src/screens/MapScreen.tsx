@@ -123,7 +123,7 @@ export default function MapScreen() {
         const query = `?min_lat=${bounds.minLat}&max_lat=${bounds.maxLat}&min_lng=${bounds.minLng}&max_lng=${bounds.maxLng}`;
         const [eventsData, gasData, policeData] = await Promise.all([
           apiGet<MapEvent[]>(`/api/map/events${query}`, authHeader),
-          apiGet<MapPlace[]>(`/api/map/gas-service${query}`, authHeader),
+          (showGas || showService) ? apiGet<MapPlace[]>(`/api/map/gas-service${query}`, authHeader) : Promise.resolve([]),
           apiGet<PoliceReport[]>(`/api/map/police-reports${query}`, authHeader),
         ]);
         setEvents(eventsData || []);
@@ -135,7 +135,7 @@ export default function MapScreen() {
         setIsFetching(false);
       }
     },
-    [authHeader]
+    [authHeader, showGas, showService]
   );
 
   const initMap = useCallback(async () => {
