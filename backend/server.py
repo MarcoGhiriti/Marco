@@ -4371,7 +4371,7 @@ async def get_static_map_image(
     w: int = 640,
     h: int = 220,
 ):
-    """Return Google Maps Static API URL for map previews."""
+    """Proxy Google Maps Static API image to avoid redirect issues on native."""
     gmaps_key = os.environ.get("GOOGLE_MAPS_API_KEY", "")
     if not gmaps_key:
         raise HTTPException(status_code=500, detail="Google Maps API key not configured")
@@ -4391,7 +4391,18 @@ async def get_static_map_image(
     else:
         raise HTTPException(status_code=400, detail="Provide polyline_str or lat+lng")
 
-    return RedirectResponse(url=url, status_code=302)
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url, follow_redirects=True)
+            if resp.status_code != 200:
+                raise HTTPException(status_code=502, detail="Failed to fetch map image")
+            return Response(
+                content=resp.content,
+                media_type=resp.headers.get("content-type", "image/png"),
+                headers={"Cache-Control": "public, max-age=86400"},
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Map image request timed out")
 
 
 # Include router
