@@ -225,6 +225,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Am refăcut MapScreen: MapView pe mobile cu toggle pentru event markers + FAB Report Police; pe web card simplificat. Necesită testare UI."
+      - working: false
+        agent: "main"
+        comment: "Preview web returnează 520 (host error) după restart; nu pot verifica UI pe web momentan. Necesită retestare când preview revine." 
 
 metadata:
   created_by: "main_agent"
