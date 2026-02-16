@@ -1,73 +1,102 @@
 import React, { useEffect } from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, StyleSheet, Platform } from "react-native";
+import { View, StyleSheet, Platform, Dimensions, Pressable } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  interpolate,
+  Extrapolate,
+} from "react-native-reanimated";
 import { Colors } from "../../src/theme/colors";
 import { useAuthStore } from "../../src/state/authStore";
 
-const stylesTab = StyleSheet.create({
-  iconWrap: {
-    width: 28,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  // Special center map button
-  mapIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.text,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Platform.OS === "ios" ? 20 : 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  dot: {
-    position: "absolute",
-    top: 1,
-    right: 1,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.danger,
-    borderWidth: 1,
-    borderColor: Colors.bg,
-  },
-});
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const TAB_COUNT = 5;
+const TAB_WIDTH = SCREEN_WIDTH / TAB_COUNT;
+const INDICATOR_WIDTH = 32;
+const CENTER_BUTTON_SIZE = 58;
 
-function TabIcon({
+// Animated Tab Icon Component
+function AnimatedTabIcon({
   name,
-  color,
-  size,
-  showDot,
+  focused,
+  isCenter = false,
 }: {
-  name: React.ComponentProps<typeof Ionicons>["name"];
-  color: string;
-  size: number;
-  showDot?: boolean;
+  name: string;
+  focused: boolean;
+  isCenter?: boolean;
 }) {
-  return (
-    <View style={stylesTab.iconWrap}>
-      <Ionicons name={name} size={size} color={color} />
-      {showDot ? <View style={stylesTab.dot} /> : null}
-    </View>
-  );
-}
+  const scale = useSharedValue(1);
+  const translateY = useSharedValue(0);
+  const indicatorOpacity = useSharedValue(0);
+  const glowOpacity = useSharedValue(0);
 
-// Special center map icon - white, larger, prominent
-function MapCenterIcon({ focused }: { focused: boolean }) {
+  useEffect(() => {
+    if (focused) {
+      scale.value = withSpring(1.15, { damping: 12, stiffness: 200 });
+      translateY.value = withSpring(-4, { damping: 12, stiffness: 200 });
+      indicatorOpacity.value = withTiming(1, { duration: 200 });
+      if (isCenter) {
+        glowOpacity.value = withSpring(0.5, { damping: 10, stiffness: 150 });
+      }
+    } else {
+      scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+      translateY.value = withSpring(0, { damping: 15, stiffness: 200 });
+      indicatorOpacity.value = withTiming(0, { duration: 150 });
+      glowOpacity.value = withTiming(0, { duration: 150 });
+    }
+  }, [focused]);
+
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value },
+    ],
+  }));
+
+  const indicatorAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: indicatorOpacity.value,
+    transform: [{ scaleX: indicatorOpacity.value }],
+  }));
+
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
+  // Center Map Button - Special styling
+  if (isCenter) {
+    return (
+      <View style={styles.centerContainer}>
+        {/* Glow effect */}
+        <Animated.View style={[styles.centerGlow, glowAnimatedStyle]} />
+        
+        <Animated.View style={[styles.centerButton, iconAnimatedStyle]}>
+          <Ionicons
+            name={focused ? "map" : "map-outline"}
+            size={28}
+            color={Colors.bg}
+          />
+        </Animated.View>
+      </View>
+    );
+  }
+
+  // Regular Tab Icon
   return (
-    <View style={stylesTab.mapIconWrap}>
-      <Ionicons 
-        name={focused ? "map" : "map-outline"} 
-        size={28} 
-        color={Colors.bg} 
-      />
+    <View style={styles.tabIconContainer}>
+      <Animated.View style={iconAnimatedStyle}>
+        <Ionicons
+          name={(focused ? name : `${name}-outline`) as any}
+          size={24}
+          color={focused ? Colors.accent : Colors.muted}
+        />
+      </Animated.View>
+      
+      {/* Active indicator dot */}
+      <Animated.View style={[styles.indicatorDot, indicatorAnimatedStyle]} />
     </View>
   );
 }
@@ -79,19 +108,11 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: Colors.bg,
-          borderTopColor: Colors.border,
-          height: Platform.OS === "ios" ? 85 : 65,
-          paddingBottom: Platform.OS === "ios" ? 25 : 10,
-          paddingTop: 5,
-        },
+        tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.muted,
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: "600",
-        },
+        tabBarShowLabel: false,
+        tabBarHideOnKeyboard: true,
       }}
     >
       {/* Tab 1: Home */}
@@ -99,12 +120,8 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon 
-              name={focused ? "home" : "home-outline"} 
-              size={size} 
-              color={color} 
-            />
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon name="home" focused={focused} />
           ),
         }}
       />
@@ -114,36 +131,30 @@ export default function TabsLayout() {
         name="routes"
         options={{
           title: "Routes",
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon 
-              name={focused ? "trail-sign" : "trail-sign-outline"} 
-              size={size} 
-              color={color} 
-            />
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon name="trail-sign" focused={focused} />
           ),
         }}
       />
       
-      {/* Tab 3: MAP - CENTER, WHITE, PROMINENT */}
+      {/* Tab 3: MAP - CENTER, WHITE, SPECIAL */}
       <Tabs.Screen
         name="map"
         options={{
           title: "",
-          tabBarIcon: ({ focused }) => <MapCenterIcon focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon name="map" focused={focused} isCenter />
+          ),
         }}
       />
       
-      {/* Tab 4: Calendar (renamed from Events) */}
+      {/* Tab 4: Calendar */}
       <Tabs.Screen
         name="events"
         options={{
           title: "Calendar",
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon 
-              name={focused ? "calendar" : "calendar-outline"} 
-              size={size} 
-              color={color} 
-            />
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon name="calendar" focused={focused} />
           ),
         }}
       />
@@ -153,35 +164,89 @@ export default function TabsLayout() {
         name="shop"
         options={{
           title: "Shop",
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon 
-              name={focused ? "cart" : "cart-outline"} 
-              size={size} 
-              color={color} 
-            />
+          tabBarIcon: ({ focused }) => (
+            <AnimatedTabIcon name="cart" focused={focused} />
           ),
         }}
       />
 
-      {/* Hidden tabs - accessible via navigation but not in tab bar */}
+      {/* Hidden tabs */}
       <Tabs.Screen
         name="community"
-        options={{
-          href: null, // Hide from tab bar
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="store"
-        options={{
-          href: null, // Hide Rankings from tab bar
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="profile"
-        options={{
-          href: null, // Profile accessible from Home avatar
-        }}
+        options={{ href: null }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: "#0A0A0A",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+    height: Platform.OS === "ios" ? 90 : 70,
+    paddingBottom: Platform.OS === "ios" ? 28 : 10,
+    paddingTop: 8,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  tabIconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 50,
+    height: 50,
+  },
+  indicatorDot: {
+    position: "absolute",
+    bottom: -2,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: Colors.accent,
+  },
+  centerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 70,
+    height: 70,
+    marginTop: -20,
+  },
+  centerButton: {
+    width: CENTER_BUTTON_SIZE,
+    height: CENTER_BUTTON_SIZE,
+    borderRadius: CENTER_BUTTON_SIZE / 2,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    // Shadow
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  centerGlow: {
+    position: "absolute",
+    width: CENTER_BUTTON_SIZE + 35,
+    height: CENTER_BUTTON_SIZE + 35,
+    borderRadius: (CENTER_BUTTON_SIZE + 35) / 2,
+    backgroundColor: Colors.accent,
+    // Blur simulation
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 25,
+  },
+});
