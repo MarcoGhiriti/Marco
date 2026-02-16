@@ -855,6 +855,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  myListingsBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   categoriesRow: {
     paddingHorizontal: 16,
     paddingBottom: 12,
