@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -11,11 +11,15 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 
+const TopTabs = createMaterialTopTabNavigator();
+
+/* ───────────── Types ───────────── */
 type Notification = {
   id: string;
   type: string;
@@ -26,23 +30,30 @@ type Notification = {
   created_at: string;
 };
 
-const NOTIFICATION_ICONS: Record<string, { icon: string; color: string }> = {
-  friend_request: { icon: "person-add", color: Colors.accent },
-  friend_accepted: { icon: "people", color: Colors.success },
-  route_invite: { icon: "map", color: Colors.accent },
-  event_invite: { icon: "calendar", color: Colors.warning },
-  group_invite: { icon: "people-circle", color: Colors.accent },
-  route_reminder: { icon: "time", color: Colors.warning },
-  event_reminder: { icon: "alarm", color: Colors.warning },
-  route_updated: { icon: "refresh", color: Colors.muted },
-  event_updated: { icon: "refresh", color: Colors.muted },
+type FriendRequestOut = {
+  incoming: { id: string; username: string; avatar_base64?: string | null }[];
+  outgoing: { id: string; username: string; avatar_base64?: string | null }[];
 };
 
-export default function NotificationsScreen() {
+type InboxConversation = {
+  kind: "dm" | "group";
+  user_id?: string;
+  username?: string;
+  avatar_base64?: string | null;
+  group_id?: string;
+  group_name?: string;
+  group_photo?: string | null;
+  last_message?: string;
+  last_message_at?: string;
+  unread: boolean;
+};
+
+/* ───────────── UPDATES TAB ───────────── */
+function UpdatesTab() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
-
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [requests, setRequests] = useState<FriendRequestOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -51,424 +62,389 @@ export default function NotificationsScreen() {
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
-  const loadNotifications = useCallback(async () => {
-    if (!headers) {
-      setLoading(false);
-      return;
-    }
+  const load = useCallback(async () => {
+    if (!headers) return;
     try {
-      const data = await apiGet<Notification[]>("/api/notifications", headers);
-      setNotifications(data);
+      const [notifs, reqs] = await Promise.all([
+        apiGet<Notification[]>("/api/notifications", headers),
+        apiGet<FriendRequestOut>("/api/friends/requests", headers),
+      ]);
+      setNotifications(notifs);
+      setRequests(reqs);
     } catch (e) {
-      console.error("Failed to load notifications:", e);
+      console.error("Updates load error:", e);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [headers]);
 
-  useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadNotifications();
-  };
+  const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [load]);
 
-  const markAsRead = async (id: string) => {
+  const acceptFriend = async (fromId: string) => {
     if (!headers) return;
-    try {
-      await apiPost(`/api/notifications/${id}/read`, {}, headers);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-      );
-    } catch (e) {
-      console.error("Failed to mark as read:", e);
-    }
+    await apiPost("/api/friends/accept", { from_user_id: fromId }, headers);
+    load();
   };
 
-  const markAllAsRead = async () => {
+  const rejectFriend = async (fromId: string) => {
     if (!headers) return;
-    try {
-      await apiPost("/api/notifications/read-all", {}, headers);
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    } catch (e) {
-      console.error("Failed to mark all as read:", e);
-    }
+    await apiPost("/api/friends/reject", { from_user_id: fromId }, headers);
+    load();
   };
 
-  const deleteNotification = async (id: string) => {
+  const cancelFriend = async (toId: string) => {
     if (!headers) return;
-    try {
-      await apiDelete(`/api/notifications/${id}`, headers);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-    } catch (e) {
-      console.error("Failed to delete notification:", e);
-    }
+    await apiPost("/api/friends/cancel", { from_user_id: toId }, headers);
+    load();
   };
 
-  const handleAcceptFriend = async (notif: Notification) => {
+  const markRead = async (id: string) => {
     if (!headers) return;
-    const fromUserId = notif.data.from_user_id;
-    if (!fromUserId) return;
-    
-    try {
-      await apiPost("/api/friends/accept", { from_user_id: fromUserId }, headers);
-      // Mark notification as read and remove it
-      await markAsRead(notif.id);
-      setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
-      Alert.alert("Success!", "Friend request accepted 🎉");
-    } catch (e) {
-      Alert.alert("Error", "Failed to accept friend request");
-      console.error("Failed to accept friend:", e);
-    }
+    await apiPost(`/api/notifications/${id}/read`, {}, headers);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
-  const handleRejectFriend = async (notif: Notification) => {
+  const markAllRead = async () => {
     if (!headers) return;
-    const fromUserId = notif.data.from_user_id;
-    if (!fromUserId) return;
-    
-    try {
-      await apiPost("/api/friends/reject", { from_user_id: fromUserId }, headers);
-      // Remove notification
-      await deleteNotification(notif.id);
-    } catch (e) {
-      Alert.alert("Error", "Failed to reject friend request");
-      console.error("Failed to reject friend:", e);
-    }
+    await apiPost("/api/notifications/read-all", {}, headers);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const handleNotificationPress = (notif: Notification) => {
-    // Mark as read
-    if (!notif.read) {
-      markAsRead(notif.id);
-    }
+  const NOTIF_ICONS: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+    friend_request: { icon: "person-add", color: Colors.accent },
+    friend_accepted: { icon: "people", color: Colors.success },
+    route_invite: { icon: "map", color: Colors.accent },
+    event_invite: { icon: "calendar", color: "#D97706" },
+    group_invite: { icon: "people-circle", color: Colors.accent },
+    route_reminder: { icon: "time", color: "#D97706" },
+    event_reminder: { icon: "alarm", color: "#D97706" },
+  };
 
-    // Navigate based on type
-    switch (notif.type) {
-      case "friend_request":
-      case "friend_accepted":
-        if (notif.data.from_user_id) {
-          router.push(`/profile/${notif.data.from_user_id}`);
-        } else if (notif.data.user_id) {
-          router.push(`/profile/${notif.data.user_id}`);
-        } else {
-          router.push("/(tabs)/community");
+  const timeAgo = (d: string) => {
+    const diff = Date.now() - new Date(d).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "now";
+    if (mins < 60) return `${mins}m`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h`;
+    return `${Math.floor(hrs / 24)}d`;
+  };
+
+  if (loading) return <View style={s.center}><ActivityIndicator color={Colors.accent} /></View>;
+
+  // Build combined list: friend requests first, then notifications
+  const items: any[] = [];
+
+  // Incoming friend requests
+  (requests?.incoming || []).forEach(r => {
+    items.push({ _type: "friend_in", ...r });
+  });
+
+  // Outgoing friend requests
+  (requests?.outgoing || []).forEach(r => {
+    items.push({ _type: "friend_out", ...r });
+  });
+
+  // Notifications
+  notifications.forEach(n => {
+    items.push({ _type: "notif", ...n });
+  });
+
+  return (
+    <View style={s.tabContainer}>
+      {notifications.some(n => !n.read) && (
+        <Pressable style={s.markAllBtn} onPress={markAllRead} data-testid="mark-all-read-btn">
+          <Ionicons name="checkmark-done" size={16} color={Colors.accent} />
+          <Text style={s.markAllText}>Mark all read</Text>
+        </Pressable>
+      )}
+
+      <FlatList
+        data={items}
+        keyExtractor={(item, i) => item.id || `req-${i}`}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        ListEmptyComponent={
+          <View style={s.empty}>
+            <Ionicons name="notifications-off-outline" size={40} color={Colors.muted} />
+            <Text style={s.emptyText}>No updates</Text>
+          </View>
         }
-        break;
-      case "route_invite":
-      case "route_reminder":
-      case "route_updated":
-        if (notif.data.route_id) {
-          router.push(`/route/${notif.data.route_id}`);
-        }
-        break;
-      case "event_invite":
-      case "event_reminder":
-      case "event_updated":
-        if (notif.data.event_id) {
-          router.push(`/event/${notif.data.event_id}`);
-        }
-        break;
-      case "group_invite":
-        if (notif.data.group_id) {
-          router.push(`/community/group/${notif.data.group_id}`);
-        }
-        break;
+        renderItem={({ item }) => {
+          if (item._type === "friend_in") {
+            return (
+              <View style={s.row} data-testid={`friend-request-in-${item.id}`}>
+                <View style={[s.iconCircle, { backgroundColor: Colors.accent + "20" }]}>
+                  <Ionicons name="person-add" size={20} color={Colors.accent} />
+                </View>
+                <View style={s.rowContent}>
+                  <Text style={s.rowTitle}>Friend request</Text>
+                  <Text style={s.rowSub}>{item.username} wants to be friends</Text>
+                  <View style={s.friendActions}>
+                    <Pressable style={s.acceptBtn} onPress={() => acceptFriend(item.id)} data-testid={`accept-friend-${item.id}`}>
+                      <Ionicons name="checkmark" size={16} color={Colors.bg} />
+                      <Text style={s.acceptText}>Accept</Text>
+                    </Pressable>
+                    <Pressable style={s.declineBtn} onPress={() => rejectFriend(item.id)} data-testid={`reject-friend-${item.id}`}>
+                      <Text style={s.declineText}>Decline</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+            );
+          }
+
+          if (item._type === "friend_out") {
+            return (
+              <View style={s.row} data-testid={`friend-request-out-${item.id}`}>
+                <View style={[s.iconCircle, { backgroundColor: Colors.muted + "20" }]}>
+                  <Ionicons name="hourglass" size={20} color={Colors.muted} />
+                </View>
+                <View style={s.rowContent}>
+                  <Text style={s.rowTitle}>Pending request</Text>
+                  <Text style={s.rowSub}>Sent to {item.username}</Text>
+                  <Pressable style={s.cancelBtn} onPress={() => cancelFriend(item.id)} data-testid={`cancel-friend-${item.id}`}>
+                    <Text style={s.cancelText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          }
+
+          // Notification
+          const cfg = NOTIF_ICONS[item.type] || { icon: "notifications", color: Colors.muted };
+          return (
+            <Pressable
+              style={[s.row, !item.read && s.unreadRow]}
+              onPress={() => {
+                markRead(item.id);
+                if (item.data?.route_id) router.push(`/route/${item.data.route_id}`);
+                else if (item.data?.event_id) router.push(`/event/${item.data.event_id}`);
+              }}
+              data-testid={`notification-${item.id}`}
+            >
+              <View style={[s.iconCircle, { backgroundColor: cfg.color + "20" }]}>
+                <Ionicons name={cfg.icon} size={20} color={cfg.color} />
+              </View>
+              <View style={s.rowContent}>
+                <Text style={s.rowTitle}>{item.title}</Text>
+                <Text style={s.rowSub} numberOfLines={2}>{item.message}</Text>
+              </View>
+              <Text style={s.timeText}>{timeAgo(item.created_at)}</Text>
+              {!item.read && <View style={s.unreadDot} />}
+            </Pressable>
+          );
+        }}
+      />
+    </View>
+  );
+}
+
+/* ───────────── MESSAGES TAB ───────────── */
+function MessagesTab() {
+  const router = useRouter();
+  const { accessToken } = useAuthStore();
+  const [inbox, setInbox] = useState<InboxConversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const headers = useMemo(() => {
+    if (!accessToken) return undefined;
+    return { Authorization: `Bearer ${accessToken}` };
+  }, [accessToken]);
+
+  const load = useCallback(async () => {
+    if (!headers) return;
+    try {
+      const data = await apiGet<InboxConversation[]>("/api/messages/inbox", headers);
+      setInbox(data);
+    } catch (e) {
+      console.error("Inbox load error:", e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  }, [headers]);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+  const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [load]);
+
+  const dms = inbox.filter(c => c.kind === "dm");
+  const groups = inbox.filter(c => c.kind === "group");
+
+  const timeAgo = (d?: string) => {
+    if (!d) return "";
+    const diff = Date.now() - new Date(d).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "now";
+    if (mins < 60) return `${mins}m`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h`;
+    return `${Math.floor(hrs / 24)}d`;
   };
 
-  const getTimeAgo = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
+  if (loading) return <View style={s.center}><ActivityIndicator color={Colors.accent} /></View>;
 
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
-  };
+  const openDm = (userId: string) => router.push(`/community/dm/${userId}`);
+  const openGroup = (groupId: string) => router.push(`/community/group/${groupId}`);
+  const createGroup = () => router.push("/community" as any);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const renderNotification = ({ item }: { item: Notification }) => {
-    const iconInfo = NOTIFICATION_ICONS[item.type] || {
-      icon: "notifications",
-      color: Colors.muted,
-    };
-
-    const isFriendRequest = item.type === "friend_request";
+  const renderConversation = (item: InboxConversation) => {
+    const isDm = item.kind === "dm";
+    const name = isDm ? item.username : item.group_name;
+    const avatarSrc = isDm ? item.avatar_base64 : item.group_photo;
 
     return (
       <Pressable
-        onPress={() => handleNotificationPress(item)}
-        onLongPress={() => {
-          Alert.alert("Delete Notification", "Remove this notification?", [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Delete",
-              style: "destructive",
-              onPress: () => deleteNotification(item.id),
-            },
-          ]);
-        }}
-        style={[styles.notifCard, !item.read && styles.notifCardUnread]}
+        key={isDm ? `dm-${item.user_id}` : `grp-${item.group_id}`}
+        style={s.chatRow}
+        onPress={() => isDm ? openDm(item.user_id!) : openGroup(item.group_id!)}
+        data-testid={`chat-row-${isDm ? item.user_id : item.group_id}`}
       >
-        <View
-          style={[
-            styles.notifIcon,
-            { backgroundColor: `${iconInfo.color}20` },
-          ]}
-        >
-          <Ionicons
-            name={iconInfo.icon as any}
-            size={22}
-            color={iconInfo.color}
-          />
+        {avatarSrc ? (
+          <Image source={{ uri: `data:image/jpeg;base64,${avatarSrc}` }} style={s.avatar} />
+        ) : (
+          <View style={s.avatarPlaceholder}>
+            <Ionicons name={isDm ? "person" : "people"} size={20} color={Colors.muted} />
+          </View>
+        )}
+        <View style={s.chatInfo}>
+          <View style={s.chatTopRow}>
+            <Text style={s.chatName} numberOfLines={1}>{name || "Unknown"}</Text>
+            <Text style={s.chatTime}>{timeAgo(item.last_message_at)}</Text>
+          </View>
+          <View style={s.chatBottomRow}>
+            <Text style={[s.chatPreview, item.unread && s.chatPreviewUnread]} numberOfLines={1}>
+              {item.last_message || "No messages yet"}
+            </Text>
+            {item.unread && <View style={s.unreadBadge} />}
+          </View>
         </View>
-        <View style={styles.notifContent}>
-          <Text style={styles.notifTitle}>{item.title}</Text>
-          <Text style={styles.notifMessage} numberOfLines={2}>
-            {item.message}
-          </Text>
-          <Text style={styles.notifTime}>{getTimeAgo(item.created_at)}</Text>
-          
-          {/* Friend Request Action Buttons */}
-          {isFriendRequest && item.data.from_user_id && (
-            <View style={styles.actionBtns}>
-              <Pressable
-                onPress={() => handleAcceptFriend(item)}
-                style={[styles.actionBtn, styles.acceptBtn]}
-              >
-                <Ionicons name="checkmark" size={16} color="#FFF" />
-                <Text style={styles.actionBtnText}>Accept</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handleRejectFriend(item)}
-                style={[styles.actionBtn, styles.rejectBtn]}
-              >
-                <Ionicons name="close" size={16} color={Colors.text} />
-                <Text style={[styles.actionBtnText, { color: Colors.text }]}>Decline</Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
-        {!item.read && <View style={styles.unreadDot} />}
       </Pressable>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text} />
+    <FlatList
+      data={[]}
+      renderItem={null}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
+      contentContainerStyle={{ paddingBottom: 40 }}
+      ListHeaderComponent={
+        <View>
+          {/* Direct Messages Section */}
+          <View style={s.sectionHeader}>
+            <Text style={s.sectionTitle}>Direct Messages</Text>
+            <Text style={s.sectionCount}>{dms.length}</Text>
+          </View>
+          {dms.length === 0 ? (
+            <Text style={s.emptySection}>No conversations yet. Add friends to start chatting!</Text>
+          ) : (
+            dms.map(renderConversation)
+          )}
+
+          {/* Group Chats Section */}
+          <View style={[s.sectionHeader, { marginTop: 12 }]}>
+            <Text style={s.sectionTitle}>Group Chats</Text>
+            <Pressable onPress={createGroup} style={s.newGroupBtn} data-testid="create-group-btn">
+              <Ionicons name="add" size={18} color={Colors.accent} />
+            </Pressable>
+          </View>
+          {groups.length === 0 ? (
+            <Text style={s.emptySection}>No groups yet. Create or join one!</Text>
+          ) : (
+            groups.map(renderConversation)
+          )}
+        </View>
+      }
+    />
+  );
+}
+
+/* ───────────── MAIN SCREEN ───────────── */
+export default function NotificationsScreen() {
+  const router = useRouter();
+
+  return (
+    <SafeAreaView style={s.safe}>
+      <View style={s.header}>
+        <Pressable onPress={() => router.back()} style={s.backBtn} data-testid="notif-back-btn">
+          <Ionicons name="chevron-back" size={24} color={Colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        {unreadCount > 0 && (
-          <Pressable onPress={markAllAsRead} style={styles.markAllBtn}>
-            <Text style={styles.markAllText}>Mark all read</Text>
-          </Pressable>
-        )}
+        <Text style={s.headerTitle}>Notifications</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={Colors.accent} />
-          <Text style={styles.centerText}>Loading notifications...</Text>
-        </View>
-      ) : notifications.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="notifications-off" size={48} color={Colors.muted} />
-          </View>
-          <Text style={styles.emptyTitle}>No Notifications</Text>
-          <Text style={styles.emptyText}>
-            When you receive friend requests, event invites, or reminders, they
-            will appear here.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={notifications}
-          keyExtractor={(item) => item.id}
-          renderItem={renderNotification}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={Colors.accent}
-            />
-          }
-          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        />
-      )}
+      <TopTabs.Navigator
+        screenOptions={{
+          tabBarStyle: { backgroundColor: Colors.bg, elevation: 0, shadowOpacity: 0, borderBottomWidth: 1, borderBottomColor: Colors.border },
+          tabBarLabelStyle: { fontWeight: "700", fontSize: 13, textTransform: "none" },
+          tabBarActiveTintColor: Colors.accent,
+          tabBarInactiveTintColor: Colors.muted,
+          tabBarIndicatorStyle: { backgroundColor: Colors.accent, height: 3, borderRadius: 2 },
+        }}
+      >
+        <TopTabs.Screen name="Updates" component={UpdatesTab} />
+        <TopTabs.Screen name="Messages" component={MessagesTab} />
+      </TopTabs.Navigator>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+/* ───────────── STYLES ───────────── */
+const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    flex: 1,
-    color: Colors.text,
-    fontSize: 20,
-    fontFamily: "Inter_700Bold",
-  },
-  markAllBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: Colors.card,
-  },
-  markAllText: {
-    color: Colors.accent,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  centerText: {
-    color: Colors.muted,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 40,
-    gap: 16,
-  },
-  emptyIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.card,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    color: Colors.text,
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-  },
-  emptyText: {
-    color: Colors.muted,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  list: {
-    padding: 16,
-  },
-  notifCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 16,
-    padding: 14,
-  },
-  notifCardUnread: {
-    backgroundColor: Colors.card2,
-    borderColor: Colors.accent,
-  },
-  notifIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notifContent: {
-    flex: 1,
-    gap: 4,
-  },
-  notifTitle: {
-    color: Colors.text,
-    fontSize: 14,
-    fontFamily: "Inter_700Bold",
-  },
-  notifMessage: {
-    color: Colors.muted,
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    lineHeight: 18,
-  },
-  notifTime: {
-    color: Colors.muted,
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    marginTop: 4,
-  },
-  unreadDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.accent,
-    marginTop: 4,
-  },
-  actionBtns: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 10,
-  },
-  actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  acceptBtn: {
-    backgroundColor: Colors.accent,
-  },
-  rejectBtn: {
-    backgroundColor: Colors.card2,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  actionBtnText: {
-    color: "#FFF",
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.card, alignItems: "center", justifyContent: "center" },
+  headerTitle: { color: Colors.text, fontSize: 18, fontWeight: "800" },
+  tabContainer: { flex: 1 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  empty: { paddingTop: 80, alignItems: "center", gap: 12 },
+  emptyText: { color: Colors.muted, fontSize: 14, fontWeight: "600" },
+
+  // Mark all read
+  markAllBtn: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-end", paddingHorizontal: 16, paddingVertical: 8 },
+  markAllText: { color: Colors.accent, fontSize: 13, fontWeight: "600" },
+
+  // Notification / friend request rows
+  row: { flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  unreadRow: { backgroundColor: Colors.accent + "08" },
+  iconCircle: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  rowContent: { flex: 1, gap: 2 },
+  rowTitle: { color: Colors.text, fontSize: 14, fontWeight: "700" },
+  rowSub: { color: Colors.muted, fontSize: 13, lineHeight: 18 },
+  timeText: { color: Colors.muted, fontSize: 11, fontWeight: "500", marginTop: 2 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.accent, marginTop: 6 },
+
+  // Friend request actions
+  friendActions: { flexDirection: "row", gap: 8, marginTop: 8 },
+  acceptBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 7 },
+  acceptText: { color: Colors.bg, fontSize: 13, fontWeight: "700" },
+  declineBtn: { borderRadius: 10, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 14, paddingVertical: 7, alignItems: "center", justifyContent: "center" },
+  declineText: { color: Colors.muted, fontSize: 13, fontWeight: "600" },
+  cancelBtn: { marginTop: 6, alignSelf: "flex-start", borderRadius: 8, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 12, paddingVertical: 5 },
+  cancelText: { color: Colors.muted, fontSize: 12, fontWeight: "600" },
+
+  // Messages tab
+  sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  sectionTitle: { color: Colors.text, fontSize: 14, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 },
+  sectionCount: { color: Colors.muted, fontSize: 12, fontWeight: "600", backgroundColor: Colors.card, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  emptySection: { color: Colors.muted, fontSize: 13, paddingHorizontal: 16, paddingVertical: 16, fontStyle: "italic" },
+  newGroupBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.accent + "20", alignItems: "center", justifyContent: "center" },
+
+  // Chat rows
+  chatRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, gap: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  avatar: { width: 48, height: 48, borderRadius: 24 },
+  avatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.card2, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Colors.border },
+  chatInfo: { flex: 1, gap: 4 },
+  chatTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  chatName: { color: Colors.text, fontSize: 15, fontWeight: "700", flex: 1 },
+  chatTime: { color: Colors.muted, fontSize: 11, fontWeight: "500", marginLeft: 8 },
+  chatBottomRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  chatPreview: { color: Colors.muted, fontSize: 13, flex: 1 },
+  chatPreviewUnread: { color: Colors.text, fontWeight: "600" },
+  unreadBadge: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.accent },
 });
