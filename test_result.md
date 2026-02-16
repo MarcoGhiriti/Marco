@@ -268,6 +268,9 @@ frontend:
         agent: "main"
         comment: "Update UI: map style dark/neon, toggle events = buton rotund, report police mutat mai sus, header actions Add Route/Event. Necesită retestare pe device." 
       - working: false
+        agent: "main"
+        comment: "Implementat filtre (Events + Gas/Service), recenter, Search this area, police report cu confirmare + TTL 30m, clustering (react-native-map-clustering) + votare 'Still there?' cu verificare distanță. Necesită testare pe device." 
+      - working: false
         agent: "testing"
         comment: "❌ NU POATE FI TESTAT: Login blocker împiedică accesul la Map tab pentru verificarea MapView native cu Report Police button și Show Events toggle. Din cod se observă că MapCanvas.native.tsx conține MapView cu Report Police FAB și Show Events toggle, iar MapCanvas.web.tsx afișează placeholder card 'Interactive Map - Live map is available on mobile devices' - implementarea pare corectă tehnic, dar necesită testare vizuală după rezolvarea problemei de login." 
 
