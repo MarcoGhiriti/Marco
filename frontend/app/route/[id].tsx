@@ -16,12 +16,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut, UserSearchOut } from "../../src/types/api";
 import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
+import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 
 export default function RouteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -193,51 +194,6 @@ export default function RouteDetailScreen() {
 
   const isCreator = me?.id && route?.created_by === me.id;
 
-  // SVG Map
-  const svgData = useMemo(() => {
-    if (!route || route.polyline.length < 2) return { points: "", start: null, end: null };
-    
-    const width = 360;
-    const height = 220;
-    const pad = 25;
-    const w = width - pad * 2;
-    const h = height - pad * 2;
-
-    let minLat = route.polyline[0][0], maxLat = route.polyline[0][0];
-    let minLng = route.polyline[0][1], maxLng = route.polyline[0][1];
-    
-    for (const p of route.polyline) {
-      minLat = Math.min(minLat, p[0]);
-      maxLat = Math.max(maxLat, p[0]);
-      minLng = Math.min(minLng, p[1]);
-      maxLng = Math.max(maxLng, p[1]);
-    }
-    
-    const latSpan = Math.max(0.001, maxLat - minLat);
-    const lngSpan = Math.max(0.001, maxLng - minLng);
-    
-    const pts = route.polyline.map(p => {
-      const x = pad + ((p[1] - minLng) / lngSpan) * w;
-      const y = pad + (1 - (p[0] - minLat) / latSpan) * h;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(" ");
-    
-    const start = route.polyline[0];
-    const end = route.polyline[route.polyline.length - 1];
-    
-    return {
-      points: pts,
-      start: {
-        x: pad + ((start[1] - minLng) / lngSpan) * w,
-        y: pad + (1 - (start[0] - minLat) / latSpan) * h,
-      },
-      end: {
-        x: pad + ((end[1] - minLng) / lngSpan) * w,
-        y: pad + (1 - (end[0] - minLat) / latSpan) * h,
-      },
-    };
-  }, [route]);
-
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -285,30 +241,12 @@ export default function RouteDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Map Preview */}
         <View style={styles.mapContainer}>
-          <Svg width={360} height={220}>
-            {svgData.points && (
-              <SvgPolyline
-                points={svgData.points}
-                fill="none"
-                stroke={Colors.accent}
-                strokeWidth={4}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            )}
-            {svgData.start && (
-              <>
-                <Circle cx={svgData.start.x} cy={svgData.start.y} r={14} fill={Colors.success} opacity={0.3} />
-                <Circle cx={svgData.start.x} cy={svgData.start.y} r={10} fill={Colors.success} />
-              </>
-            )}
-            {svgData.end && (
-              <>
-                <Circle cx={svgData.end.x} cy={svgData.end.y} r={14} fill={Colors.danger} opacity={0.3} />
-                <Circle cx={svgData.end.x} cy={svgData.end.y} r={10} fill={Colors.danger} />
-              </>
-            )}
-          </Svg>
+          <RouteMiniMap
+            polyline={route.polyline}
+            startCity={route.start_city}
+            endCity={route.end_city}
+            height={220}
+          />
           
           {/* Legend */}
           <View style={styles.legend}>
