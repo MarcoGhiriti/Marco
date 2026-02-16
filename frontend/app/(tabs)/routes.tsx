@@ -153,7 +153,7 @@ export default function RoutesScreen() {
         </View>
         <Pressable
           style={styles.createBtn}
-          onPress={() => router.push("/route/create")}
+          onPress={() => router.push("/create/route")}
         >
           <Ionicons name="add" size={24} color={Colors.bg} />
         </Pressable>
@@ -242,7 +242,7 @@ export default function RoutesScreen() {
               {activeTab === "my" && (
                 <Pressable
                   style={styles.createFirstBtn}
-                  onPress={() => router.push("/route/create")}
+                  onPress={() => router.push("/create/route")}
                 >
                   <Ionicons name="add" size={20} color={Colors.bg} />
                   <Text style={styles.createFirstBtnText}>Create Route</Text>
