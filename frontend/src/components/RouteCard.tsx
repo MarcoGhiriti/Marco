@@ -147,16 +147,29 @@ export function RouteCard({
           {/* Start/End Ride Button (only for creator) */}
           {isCreator && item.is_joined && (
             hasActiveRide ? (
-              <Pressable 
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onEndRide?.();
-                }} 
-                style={styles.rideBtn}
-              >
-                <Ionicons name="flag" size={16} color="#FFF" />
-                <Text style={styles.rideBtnText}>End</Text>
-              </Pressable>
+              <>
+                <Pressable 
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onEndRide?.();
+                  }} 
+                  style={styles.rideBtn}
+                >
+                  <Ionicons name="flag" size={16} color="#FFF" />
+                  <Text style={styles.rideBtnText}>{t("common.end")}</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    openDirectionsInGoogleMaps(item.polyline);
+                  }} 
+                  style={styles.directionsBtn}
+                  data-testid="directions-btn"
+                >
+                  <Ionicons name="navigate" size={16} color="#FFF" />
+                  <Text style={styles.rideBtnText}>{t("routes.directions")}</Text>
+                </Pressable>
+              </>
             ) : !activeRideRouteId ? (
               <Pressable 
                 onPress={(e) => {
@@ -166,7 +179,7 @@ export function RouteCard({
                 style={[styles.rideBtn, styles.startRideBtn]}
               >
                 <Ionicons name="play" size={16} color="#FFF" />
-                <Text style={styles.rideBtnText}>Start</Text>
+                <Text style={styles.rideBtnText}>{t("common.start")}</Text>
               </Pressable>
             ) : null
           )}
