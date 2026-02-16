@@ -163,9 +163,21 @@ export default function MapCanvas({
             <Marker
               key={`place-${place.id}`}
               coordinate={{ latitude: place.lat, longitude: place.lng }}
-              title={place.name}
               pinColor="#FFB020"
-            />
+            >
+              <Callout tooltip onPress={() => openDirections(place.lat, place.lng, place.name)}>
+                <View style={styles.placeCallout}>
+                  <View style={styles.placeCalloutHeader}>
+                    <Ionicons name="flame" size={14} color="#FFB020" />
+                    <Text style={styles.placeCalloutName} numberOfLines={1}>{place.name}</Text>
+                  </View>
+                  <View style={styles.directionsBtn}>
+                    <Ionicons name="navigate" size={14} color={Colors.bg} />
+                    <Text style={styles.directionsBtnText}>Directions</Text>
+                  </View>
+                </View>
+              </Callout>
+            </Marker>
           ))}
 
         {showService &&
@@ -175,9 +187,21 @@ export default function MapCanvas({
             <Marker
               key={`svc-${place.id}`}
               coordinate={{ latitude: place.lat, longitude: place.lng }}
-              title={place.name}
               pinColor="#4A90D9"
-            />
+            >
+              <Callout tooltip onPress={() => openDirections(place.lat, place.lng, place.name)}>
+                <View style={styles.placeCallout}>
+                  <View style={styles.placeCalloutHeader}>
+                    <Ionicons name="build" size={14} color="#4A90D9" />
+                    <Text style={styles.placeCalloutName} numberOfLines={1}>{place.name}</Text>
+                  </View>
+                  <View style={[styles.directionsBtn, { backgroundColor: "#4A90D9" }]}>
+                    <Ionicons name="navigate" size={14} color={Colors.bg} />
+                    <Text style={styles.directionsBtnText}>Directions</Text>
+                  </View>
+                </View>
+              </Callout>
+            </Marker>
           ))}
 
         {policeReports.map((report) => (
