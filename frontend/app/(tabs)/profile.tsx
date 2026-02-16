@@ -997,6 +997,43 @@ const styles = StyleSheet.create({
   section: { marginTop: 18, gap: 10 },
   sectionTitle: { color: Colors.text, fontSize: 13, fontFamily: "Inter_900Black" },
 
+  // Rankings Section
+  rankingsSection: {
+    marginTop: 12,
+  },
+  rankingCard: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  rankingIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "rgba(255, 215, 0, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rankingInfo: {
+    flex: 1,
+  },
+  rankingTitle: {
+    color: Colors.text,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+  },
+  rankingSub: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 2,
+  },
+
   center: { paddingVertical: 12, alignItems: "center" },
   errorText: { color: Colors.danger, fontSize: 12, fontFamily: "Inter_700Bold" },
 
