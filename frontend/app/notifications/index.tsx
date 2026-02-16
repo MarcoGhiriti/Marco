@@ -165,12 +165,14 @@ export default function NotificationsScreen() {
               if (item._type === "friend_in") {
                 return (
                   <View style={s.row} data-testid={`friend-request-in-${item.id}`}>
-                    <View style={[s.iconCircle, { backgroundColor: Colors.accent + "20" }]}>
+                    <Pressable onPress={() => router.push(`/profile/${item.id}`)} style={[s.iconCircle, { backgroundColor: Colors.accent + "20" }]}>
                       <Ionicons name="person-add" size={20} color={Colors.accent} />
-                    </View>
+                    </Pressable>
                     <View style={s.rowContent}>
-                      <Text style={s.rowTitle}>Cerere de prietenie</Text>
-                      <Text style={s.rowSub}>{item.username} vrea să fie prieten</Text>
+                      <Pressable onPress={() => router.push(`/profile/${item.id}`)}>
+                        <Text style={s.rowTitle}>Cerere de prietenie</Text>
+                        <Text style={s.rowSub}>{item.username} vrea să fie prieten</Text>
+                      </Pressable>
                       <View style={s.friendActions}>
                         <Pressable style={s.acceptBtn} onPress={() => acceptFriend(item.id)} data-testid={`accept-friend-${item.id}`}>
                           <Ionicons name="checkmark" size={16} color={Colors.bg} />
