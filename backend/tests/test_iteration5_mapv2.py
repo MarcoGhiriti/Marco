@@ -169,13 +169,11 @@ class TestFrontendCodeStructure:
         with open(filepath, "r") as f:
             content = f.read()
         
-        # Check that FlatList is NOT imported
-        flatlist_import = re.search(r'import.*FlatList.*from.*react-native', content)
-        assert flatlist_import is None, "PlaceSearchInput should NOT import FlatList"
+        # Check that FlatList is NOT imported (look for FlatList anywhere in imports)
+        assert "FlatList" not in content, "PlaceSearchInput should NOT have FlatList"
         
-        # Check that ScrollView IS imported
-        scrollview_import = re.search(r'import.*ScrollView.*from.*react-native', content)
-        assert scrollview_import is not None, "PlaceSearchInput should import ScrollView"
+        # Check that ScrollView IS imported (multiline import block)
+        assert "ScrollView" in content, "PlaceSearchInput should import ScrollView"
         
         # Check that ScrollView is used for results
         scrollview_usage = re.search(r'<ScrollView', content)
