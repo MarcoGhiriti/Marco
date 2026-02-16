@@ -19,9 +19,22 @@ from src_chat_models import (
     MessageOut,
 )
 
+# Import shared database, helpers, and socket.io from the new database module
+from database import (
+    db, client, sio, sid_to_user, security,
+    get_current_user, GOOGLE_MAPS_API_KEY, logger,
+    haversine_distance, haversine_km, polyline_distance_km,
+    estimate_duration_min, estimate_cost, _oid_str, _as_object_id,
+    dm_thread_id, is_group_member,
+    google_directions_distance_duration, google_reverse_geocode_city,
+    ensure_route_city_fields, _enrich_waypoints_with_city,
+    create_notification, check_and_award_badges, verify_license_with_ai,
+    ensure_indexes, BADGE_INFO,
+)
+
 import httpx
 import polyline as polyline_lib
-import socketio
+import socketio as socketio_lib
 from bson import ObjectId
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
