@@ -82,6 +82,7 @@ export default function MapScreen() {
   const [showSearchArea, setShowSearchArea] = useState(false);
   const [showEvents, setShowEvents] = useState(true);
   const [showGas, setShowGas] = useState(false);
+  const [showService, setShowService] = useState(false);
   const [events, setEvents] = useState<MapEvent[]>([]);
   const [gasMarkers, setGasMarkers] = useState<MapPlace[]>([]);
   const [policeReports, setPoliceReports] = useState<PoliceReport[]>([]);
@@ -275,8 +276,10 @@ export default function MapScreen() {
           policeReports={policeReports}
           showEvents={showEvents}
           showGas={showGas}
+          showService={showService}
           onToggleEvents={() => setShowEvents((prev) => !prev)}
           onToggleGas={() => setShowGas((prev) => !prev)}
+          onToggleService={() => setShowService((prev) => !prev)}
           onReportPolice={handleReportPolice}
           onVotePolice={handleVotePolice}
           isFetching={isFetching}
