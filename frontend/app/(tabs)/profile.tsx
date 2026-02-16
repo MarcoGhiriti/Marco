@@ -377,6 +377,23 @@ export default function ProfileScreen() {
           </View>
         </Pressable>
 
+        {/* RANKINGS & BADGES */}
+        <View style={styles.rankingsSection}>
+          <Pressable 
+            onPress={() => router.push("/(tabs)/store")} 
+            style={styles.rankingCard}
+          >
+            <View style={styles.rankingIconBox}>
+              <Ionicons name="trophy" size={24} color="#FFD700" />
+            </View>
+            <View style={styles.rankingInfo}>
+              <Text style={styles.rankingTitle}>Rankings & Badges</Text>
+              <Text style={styles.rankingSub}>View leaderboard, badges & levels</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
+          </Pressable>
+        </View>
+
         {/* MY CONTENT - Tab Switcher */}
         <View style={styles.section}>
           <View style={styles.tabSwitcher}>
