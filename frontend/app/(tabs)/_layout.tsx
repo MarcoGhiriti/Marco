@@ -1,18 +1,12 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, StyleSheet, Platform } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import { View, StyleSheet, Platform, Animated, Easing } from "react-native";
 import { Colors } from "../../src/theme/colors";
 
 const CENTER_BUTTON_SIZE = 58;
 
-// Animated Tab Icon Component
+// Animated Tab Icon Component - Using standard React Native Animated
 function AnimatedTabIcon({
   name,
   focused,
@@ -22,52 +16,124 @@ function AnimatedTabIcon({
   focused: boolean;
   isCenter?: boolean;
 }) {
-  const scale = useSharedValue(focused ? 1.15 : 1);
-  const translateY = useSharedValue(focused ? -4 : 0);
-  const indicatorOpacity = useSharedValue(focused ? 1 : 0);
-  const glowOpacity = useSharedValue(focused && isCenter ? 0.5 : 0);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const translateYAnim = useRef(new Animated.Value(0)).current;
+  const indicatorOpacity = useRef(new Animated.Value(0)).current;
+  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const glowScale = useRef(new Animated.Value(0.8)).current;
 
-  // Update values when focused changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (focused) {
-      scale.value = withSpring(1.15, { damping: 12, stiffness: 200 });
-      translateY.value = withSpring(-4, { damping: 12, stiffness: 200 });
-      indicatorOpacity.value = withTiming(1, { duration: 200 });
+      // Scale up and move up
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1.15,
+          friction: 6,
+          tension: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateYAnim, {
+          toValue: -4,
+          friction: 6,
+          tension: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(indicatorOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Special pulse glow for center Map tab
       if (isCenter) {
-        glowOpacity.value = withSpring(0.5, { damping: 10, stiffness: 150 });
+        // Pulse animation - glow appears and fades
+        Animated.sequence([
+          // Appear
+          Animated.parallel([
+            Animated.timing(glowOpacity, {
+              toValue: 0.7,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+            Animated.spring(glowScale, {
+              toValue: 1.2,
+              friction: 4,
+              tension: 100,
+              useNativeDriver: true,
+            }),
+          ]),
+          // Fade out slowly
+          Animated.parallel([
+            Animated.timing(glowOpacity, {
+              toValue: 0,
+              duration: 600,
+              easing: Easing.out(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(glowScale, {
+              toValue: 0.8,
+              duration: 600,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]).start();
       }
     } else {
-      scale.value = withSpring(1, { damping: 15, stiffness: 200 });
-      translateY.value = withSpring(0, { damping: 15, stiffness: 200 });
-      indicatorOpacity.value = withTiming(0, { duration: 150 });
-      glowOpacity.value = withTiming(0, { duration: 150 });
+      // Scale down and move back
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 8,
+          tension: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateYAnim, {
+          toValue: 0,
+          friction: 8,
+          tension: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(indicatorOpacity, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowOpacity, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }, [focused, isCenter]);
 
-  const iconAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { translateY: translateY.value },
-    ],
-  }));
-
-  const indicatorAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: indicatorOpacity.value,
-    transform: [{ scaleX: indicatorOpacity.value }],
-  }));
-
-  const glowAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
-
-  // Center Map Button - Special styling
+  // Center Map Button - Special styling with pulse glow
   if (isCenter) {
     return (
       <View style={styles.centerContainer}>
-        {/* Glow effect */}
-        <Animated.View style={[styles.centerGlow, glowAnimatedStyle]} />
+        {/* Pulse glow effect */}
+        <Animated.View 
+          style={[
+            styles.centerGlow, 
+            {
+              opacity: glowOpacity,
+              transform: [{ scale: glowScale }],
+            }
+          ]} 
+        />
         
-        <Animated.View style={[styles.centerButton, iconAnimatedStyle]}>
+        <Animated.View 
+          style={[
+            styles.centerButton, 
+            {
+              transform: [
+                { scale: scaleAnim },
+                { translateY: translateYAnim },
+              ],
+            }
+          ]}
+        >
           <Ionicons
             name={focused ? "map" : "map-outline"}
             size={28}
@@ -81,7 +147,14 @@ function AnimatedTabIcon({
   // Regular Tab Icon
   return (
     <View style={styles.tabIconContainer}>
-      <Animated.View style={iconAnimatedStyle}>
+      <Animated.View 
+        style={{
+          transform: [
+            { scale: scaleAnim },
+            { translateY: translateYAnim },
+          ],
+        }}
+      >
         <Ionicons
           name={(focused ? name : `${name}-outline`) as any}
           size={24}
@@ -90,7 +163,12 @@ function AnimatedTabIcon({
       </Animated.View>
       
       {/* Active indicator dot */}
-      <Animated.View style={[styles.indicatorDot, indicatorAnimatedStyle]} />
+      <Animated.View 
+        style={[
+          styles.indicatorDot, 
+          { opacity: indicatorOpacity }
+        ]} 
+      />
     </View>
   );
 }
@@ -129,7 +207,7 @@ export default function TabsLayout() {
         }}
       />
       
-      {/* Tab 3: MAP - CENTER, WHITE, SPECIAL */}
+      {/* Tab 3: MAP - CENTER, WHITE, SPECIAL PULSE GLOW */}
       <Tabs.Screen
         name="map"
         options={{
@@ -211,9 +289,9 @@ const styles = StyleSheet.create({
   centerContainer: {
     alignItems: "center",
     justifyContent: "center",
-    width: 70,
-    height: 70,
-    marginTop: -20,
+    width: 80,
+    height: 80,
+    marginTop: -25,
   },
   centerButton: {
     width: CENTER_BUTTON_SIZE,
@@ -223,22 +301,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     // Shadow
-    shadowColor: Colors.accent,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 12,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   centerGlow: {
     position: "absolute",
-    width: CENTER_BUTTON_SIZE + 35,
-    height: CENTER_BUTTON_SIZE + 35,
-    borderRadius: (CENTER_BUTTON_SIZE + 35) / 2,
+    width: CENTER_BUTTON_SIZE + 40,
+    height: CENTER_BUTTON_SIZE + 40,
+    borderRadius: (CENTER_BUTTON_SIZE + 40) / 2,
     backgroundColor: Colors.accent,
-    // Blur simulation
-    shadowColor: Colors.accent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 25,
   },
 });
