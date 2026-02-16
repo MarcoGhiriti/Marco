@@ -23,6 +23,7 @@ import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { EventOut, UserSearchOut } from "../../src/types/api";
+import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
 
 // Haversine distance calculator
@@ -350,36 +351,12 @@ export default function EventDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Map Preview */}
         <Pressable onPress={openInMaps} style={styles.mapContainer}>
-          <Svg width={360} height={180}>
-            {/* Grid pattern */}
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Rect
-                key={`h${i}`}
-                x={0}
-                y={i * 25}
-                width={360}
-                height={1}
-                fill={Colors.border}
-                opacity={0.3}
-              />
-            ))}
-            {Array.from({ length: 15 }).map((_, i) => (
-              <Rect
-                key={`v${i}`}
-                x={i * 25}
-                y={0}
-                width={1}
-                height={180}
-                fill={Colors.border}
-                opacity={0.3}
-              />
-            ))}
-            
-            {/* Center pin */}
-            <Circle cx={180} cy={90} r={25} fill={Colors.accent} opacity={0.2} />
-            <Circle cx={180} cy={90} r={15} fill={Colors.accent} />
-            <Circle cx={180} cy={90} r={5} fill={Colors.bg} />
-          </Svg>
+          <RouteMiniMap
+            lat={event.start_point?.[0]}
+            lng={event.start_point?.[1]}
+            locationName={event.location_name}
+            height={180}
+          />
           
           {/* Tap to open hint */}
           <View style={styles.mapOverlay}>
