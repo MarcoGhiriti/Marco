@@ -226,7 +226,7 @@ frontend:
     file: "/app/frontend/app/(tabs)/map.tsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -237,6 +237,9 @@ frontend:
       - working: false
         agent: "main"
         comment: "Am separat MapCanvas (native/web) + am golit cache-ul; preview web funcționează și cardul map apare. Necesită testare pe mobile pentru MapView + markers." 
+      - working: false
+        agent: "testing"
+        comment: "❌ NU POATE FI TESTAT: Login blocker împiedică accesul la Map tab pentru verificarea MapView native cu Report Police button și Show Events toggle. Din cod se observă că MapCanvas.native.tsx conține MapView cu Report Police FAB și Show Events toggle, iar MapCanvas.web.tsx afișează placeholder card 'Interactive Map - Live map is available on mobile devices' - implementarea pare corectă tehnic, dar necesită testare vizuală după rezolvarea problemei de login." 
 
 metadata:
   created_by: "main_agent"
