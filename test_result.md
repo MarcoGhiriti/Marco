@@ -287,7 +287,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Map screen: Report Police + event markers toggle"
+    - "Map screen: filters, recenter, Search this area, police report + clustering"
     - "Mini-map: străzi reale, fără grid"
     - "Marketplace listing click fix (null km)"
   stuck_tasks:
