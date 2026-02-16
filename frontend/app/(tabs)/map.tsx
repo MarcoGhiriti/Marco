@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Alert, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Colors } from "../../src/theme/colors";
 import { apiGet } from "../../src/lib/api";
@@ -15,6 +17,7 @@ type EventMarker = {
 };
 
 export default function MapScreen() {
+  const router = useRouter();
   const { accessToken } = useAuthStore();
   const [events, setEvents] = useState<EventMarker[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +61,20 @@ export default function MapScreen() {
             <Text style={styles.h1}>Live Map</Text>
             <Text style={styles.sub}>Event markers & police reports</Text>
           </View>
+          <View style={styles.headerActions}>
+            <Pressable
+              style={styles.headerBtn}
+              onPress={() => router.push("/create/route")}
+            >
+              <Ionicons name="trail-sign" size={18} color={Colors.text} />
+            </Pressable>
+            <Pressable
+              style={styles.headerBtn}
+              onPress={() => router.push("/create/event")}
+            >
+              <Ionicons name="calendar" size={18} color={Colors.text} />
+            </Pressable>
+          </View>
         </View>
 
         <MapCanvas
@@ -76,10 +93,28 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
   container: { flex: 1, backgroundColor: Colors.bg },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
   },
   h1: { color: Colors.text, fontSize: 22, fontFamily: "Inter_900Black" },
   sub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
 });
