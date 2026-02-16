@@ -235,6 +235,9 @@ frontend:
         agent: "main"
         comment: "Fix: RouteMiniMap.native export aliniat (named export) pentru a elimina crash în RouteCard. Necesită retestare." 
       - working: false
+        agent: "main"
+        comment: "Manual web: Home se încarcă fără crash după fix (RouteCard render OK)."
+      - working: false
         agent: "testing"
         comment: "❌ NU POATE FI TESTAT: Login blocker împiedică accesul la Routes/Home tab pentru verificarea mini-map-ului cu grid gri. Din cod se observă că grid lines folosesc Colors.muted cu strokeOpacity={0.35} și strokeWidth={0.6} - implementarea pare corectă tehnic, dar necesită testare vizuală după rezolvarea problemei de login."
 
