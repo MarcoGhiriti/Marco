@@ -92,11 +92,6 @@ async def ping_test(sid, data):  # type: ignore[no-untyped-def]
     await sio.emit("pong_test", {"ok": True, "echo": data}, to=sid)
 
 
-def dm_thread_id(a: str, b: str) -> str:
-    pass  # Imported from database
-
-dm_thread_id = dm_thread_id  # Use the imported version
-
 # NOTE: dm_thread_id, is_group_member are imported from database module.
 # The local Socket.IO event handlers below use the imported `sio`, `db`, `sid_to_user`.
 
