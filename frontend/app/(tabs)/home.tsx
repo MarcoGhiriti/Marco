@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   headerLeft: { gap: 4 },
-  headerRight: { flexDirection: "row", gap: 10 },
+  headerRight: { flexDirection: "row", gap: 10, alignItems: "center" },
   h1: { color: Colors.text, fontSize: 22, fontWeight: "900", letterSpacing: 0.2 },
   sub: { color: Colors.muted, fontSize: 13, fontWeight: "600" },
   iconBtn: {
@@ -666,6 +666,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     alignItems: "center",
     justifyContent: "center",
+  },
+  profileAvatarBtn: {
+    height: 44,
+    width: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: Colors.accent,
+  },
+  profileAvatarImg: {
+    width: "100%",
+    height: "100%",
   },
   shopBtn: {
     height: 44,
