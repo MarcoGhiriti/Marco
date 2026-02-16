@@ -229,6 +229,12 @@ frontend:
         agent: "main"
         comment: "Manual web screenshot: grid eliminat (route line pe background simplu). Retestare necesară pe device pentru MapView." 
       - working: false
+        agent: "user"
+        comment: "Expo Go: Render Error în RouteCard (Element type invalid) după schimbarea RouteMiniMap." 
+      - working: false
+        agent: "main"
+        comment: "Fix: RouteMiniMap.native export aliniat (named export) pentru a elimina crash în RouteCard. Necesită retestare." 
+      - working: false
         agent: "testing"
         comment: "❌ NU POATE FI TESTAT: Login blocker împiedică accesul la Routes/Home tab pentru verificarea mini-map-ului cu grid gri. Din cod se observă că grid lines folosesc Colors.muted cu strokeOpacity={0.35} și strokeWidth={0.6} - implementarea pare corectă tehnic, dar necesită testare vizuală după rezolvarea problemei de login."
 
