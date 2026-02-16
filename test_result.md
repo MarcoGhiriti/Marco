@@ -185,13 +185,16 @@ frontend:
     implemented: true
     working: false
     file: "/app/frontend/app/(tabs)/shop.tsx, /app/frontend/app/marketplace/[listingId].tsx, /app/frontend/app/marketplace/my-listings.tsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Am adăugat câmp telefon în form, buton My Listings + ecran nou, detalii listing cu acțiuni Message/Call/Delete. Necesită testare UI."
+      - working: false
+        agent: "user"
+        comment: "User: apare eroare când dai click pe anunț (listing detail)."
 
 metadata:
   created_by: "main_agent"
