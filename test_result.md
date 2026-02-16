@@ -301,6 +301,8 @@ agent_communication:
     message: "✅ MARKETPLACE FRONTEND TESTING COMPLET: Login OK, Shop->Second Hand OK, listări încărcate, click pe anunț fără eroare, Phone field prezent, My Listings OK, delete OK (mobile 390x844 & 360x800)."
   - agent: "testing"
     message: "❌ Login blocked on mobile viewports (Continue unresponsive) - unable to test marketplace/minimap/map. Expo logs show unauthorized request from preview." 
+  - agent: "main"
+    message: "Manual Playwright: login funcționează (Continue navighează către Home). Gridul mini-map a fost eliminat în web. Map web placeholder apare OK."
   - agent: "testing"
     message: "✅ MARKETPLACE UI TESTING COMPLET pe mobile (390x844 & 360x800): Toate cerințele de testare îndeplinite perfect! 1) Login user1@example.com funcționează ✅ 2) Navigare Shop -> Second Hand funcționează ✅ 3) Listările se încarcă corect (loading spinner vizibil) ✅ 4) CLICK PE ANUNȚ FUNCȚIONEAZĂ FĂRĂ EROARE - eroarea raportată de user NU a fost reprodusă ✅ 5) Add Listing modal conține câmpul Phone (optional) ✅ 6) My Listings page (buton person) se deschide corect ✅ 7) Delete functionality cu confirmare funcționează ✅ 8) UI complet responsive pe ambele viewport-uri mobile ✅. CONCLUZIE: Marketplace UI funcționează perfect - nu există erori critice!"
   - agent: "testing"
