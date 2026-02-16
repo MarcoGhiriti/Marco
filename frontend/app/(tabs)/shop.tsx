@@ -199,6 +199,12 @@ function SecondHandTab() {
             returnKeyType="search"
           />
         </View>
+        <Pressable
+          style={styles.myListingsBtn}
+          onPress={() => router.push("/marketplace/my-listings")}
+        >
+          <Ionicons name="person" size={22} color={Colors.text} />
+        </Pressable>
         <Pressable 
           style={styles.addListingBtn}
           onPress={() => setShowCreateModal(true)}
