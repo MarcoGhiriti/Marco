@@ -4,10 +4,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import { useFocusEffect } from "@react-navigation/native";
-import MapCanvas from "../../src/components/MapCanvas";
-import { apiGet, apiPost } from "../../src/lib/api";
-import { useAuthStore } from "../../src/state/authStore";
-import { Colors } from "../../src/theme/colors";
+import MapCanvas from "../components/MapCanvas";
+import { apiGet, apiPost } from "../lib/api";
+import { useAuthStore } from "../state/authStore";
+import { Colors } from "../theme/colors";
 
 type MapRegion = {
   latitude: number;
