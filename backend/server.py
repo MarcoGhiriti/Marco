@@ -1778,10 +1778,26 @@ async def messages_inbox(current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
     conversations: list[InboxConversation] = []
 
-    # Get unread summary
-    unread_data = await unread_summary(current_user)
-    unread_dm_set = set(unread_data.dm_user_ids)
-    unread_group_set = set(unread_data.group_ids)
+    # Get unread summary - call the inner logic directly
+    dm_unread: set[str] = set()
+    group_unread: set[str] = set()
+    read_state = await db.message_read_state.find_one({"user_id": uid})
+    if read_state:
+        for fid in (current_user.get("friends") or []):
+            tid = dm_thread_id(uid, fid)
+            last = await db.messages.find({"thread_id": tid}).sort("created_at", -1).limit(1).to_list(1)
+            if last:
+                last_read = (read_state.get("threads") or {}).get(tid)
+                if not last_read or last[0]["created_at"] > last_read:
+                    dm_unread.add(fid)
+        async for g in db.groups.find({"members": uid}, {"_id": 1}):
+            gid = _oid_str(g["_id"])
+            tid = f"group:{gid}"
+            last = await db.messages.find({"thread_id": tid}).sort("created_at", -1).limit(1).to_list(1)
+            if last:
+                last_read = (read_state.get("threads") or {}).get(tid)
+                if not last_read or last[0]["created_at"] > last_read:
+                    group_unread.add(gid)
 
     # DM conversations (from friends list)
     friends = current_user.get("friends") or []
@@ -1804,14 +1820,14 @@ async def messages_inbox(current_user: dict = Depends(get_current_user)):
             avatar_base64=friend_doc.get("avatar_base64") if friend_doc else None,
             last_message=last_text,
             last_message_at=last_at,
-            unread=fid in unread_dm_set,
+            unread=fid in dm_unread,
         ))
 
     # Group conversations
     cursor = db.groups.find({"members": uid}, {"_id": 1, "name": 1, "photo_base64": 1})
     groups = await cursor.to_list(length=300)
     for g in groups:
-        gid = oid_str(g.get("_id"))
+        gid = _oid_str(g.get("_id"))
         thread_id = f"group:{gid}"
         last_msgs = await db.messages.find({"thread_id": thread_id}).sort("created_at", -1).limit(1).to_list(1)
 
@@ -1829,7 +1845,7 @@ async def messages_inbox(current_user: dict = Depends(get_current_user)):
             group_photo=g.get("photo_base64"),
             last_message=last_text,
             last_message_at=last_at,
-            unread=gid in unread_group_set,
+            unread=gid in group_unread,
         ))
 
     # Sort by last_message_at descending (most recent first), nulls last
