@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, View, Text } from "react-native";
-import Svg, { Polyline as SvgPolyline, Circle, Rect, Line } from "react-native-svg";
+import Svg, { Polyline as SvgPolyline, Circle, Rect } from "react-native-svg";
 import { softShadow } from "../theme/shadow";
 import { Colors } from "../theme/colors";
 
@@ -59,23 +59,6 @@ function normalizeToSvg(
   };
 }
 
-// Generate grid lines for background streets
-function generateGridLines(width: number, height: number) {
-  const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
-  const spacing = 25;
-  
-  // Vertical lines
-  for (let x = spacing; x < width; x += spacing) {
-    lines.push({ x1: x, y1: 0, x2: x, y2: height });
-  }
-  
-  // Horizontal lines
-  for (let y = spacing; y < height; y += spacing) {
-    lines.push({ x1: 0, y1: y, x2: width, y2: y });
-  }
-  
-  return lines;
-}
 
 type RouteMiniMapProps = {
   polyline: number[][]; // [lat,lng]
@@ -97,25 +80,9 @@ export function RouteMiniMap({
   const width = 420;
   const height = 150;
   const svg = useMemo(() => normalizeToSvg(coords, width, height), [coords]);
-  const gridLines = useMemo(() => generateGridLines(width, height), []);
-
   const renderMap = () => (
     <View style={styles.mapContainer}>
       <Svg width={width} height={height}>
-        {/* Background grid (secondary streets) */}
-        {gridLines.map((line, i) => (
-          <Line
-            key={i}
-            x1={line.x1}
-            y1={line.y1}
-            x2={line.x2}
-            y2={line.y2}
-            stroke={Colors.muted}
-            strokeWidth={0.6}
-            strokeOpacity={0.35}
-          />
-        ))}
-        
         {/* Main route polyline */}
         <SvgPolyline
           points={svg.points}
