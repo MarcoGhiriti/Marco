@@ -157,10 +157,10 @@ function MyEventsTab() {
             </Text>
             <Pressable 
               style={styles.browseBtn}
-              onPress={() => router.push("/events/browse")}
+              onPress={() => router.push("/(tabs)/home")}
             >
               <Ionicons name="search" size={18} color={Colors.bg} />
-              <Text style={styles.browseBtnText}>Browse Events</Text>
+              <Text style={styles.browseBtnText}>Explore Events</Text>
             </Pressable>
           </View>
         }
