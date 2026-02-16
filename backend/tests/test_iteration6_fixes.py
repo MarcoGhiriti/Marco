@@ -23,7 +23,7 @@ USER2_PASSWORD = "Password123"
 @pytest.fixture(scope="module")
 def user1_token():
     """Get authentication token for user1"""
-    response = requests.post(f"{BASE_URL}/api/login", json={
+    response = requests.post(f"{BASE_URL}/api/auth/login", json={
         "email": USER1_EMAIL,
         "password": USER1_PASSWORD
     })
@@ -35,7 +35,7 @@ def user1_token():
 @pytest.fixture(scope="module")
 def user2_token():
     """Get authentication token for user2"""
-    response = requests.post(f"{BASE_URL}/api/login", json={
+    response = requests.post(f"{BASE_URL}/api/auth/login", json={
         "email": USER2_EMAIL,
         "password": USER2_PASSWORD
     })
