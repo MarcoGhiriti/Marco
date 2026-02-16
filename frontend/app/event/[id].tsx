@@ -637,7 +637,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: "hidden",
-    alignItems: "center",
   },
   mapOverlay: {
     position: "absolute",
