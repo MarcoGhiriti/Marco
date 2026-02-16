@@ -19,7 +19,7 @@ import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
-import type { RouteOut, StoryOwner, RideSessionOut, ActiveRideForHomeOut } from "../../src/types/api";
+import type { RouteOut, StoryOwner, RideSessionOut, ActiveRideForHomeOut, EventOut } from "../../src/types/api";
 import { RouteCard } from "../../src/components/RouteCard";
 import { StoriesBar } from "../../src/components/StoriesBar";
 import { StoryViewer } from "../../src/components/StoryViewer";
@@ -53,6 +53,7 @@ export default function HomeScreen() {
   const { accessToken, me } = useAuthStore();
   
   const [routes, setRoutes] = useState<RouteOut[]>([]);
+  const [events, setEvents] = useState<EventOut[]>([]);
   const [stories, setStories] = useState<StoryOwner[]>([]);
   const [activeRide, setActiveRide] = useState<RideSessionOut | null>(null);
   const [activeRideForHome, setActiveRideForHome] = useState<ActiveRideForHomeOut | null>(null);
@@ -63,6 +64,10 @@ export default function HomeScreen() {
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [showRideModal, setShowRideModal] = useState(false);
+
+  // Feed filter toggles
+  const [feedShowRoutes, setFeedShowRoutes] = useState(true);
+  const [feedShowEvents, setFeedShowEvents] = useState(false);
   const [rideProgress, setRideProgress] = useState<RideProgress | null>(null);
   const [loadingRideProgress, setLoadingRideProgress] = useState(false);
   
