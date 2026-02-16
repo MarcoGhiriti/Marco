@@ -1736,6 +1736,107 @@ async def friends_reject(payload: FriendAccept, current_user: dict = Depends(get
     return {"ok": True}
 
 
+@api_router.post("/friends/cancel")
+async def friends_cancel(payload: FriendAccept, current_user: dict = Depends(get_current_user)):
+    """Cancel an outgoing friend request."""
+    to_id = payload.from_user_id  # reuse field: the person we sent request to
+    from_id = current_user["id"]
+
+    if to_id not in (current_user.get("friend_requests_out") or []):
+        raise HTTPException(status_code=400, detail="No such outgoing request")
+
+    await db.users.update_one(
+        {"_id": _as_object_id(from_id)},
+        {"$pull": {"friend_requests_out": to_id}},
+    )
+    await db.users.update_one(
+        {"_id": _as_object_id(to_id)},
+        {"$pull": {"friend_requests_in": from_id}},
+    )
+    return {"ok": True}
+
+
+class InboxConversation(BaseModel):
+    kind: Literal["dm", "group"]
+    # DM fields
+    user_id: Optional[str] = None
+    username: Optional[str] = None
+    avatar_base64: Optional[str] = None
+    # Group fields
+    group_id: Optional[str] = None
+    group_name: Optional[str] = None
+    group_photo: Optional[str] = None
+    # Shared
+    last_message: Optional[str] = None
+    last_message_at: Optional[str] = None
+    unread: bool = False
+
+
+@api_router.get("/messages/inbox", response_model=list[InboxConversation])
+async def messages_inbox(current_user: dict = Depends(get_current_user)):
+    """Return combined DM + group conversations with last message for Messages tab."""
+    uid = current_user["id"]
+    conversations: list[InboxConversation] = []
+
+    # Get unread summary
+    unread_data = await unread_summary(current_user)
+    unread_dm_set = set(unread_data.dm_user_ids)
+    unread_group_set = set(unread_data.group_ids)
+
+    # DM conversations (from friends list)
+    friends = current_user.get("friends") or []
+    for fid in friends:
+        thread_id = dm_thread_id(uid, fid)
+        last_msgs = await db.messages.find({"thread_id": thread_id}).sort("created_at", -1).limit(1).to_list(1)
+        friend_doc = await db.users.find_one({"_id": _as_object_id(fid)}, {"username": 1, "avatar_base64": 1})
+
+        last_text = None
+        last_at = None
+        if last_msgs:
+            last_text = last_msgs[0].get("text", "")[:60]
+            raw_at = last_msgs[0].get("created_at")
+            last_at = raw_at.isoformat() if raw_at else None
+
+        conversations.append(InboxConversation(
+            kind="dm",
+            user_id=fid,
+            username=friend_doc.get("username", "User") if friend_doc else "User",
+            avatar_base64=friend_doc.get("avatar_base64") if friend_doc else None,
+            last_message=last_text,
+            last_message_at=last_at,
+            unread=fid in unread_dm_set,
+        ))
+
+    # Group conversations
+    cursor = db.groups.find({"members": uid}, {"_id": 1, "name": 1, "photo_base64": 1})
+    groups = await cursor.to_list(length=300)
+    for g in groups:
+        gid = oid_str(g.get("_id"))
+        thread_id = f"group:{gid}"
+        last_msgs = await db.messages.find({"thread_id": thread_id}).sort("created_at", -1).limit(1).to_list(1)
+
+        last_text = None
+        last_at = None
+        if last_msgs:
+            last_text = last_msgs[0].get("text", "")[:60]
+            raw_at = last_msgs[0].get("created_at")
+            last_at = raw_at.isoformat() if raw_at else None
+
+        conversations.append(InboxConversation(
+            kind="group",
+            group_id=gid,
+            group_name=g.get("name", "Group"),
+            group_photo=g.get("photo_base64"),
+            last_message=last_text,
+            last_message_at=last_at,
+            unread=gid in unread_group_set,
+        ))
+
+    # Sort by last_message_at descending (most recent first), nulls last
+    conversations.sort(key=lambda c: c.last_message_at or "", reverse=True)
+    return conversations
+
+
 @api_router.post("/groups", response_model=GroupOut)
 async def groups_create(payload: GroupCreate, current_user: dict = Depends(get_current_user)):
     now = datetime.utcnow()
