@@ -3721,7 +3721,6 @@ class MarketplaceListingOut(BaseModel):
     seller_id: str
     seller_username: str
     phone: Optional[str] = None
-    seller_username: str
     created_at: str
     is_active: bool = True
 
@@ -3729,10 +3728,12 @@ class MarketplaceListingOut(BaseModel):
 async def get_marketplace_listings(
     category: Optional[str] = None,
     q: Optional[str] = None,
+    mine: bool = False,
     current_user: dict = Depends(get_current_user)
 ):
     """Get all marketplace listings with optional filters"""
-    filter_query: dict = {"is_active": True}
+    expires_after = datetime.utcnow() - timedelta(days=90)
+    filter_query: dict = {"is_active": True, "created_at": {"$gte": expires_after}}
     
     if category:
         filter_query["category"] = category
@@ -3744,6 +3745,9 @@ async def get_marketplace_listings(
             {"brand": {"$regex": q, "$options": "i"}},
             {"model": {"$regex": q, "$options": "i"}},
         ]
+
+    if mine:
+        filter_query["seller_id"] = ObjectId(current_user["id"])
     
     listings = await db.marketplace_listings.find(filter_query).sort("created_at", -1).to_list(100)
     
@@ -3803,7 +3807,7 @@ async def create_marketplace_listing(
         "license_type": data.license_type,
         "condition": data.condition,
         "images": data.images[:10],  # Max 10 images
-        "phone": data.phone,
+        "phone": data.phone.strip() if data.phone else None,
         "seller_id": user_id,
         "seller_username": user.get("username", "Unknown"),
         "created_at": datetime.utcnow(),
@@ -3832,6 +3836,7 @@ async def create_marketplace_listing(
         images=listing_doc.get("images", []),
         seller_id=str(listing_doc["seller_id"]),
         seller_username=listing_doc.get("seller_username", "Unknown"),
+        phone=listing_doc.get("phone"),
         created_at=listing_doc["created_at"].isoformat(),
         is_active=listing_doc.get("is_active", True),
     )
@@ -3845,6 +3850,10 @@ async def get_marketplace_listing(
     listing = await db.marketplace_listings.find_one({"_id": ObjectId(listing_id)})
     
     if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+
+    expires_after = datetime.utcnow() - timedelta(days=90)
+    if listing.get("is_active") is False or listing.get("created_at") < expires_after:
         raise HTTPException(status_code=404, detail="Listing not found")
     
     return MarketplaceListingOut(
@@ -3866,6 +3875,7 @@ async def get_marketplace_listing(
         images=listing.get("images", []),
         seller_id=str(listing["seller_id"]),
         seller_username=listing.get("seller_username", "Unknown"),
+        phone=listing.get("phone"),
         created_at=listing["created_at"].isoformat(),
         is_active=listing.get("is_active", True),
     )
