@@ -365,6 +365,12 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  friendTap: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
   friendName: {
     color: Colors.text,
     fontSize: 14,
