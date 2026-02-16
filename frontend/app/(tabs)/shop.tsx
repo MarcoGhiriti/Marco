@@ -171,6 +171,16 @@ function SecondHandTab() {
         )}
         
         <View style={styles.listingFooter}>
+          <Pressable 
+            onPress={(e) => {
+              e.stopPropagation();
+              if (item.seller_id) router.push(`/profile/${item.seller_id}`);
+            }}
+            style={styles.sellerRow}
+          >
+            <Ionicons name="person-circle-outline" size={14} color={Colors.accent} />
+            <Text style={styles.sellerName} numberOfLines={1}>{item.seller_username}</Text>
+          </Pressable>
           <View style={styles.locationRow}>
             <Ionicons name="location-outline" size={12} color={Colors.muted} />
             <Text style={styles.listingLocation}>{item.location}</Text>
