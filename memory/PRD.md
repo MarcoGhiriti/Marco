@@ -10,6 +10,7 @@
 ### In Progress / Needs Retest
 - Marketplace UI: listing click error fix (null kilometers safeguard) — needs UI retest.
 - Map screen: MapCanvas split (native/web) + Expo Go recursion fix — needs device retest.
+- Mini‑map MapView (native) — needs device retest.
 
 ### Backlog / Upcoming
 - Mini‑map styling: show adjacent streets in gray.
