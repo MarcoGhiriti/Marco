@@ -442,16 +442,16 @@ export default function ProfileScreen() {
                 </Pressable>
               </View>
 
-          {/* Create Button */}
-          <Pressable 
-            onPress={() => router.push(activeTab === "routes" ? "/create/route" : "/create/event")} 
-            style={styles.createContentBtn}
-          >
-            <Ionicons name="add-circle" size={20} color="#FFF" />
-            <Text style={styles.createContentBtnText}>
-              Create {activeTab === "routes" ? "Route" : "Event"}
-            </Text>
-          </Pressable>
+              {/* Create Button */}
+              <Pressable 
+                onPress={() => router.push(activeTab === "routes" ? "/create/route" : "/create/event")} 
+                style={styles.createContentBtn}
+              >
+                <Ionicons name="add-circle" size={20} color="#FFF" />
+                <Text style={styles.createContentBtnText}>
+                  Create {activeTab === "routes" ? "Route" : "Event"}
+                </Text>
+              </Pressable>
 
           {/* Routes Tab Content */}
           {activeTab === "routes" && (
