@@ -9,7 +9,6 @@ import {
   Text,
   TextInput,
   View,
-  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -17,6 +16,7 @@ import { Colors } from "../../src/theme/colors";
 import { apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut } from "../../src/types/api";
+import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 
 export default function RoutesScreen() {
   const router = useRouter();
