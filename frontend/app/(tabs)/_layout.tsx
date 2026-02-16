@@ -1,11 +1,9 @@
 import React, { useEffect } from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Platform } from "react-native";
 import { Colors } from "../../src/theme/colors";
 import { useAuthStore } from "../../src/state/authStore";
-import { useUnreadStore } from "../../src/state/unreadStore";
-
 
 const stylesTab = StyleSheet.create({
   iconWrap: {
@@ -13,6 +11,21 @@ const stylesTab = StyleSheet.create({
     height: 28,
     alignItems: "center",
     justifyContent: "center",
+  },
+  // Special center map button
+  mapIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.text,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Platform.OS === "ios" ? 20 : 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   dot: {
     position: "absolute",
@@ -46,21 +59,21 @@ function TabIcon({
   );
 }
 
+// Special center map icon - white, larger, prominent
+function MapCenterIcon({ focused }: { focused: boolean }) {
+  return (
+    <View style={stylesTab.mapIconWrap}>
+      <Ionicons 
+        name={focused ? "map" : "map-outline"} 
+        size={28} 
+        color={Colors.bg} 
+      />
+    </View>
+  );
+}
+
 export default function TabsLayout() {
   const { accessToken } = useAuthStore();
-  const { hasUnread, refresh } = useUnreadStore();
-
-  useEffect(() => {
-    if (!accessToken) return;
-
-    // Initial fetch + small polling (simple & robust)
-    refresh(accessToken).catch(() => {});
-    const t = setInterval(() => {
-      refresh(accessToken).catch(() => {});
-    }, 12000);
-
-    return () => clearInterval(t);
-  }, [accessToken, refresh]);
 
   return (
     <Tabs
@@ -69,74 +82,104 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: Colors.bg,
           borderTopColor: Colors.border,
+          height: Platform.OS === "ios" ? 85 : 65,
+          paddingBottom: Platform.OS === "ios" ? 25 : 10,
+          paddingTop: 5,
         },
         tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.muted,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: "600",
+        },
       }}
     >
+      {/* Tab 1: Home */}
       <Tabs.Screen
         name="home"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="compass-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon 
+              name={focused ? "home" : "home-outline"} 
+              size={size} 
+              color={color} 
+            />
           ),
         }}
       />
+      
+      {/* Tab 2: Routes */}
+      <Tabs.Screen
+        name="routes"
+        options={{
+          title: "Routes",
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon 
+              name={focused ? "trail-sign" : "trail-sign-outline"} 
+              size={size} 
+              color={color} 
+            />
+          ),
+        }}
+      />
+      
+      {/* Tab 3: MAP - CENTER, WHITE, PROMINENT */}
       <Tabs.Screen
         name="map"
         options={{
-          title: "Map",
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="map-outline" size={size} color={color} />
-          ),
+          title: "",
+          tabBarIcon: ({ focused }) => <MapCenterIcon focused={focused} />,
         }}
       />
+      
+      {/* Tab 4: Calendar (renamed from Events) */}
       <Tabs.Screen
         name="events"
         options={{
-          title: "Events",
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="calendar-outline" size={size} color={color} />
+          title: "Calendar",
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon 
+              name={focused ? "calendar" : "calendar-outline"} 
+              size={size} 
+              color={color} 
+            />
           ),
         }}
       />
+      
+      {/* Tab 5: Shop */}
+      <Tabs.Screen
+        name="shop"
+        options={{
+          title: "Shop",
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon 
+              name={focused ? "cart" : "cart-outline"} 
+              size={size} 
+              color={color} 
+            />
+          ),
+        }}
+      />
+
+      {/* Hidden tabs - accessible via navigation but not in tab bar */}
       <Tabs.Screen
         name="community"
         options={{
-          title: "Community",
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon
-              name="chatbubbles-outline"
-              size={size}
-              color={color}
-              showDot={hasUnread}
-            />
-          ),
+          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
         name="store"
         options={{
-          title: "Rankings",
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="podium-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="shop"
-        options={{
-          href: null, // Hide from tab bar, accessible via button on Home
+          href: null, // Hide Rankings from tab bar
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="person-circle-outline" size={size} color={color} />
-          ),
+          href: null, // Profile accessible from Home avatar
         }}
       />
     </Tabs>
