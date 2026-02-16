@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
@@ -27,6 +27,20 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.5,
 };
 
+const MAP_STYLE = [
+  { elementType: "geometry", stylers: [{ color: "#0b0f0e" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#7a8a86" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#0b0f0e" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#16221f" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#0f1815" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#1d2f2a" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#36f19a" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f1b18" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+];
+
 export default function MapCanvas({
   events,
   loading,
@@ -51,7 +65,11 @@ export default function MapCanvas({
 
   return (
     <View style={styles.mapWrapper}>
-      <MapView style={StyleSheet.absoluteFill} initialRegion={initialRegion}>
+      <MapView
+        style={StyleSheet.absoluteFill}
+        initialRegion={initialRegion}
+        customMapStyle={MAP_STYLE}
+      >
         {showEvents &&
           events.map((event) => {
             const [lat, lng] = event.start_point || [];
@@ -80,18 +98,16 @@ export default function MapCanvas({
         </View>
       )}
 
-      <View style={styles.toggleBar}>
-        <View style={styles.toggleRow}>
-          <Ionicons name="calendar" size={16} color={Colors.text} />
-          <Text style={styles.toggleText}>Show Events</Text>
-        </View>
-        <Switch
-          value={showEvents}
-          onValueChange={onToggleEvents}
-          thumbColor={showEvents ? Colors.accent : Colors.muted}
-          trackColor={{ false: Colors.card2, true: Colors.accent2 }}
+      <Pressable
+        style={[styles.eventToggle, showEvents && styles.eventToggleActive]}
+        onPress={() => onToggleEvents(!showEvents)}
+      >
+        <Ionicons
+          name="calendar"
+          size={18}
+          color={showEvents ? Colors.bg : Colors.text}
         />
-      </View>
+      </Pressable>
 
       <Pressable style={styles.reportFab} onPress={onReportPolice}>
         <Ionicons name="shield" size={20} color={Colors.bg} />
@@ -116,30 +132,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(5,5,7,0.35)",
   },
-  toggleBar: {
+  eventToggle: {
     position: "absolute",
     top: 16,
     left: 16,
-    right: 16,
-    flexDirection: "row",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    justifyContent: "center",
     backgroundColor: Colors.card,
-    borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  eventToggleActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
   },
-  toggleText: { color: Colors.text, fontSize: 13, fontFamily: "Inter_600SemiBold" },
   reportFab: {
     position: "absolute",
-    bottom: 16,
+    bottom: 90,
     right: 16,
     flexDirection: "row",
     alignItems: "center",
