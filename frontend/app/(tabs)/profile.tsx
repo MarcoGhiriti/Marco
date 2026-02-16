@@ -114,6 +114,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"routes" | "events">("routes");
+  const [showMyContent, setShowMyContent] = useState(false); // Collapsed by default
   
   // License verification state
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
