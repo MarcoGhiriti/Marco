@@ -15,7 +15,7 @@ type RouteMiniMapProps = {
   color?: string;
 };
 
-export default function RouteMiniMap({
+export function RouteMiniMap({
   points,
   height = 100,
   width = 300,
