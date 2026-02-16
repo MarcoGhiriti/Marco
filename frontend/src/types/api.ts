@@ -36,6 +36,7 @@ export type RouteOut = {
   participants_count: number;
   is_joined: boolean;
   created_by: string;
+  creator_username?: string;
   start_date?: string | null;
   start_city?: string | null;
   end_city?: string | null;
