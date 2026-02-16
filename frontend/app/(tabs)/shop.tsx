@@ -207,7 +207,7 @@ function SecondHandTab() {
         </Pressable>
       </View>
 
-      {/* Category Filter */}
+      {/* Category Filter - Compact with icons only */}
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
@@ -217,9 +217,11 @@ function SecondHandTab() {
           style={[styles.categoryChip, !selectedCategory && styles.categoryChipActive]}
           onPress={() => setSelectedCategory(null)}
         >
-          <Text style={[styles.categoryChipText, !selectedCategory && styles.categoryChipTextActive]}>
-            All
-          </Text>
+          <Ionicons 
+            name="grid" 
+            size={16} 
+            color={!selectedCategory ? Colors.bg : Colors.muted} 
+          />
         </Pressable>
         {CATEGORIES.map((cat) => (
           <Pressable
@@ -229,12 +231,9 @@ function SecondHandTab() {
           >
             <Ionicons 
               name={cat.icon as any} 
-              size={14} 
+              size={16} 
               color={selectedCategory === cat.id ? Colors.bg : Colors.muted} 
             />
-            <Text style={[styles.categoryChipText, selectedCategory === cat.id && styles.categoryChipTextActive]}>
-              {cat.label}
-            </Text>
           </Pressable>
         ))}
       </ScrollView>
