@@ -59,10 +59,8 @@ export default function EditProfileScreen() {
 
   // Fetch full profile with privacy settings
   const loadPrivacy = useCallback(async () => {
-    if (!headers || !me?.id) return;
+    if (!headers) return;
     try {
-      const data = await apiGet<any>(`/api/users/${me.id}`, headers);
-      // The full /api/me response has privacy
       const fullMe = await apiGet<any>("/api/me", headers);
       if (fullMe.privacy) {
         setPrivacy({
@@ -75,7 +73,7 @@ export default function EditProfileScreen() {
     } catch (e) {
       // Fall through with defaults
     }
-  }, [headers, me?.id]);
+  }, [headers]);
 
   useEffect(() => { loadPrivacy(); }, [loadPrivacy]);
 
