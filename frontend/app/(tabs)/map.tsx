@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -83,8 +82,6 @@ export default function MapScreen() {
     Alert.alert("Report Police", "This feature is available on the live mobile map.");
   };
 
-  const isWeb = Platform.OS === "web";
-
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -94,66 +91,54 @@ export default function MapScreen() {
             <Text style={styles.sub}>Event markers & police reports</Text>
           </View>
         </View>
+        <View style={styles.mapWrapper}>
+          <MapView style={StyleSheet.absoluteFill} initialRegion={initialRegion}>
+            {showEvents &&
+              events.map((event) => {
+                const [lat, lng] = event.start_point || [];
+                if (typeof lat !== "number" || typeof lng !== "number") return null;
+                return (
+                  <Marker
+                    key={event.id}
+                    coordinate={{ latitude: lat, longitude: lng }}
+                    title={event.title}
+                    description={event.location_name}
+                  />
+                );
+              })}
+          </MapView>
 
-        {isWeb ? (
-          <View style={styles.webCard}>
-            <Ionicons name="map" size={64} color={Colors.accent} />
-            <Text style={styles.title}>Interactive Map</Text>
-            <Text style={styles.desc}>Live map is available on mobile devices.</Text>
-            <Text style={styles.descSub}>
-              Only event markers + Report Police are shown. Open Expo Go on your phone to use it.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.mapWrapper}>
-            <MapView style={StyleSheet.absoluteFill} initialRegion={initialRegion}>
-              {showEvents &&
-                events.map((event) => {
-                  const [lat, lng] = event.start_point || [];
-                  if (typeof lat !== "number" || typeof lng !== "number") return null;
-                  return (
-                    <Marker
-                      key={event.id}
-                      coordinate={{ latitude: lat, longitude: lng }}
-                      title={event.title}
-                      description={event.location_name}
-                    />
-                  );
-                })}
-            </MapView>
-
-            {loading && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator color={Colors.accent} size="large" />
-              </View>
-            )}
-
-            {!loading && showEvents && events.length === 0 && (
-              <View style={styles.emptyEvents}>
-                <Ionicons name="calendar" size={20} color={Colors.muted} />
-                <Text style={styles.emptyText}>No upcoming events</Text>
-              </View>
-            )}
-
-            <View style={styles.toggleBar}>
-              <View style={styles.toggleRow}>
-                <Ionicons name="calendar" size={16} color={Colors.text} />
-                <Text style={styles.toggleText}>Show Events</Text>
-              </View>
-              <Switch
-                value={showEvents}
-                onValueChange={setShowEvents}
-                thumbColor={showEvents ? Colors.accent : Colors.muted}
-                trackColor={{ false: Colors.card2, true: Colors.accent2 }}
-              />
+          {loading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator color={Colors.accent} size="large" />
             </View>
+          )}
 
-            <Pressable style={styles.reportFab} onPress={handleReportPolice}>
-              <Ionicons name="shield" size={20} color={Colors.bg} />
-              <Text style={styles.reportFabText}>Report Police</Text>
-            </Pressable>
+          {!loading && showEvents && events.length === 0 && (
+            <View style={styles.emptyEvents}>
+              <Ionicons name="calendar" size={20} color={Colors.muted} />
+              <Text style={styles.emptyText}>No upcoming events</Text>
+            </View>
+          )}
+
+          <View style={styles.toggleBar}>
+            <View style={styles.toggleRow}>
+              <Ionicons name="calendar" size={16} color={Colors.text} />
+              <Text style={styles.toggleText}>Show Events</Text>
+            </View>
+            <Switch
+              value={showEvents}
+              onValueChange={setShowEvents}
+              thumbColor={showEvents ? Colors.accent : Colors.muted}
+              trackColor={{ false: Colors.card2, true: Colors.accent2 }}
+            />
           </View>
-        )}
+
+          <Pressable style={styles.reportFab} onPress={handleReportPolice}>
+            <Ionicons name="shield" size={20} color={Colors.bg} />
+            <Text style={styles.reportFabText}>Report Police</Text>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -169,19 +154,6 @@ const styles = StyleSheet.create({
   },
   h1: { color: Colors.text, fontSize: 22, fontFamily: "Inter_900Black" },
   sub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  webCard: {
-    margin: 16,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: "center",
-    gap: 12,
-  },
-  title: { color: Colors.text, fontSize: 20, fontFamily: "Inter_900Black" },
-  desc: { color: Colors.text, fontSize: 14, fontFamily: "Inter_600SemiBold", textAlign: "center", lineHeight: 20 },
-  descSub: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold", textAlign: "center" },
   mapWrapper: {
     flex: 1,
     margin: 16,
