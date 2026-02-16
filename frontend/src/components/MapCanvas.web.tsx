@@ -23,6 +23,8 @@ type MapCanvasProps = {
   onReportPolice: () => void;
   onVotePolice: (reportId: string, vote: "up" | "down", lat: number, lng: number) => void;
   isFetching: boolean;
+  userLocation?: { lat: number; lng: number } | null;
+  onEventPress?: (eventId: string) => void;
 };
 
 export default function MapCanvas(_props: MapCanvasProps) {
