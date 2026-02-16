@@ -905,12 +905,12 @@ const styles = StyleSheet.create({
   
   // Listings
   listingsContainer: {
-    padding: 16,
-    paddingTop: 4,
+    padding: 12,
+    paddingTop: 2,
   },
   listingRow: {
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   listingCard: {
     width: "48%",

@@ -105,6 +105,7 @@ function Row({
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { accessToken, me, logout, refreshMe } = useAuthStore();
 
   const [stats, setStats] = useState<Stats | null>(null);
