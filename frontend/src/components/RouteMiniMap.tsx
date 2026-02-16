@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { Colors } from "../theme/colors";
-
-const MAPS_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY || "";
+import { API_BASE_URL } from "../lib/api";
 
 /* ---------- Google Polyline Encoder ---------- */
 function encodeValue(v: number): string {
@@ -31,65 +30,40 @@ function encodePolyline(coords: number[][]): string {
   return encoded;
 }
 
-/* ---------- Dark style params for Static Maps ---------- */
-const STYLE_PARAMS = [
-  "style=element:geometry%7Ccolor:0x101615",
-  "style=element:labels.text.fill%7Ccolor:0x8da39c",
-  "style=element:labels.text.stroke%7Ccolor:0x101615",
-  "style=feature:road%7Celement:geometry%7Ccolor:0x242d2b",
-  "style=feature:road%7Celement:geometry.stroke%7Ccolor:0x141b19",
-  "style=feature:road.highway%7Celement:geometry%7Ccolor:0x303b38",
-  "style=feature:road.highway%7Celement:geometry.stroke%7Ccolor:0x394543",
-  "style=feature:water%7Celement:geometry%7Ccolor:0x0f1b18",
-  "style=feature:landscape%7Celement:geometry%7Ccolor:0x0f1413",
-  "style=feature:poi%7Cvisibility:off",
-  "style=feature:transit%7Cvisibility:off",
-].join("&");
-
-/* ---------- Build route URL (polyline mode) ---------- */
-function buildRouteUrl(polyline: number[][], size = "640x220"): string {
-  if (!polyline || polyline.length < 2 || !MAPS_KEY) return "";
+/* ---------- Build URL via backend proxy ---------- */
+function buildRouteUrl(polyline: number[][]): string {
+  if (!polyline || polyline.length < 2) return "";
   const enc = encodePolyline(polyline);
   const start = polyline[0];
   const end = polyline[polyline.length - 1];
-  return [
-    "https://maps.googleapis.com/maps/api/staticmap?",
-    `size=${size}&scale=2&maptype=roadmap`,
-    `&${STYLE_PARAMS}`,
-    `&path=color:0x36F19AFF%7Cweight:4%7Cenc:${encodeURIComponent(enc)}`,
-    `&markers=size:small%7Ccolor:0x36F19A%7C${start[0]},${start[1]}`,
-    `&markers=size:small%7Ccolor:0xFF3B30%7C${end[0]},${end[1]}`,
-    `&key=${MAPS_KEY}`,
-  ].join("");
+  const params = new URLSearchParams({
+    polyline_str: enc,
+    start_lat: String(start[0]),
+    start_lng: String(start[1]),
+    end_lat: String(end[0]),
+    end_lng: String(end[1]),
+  });
+  return `${API_BASE_URL}/api/map/static-image?${params.toString()}`;
 }
 
-/* ---------- Build single-point URL (event / location mode) ---------- */
-function buildPointUrl(lat: number, lng: number, zoom = 14, size = "640x220"): string {
-  if (!MAPS_KEY) return "";
-  return [
-    "https://maps.googleapis.com/maps/api/staticmap?",
-    `center=${lat},${lng}&zoom=${zoom}`,
-    `&size=${size}&scale=2&maptype=roadmap`,
-    `&${STYLE_PARAMS}`,
-    `&markers=size:mid%7Ccolor:0x36F19A%7C${lat},${lng}`,
-    `&key=${MAPS_KEY}`,
-  ].join("");
+function buildPointUrl(lat: number, lng: number, zoom = 14): string {
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lng: String(lng),
+    zoom: String(zoom),
+  });
+  return `${API_BASE_URL}/api/map/static-image?${params.toString()}`;
 }
 
 /* ---------- Component ---------- */
 type Props = {
-  /** Route mode: array of [lat,lng] pairs */
   polyline?: number[][];
-  /** Event/location mode: single point */
   lat?: number;
   lng?: number;
-  /** Optional zoom for single-point mode (default 14) */
   zoom?: number;
   startCity?: string;
   endCity?: string;
-  /** Optional location label for event mode */
   locationName?: string;
-  /** Custom height (default 150) */
   height?: number;
 };
 
@@ -104,14 +78,8 @@ export function RouteMiniMap({
   height = 150,
 }: Props) {
   const url = useMemo(() => {
-    // Route mode
-    if (polyline && polyline.length >= 2) {
-      return buildRouteUrl(polyline);
-    }
-    // Single-point mode
-    if (lat != null && lng != null) {
-      return buildPointUrl(lat, lng, zoom);
-    }
+    if (polyline && polyline.length >= 2) return buildRouteUrl(polyline);
+    if (lat != null && lng != null) return buildPointUrl(lat, lng, zoom);
     return "";
   }, [polyline, lat, lng, zoom]);
 
@@ -127,7 +95,6 @@ export function RouteMiniMap({
     <View style={[styles.wrap, { height }]}>
       <Image source={{ uri: url }} style={styles.image} resizeMode="cover" />
 
-      {/* City labels for route mode */}
       {startCity ? (
         <View style={[styles.cityTag, styles.startTag]}>
           <View style={[styles.dot, { backgroundColor: Colors.accent }]} />
@@ -142,7 +109,6 @@ export function RouteMiniMap({
         </View>
       ) : null}
 
-      {/* Location label for event mode */}
       {locationName && !startCity ? (
         <View style={[styles.cityTag, styles.startTag, { maxWidth: 200 }]}>
           <View style={[styles.dot, { backgroundColor: Colors.accent }]} />
@@ -162,19 +128,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  placeholder: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  placeholderText: {
-    color: Colors.muted,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
+  image: { width: "100%", height: "100%" },
+  placeholder: { alignItems: "center", justifyContent: "center" },
+  placeholderText: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
   cityTag: {
     position: "absolute",
     bottom: 8,
@@ -191,14 +147,6 @@ const styles = StyleSheet.create({
   },
   startTag: { left: 8 },
   endTag: { right: 8 },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  cityText: {
-    color: Colors.text,
-    fontSize: 10,
-    fontFamily: "Inter_600SemiBold",
-  },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  cityText: { color: Colors.text, fontSize: 10, fontFamily: "Inter_600SemiBold" },
 });
