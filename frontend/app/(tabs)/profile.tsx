@@ -656,31 +656,52 @@ export default function ProfileScreen() {
 
         {/* SETTINGS */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Profile settings</Text>
+          <Text style={styles.sectionTitle}>{t("profile.profileSettings")}</Text>
           <Row
-            title="Edit Profile"
-            subtitle="Bio, motorcycle, country"
+            title={t("profile.editProfile")}
+            subtitle={t("profile.bioMotorcycleCountry")}
             leftIcon="person-outline"
             onPress={() => router.push("/profile/edit")}
           />
           <Row
-            title="Friends"
-            subtitle={`${friends.length} friends · Add or message`}
+            title={t("profile.friends")}
+            subtitle={`${friends.length} ${t("profile.friendsAddOrMessage")}`}
             leftIcon="people-outline"
             onPress={() => router.push("/profile/friends")}
           />
           <Row
-            title="Privacy Settings"
-            subtitle="Location visibility & routes"
+            title={t("profile.privacySettings")}
+            subtitle={t("profile.privacySubtitle")}
             leftIcon="shield-outline"
             onPress={() => router.push("/profile/edit")}
           />
           <Row
-            title="Notifications"
-            subtitle="Routes, events, messages"
+            title={t("settings.language")}
+            subtitle={i18n.language === "ro" ? t("settings.romanian") : t("settings.english")}
+            leftIcon="language-outline"
+            right={
+              <View style={styles.langSwitcher}>
+                <Pressable
+                  onPress={() => i18n.changeLanguage("en")}
+                  style={[styles.langBtn, i18n.language === "en" && styles.langBtnActive]}
+                >
+                  <Text style={[styles.langBtnText, i18n.language === "en" && styles.langBtnTextActive]}>EN</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => i18n.changeLanguage("ro")}
+                  style={[styles.langBtn, i18n.language === "ro" && styles.langBtnActive]}
+                >
+                  <Text style={[styles.langBtnText, i18n.language === "ro" && styles.langBtnTextActive]}>RO</Text>
+                </Pressable>
+              </View>
+            }
+          />
+          <Row
+            title={t("profile.notifications")}
+            subtitle={t("profile.notificationsSubtitle")}
             leftIcon="notifications-outline"
             onPress={() => {}}
-            right={<Text style={styles.lockedText}>Coming soon</Text>}
+            right={<Text style={styles.lockedText}>{t("common.comingSoon")}</Text>}
           />
         </View>
 
