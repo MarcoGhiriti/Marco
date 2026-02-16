@@ -380,6 +380,7 @@ function CreateListingModal({
         license_type: licenseType || undefined,
         condition,
         images,
+        phone: phone.trim() || undefined,
       }, authHeader);
 
       Alert.alert("Success", "Your listing has been created!");
