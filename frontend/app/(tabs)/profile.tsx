@@ -1205,6 +1205,32 @@ const styles = StyleSheet.create({
   rowSubtitle: { marginTop: 2, color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
   lockedText: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
 
+  // Language switcher
+  langSwitcher: {
+    flexDirection: "row",
+    gap: 4,
+  },
+  langBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  langBtnActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  langBtnText: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
+  langBtnTextActive: {
+    color: Colors.bg,
+  },
+
   // Tab Switcher Styles
   tabSwitcher: {
     flexDirection: "row",
