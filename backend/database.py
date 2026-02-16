@@ -300,7 +300,7 @@ async def ensure_indexes():
 
         # Messages indexes
         await db.messages.create_index([("thread_id", 1), ("created_at", -1)], background=True)
-        await db.thread_reads.create_index([("user_id", 1), ("thread_id", 1)], unique=True, background=True)
+        await db.thread_reads.create_index([("user_id", 1), ("thread_id", 1)], background=True)
 
         # Notifications indexes
         await db.notifications.create_index([("user_id", 1), ("created_at", -1)], background=True)
