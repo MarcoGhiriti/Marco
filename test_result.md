@@ -211,11 +211,14 @@ frontend:
     file: "/app/frontend/src/components/RouteMiniMap.tsx"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Am ajustat grid lines la gri (muted) + opacitate/width pentru a simula străzi adiacente. Necesită verificare vizuală."
+      - working: false
+        agent: "testing"
+        comment: "❌ NU POATE FI TESTAT: Login blocker împiedică accesul la Routes/Home tab pentru verificarea mini-map-ului cu grid gri. Din cod se observă că grid lines folosesc Colors.muted cu strokeOpacity={0.35} și strokeWidth={0.6} - implementarea pare corectă tehnic, dar necesită testare vizuală după rezolvarea problemei de login."
 
   - task: "Map screen: doar Report Police + event markers toggle"
     implemented: true
