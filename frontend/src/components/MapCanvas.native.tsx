@@ -215,7 +215,7 @@ export default function MapCanvas({
       </Animated.View>
 
       <Pressable style={styles.recenterBtn} onPress={onRecenter}>
-        <Ionicons name="locate" size={18} color={Colors.bg} />
+        <Ionicons name="locate" size={18} color={Colors.text} />
       </Pressable>
 
       <Pressable style={styles.reportFab} onPress={onReportPolice}>
