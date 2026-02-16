@@ -858,6 +858,79 @@ const styles = StyleSheet.create({
   centerText: { color: Colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" },
   errorTitle: { color: Colors.text, fontSize: 14, fontWeight: "800" },
   errorText: { color: Colors.muted, fontSize: 12, textAlign: "center" },
+
+  // Feed toggle buttons
+  storiesRow: { flexDirection: "row" as const, alignItems: "flex-start" },
+  feedToggles: {
+    paddingRight: 12,
+    paddingTop: 10,
+    gap: 6,
+    alignItems: "center" as const,
+  },
+  feedToggle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  feedToggleActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  feedToggleActiveEvent: {
+    backgroundColor: "#D97706",
+    borderColor: "#D97706",
+  },
+
+  // Event card in home feed
+  eventFeedCard: {
+    borderRadius: 16,
+    overflow: "hidden" as const,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  eventFeedInfo: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+  },
+  eventFeedTitle: {
+    color: Colors.text,
+    fontSize: 15,
+    fontWeight: "700" as const,
+    marginBottom: 4,
+  },
+  eventFeedMeta: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 4,
+    marginTop: 2,
+  },
+  eventFeedMetaText: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontWeight: "500" as const,
+  },
+  eventBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 4,
+    backgroundColor: "#D97706",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  eventBadgeText: {
+    color: Colors.bg,
+    fontSize: 11,
+    fontWeight: "700" as const,
+  },
   
   // Ride Progress Modal Styles
   modalOverlay: {
