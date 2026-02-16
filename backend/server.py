@@ -53,52 +53,8 @@ class UnreadSummaryOut(BaseModel):
     dm_user_ids: list[str]
     group_ids: list[str]
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / ".env")
-# Re-read env after loading .env
-
-logger = logging.getLogger("moto-go")
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-
-mongo_url = os.environ["MONGO_URL"]
-db_name = os.environ.get("DB_NAME", "test_database")
-client = AsyncIOMotorClient(mongo_url)
-db = client[db_name]
-
-GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
-
-
-def haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
-    """Calculate distance in km between two points using Haversine formula."""
-    R = 6371  # Earth's radius in km
-    
-    lat1_rad = math.radians(lat1)
-    lat2_rad = math.radians(lat2)
-    delta_lat = math.radians(lat2 - lat1)
-    delta_lng = math.radians(lng2 - lng1)
-    
-    a = math.sin(delta_lat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lng / 2) ** 2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    
-    return R * c
-
-
 fastapi_app = FastAPI()
 api_router = APIRouter(prefix="/api")
-security = HTTPBearer(auto_error=False)
-
-sio = socketio.AsyncServer(
-    async_mode="asgi",
-    cors_allowed_origins="*",
-    ping_interval=20,
-    ping_timeout=20,
-)
-
-# In-memory mapping of socket session -> user_id
-sid_to_user: dict[str, str] = {}
 
 
 @sio.event
