@@ -286,6 +286,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent,
     borderColor: Colors.accent,
   },
+  filterChipActiveGas: {
+    backgroundColor: "#FFB020",
+    borderColor: "#FFB020",
+  },
+  filterChipActiveService: {
+    backgroundColor: "#4A90D9",
+    borderColor: "#4A90D9",
+  },
   searchButton: {
     position: "absolute",
     top: 16,
