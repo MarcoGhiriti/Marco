@@ -223,6 +223,9 @@ frontend:
         agent: "testing"
         comment: "Testing agent: nu a putut loga, testarea mini-map nu a fost posibilă." 
       - working: false
+        agent: "main"
+        comment: "Am eliminat gridul și am trecut mini-map pe MapView (native) pentru străzi reale; web rămâne SVG simplu. Necesită retestare vizuală." 
+      - working: false
         agent: "testing"
         comment: "❌ NU POATE FI TESTAT: Login blocker împiedică accesul la Routes/Home tab pentru verificarea mini-map-ului cu grid gri. Din cod se observă că grid lines folosesc Colors.muted cu strokeOpacity={0.35} și strokeWidth={0.6} - implementarea pare corectă tehnic, dar necesită testare vizuală după rezolvarea problemei de login."
 
