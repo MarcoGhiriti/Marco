@@ -661,6 +661,35 @@ class EventOut(BaseModel):
     created_at: datetime
 
 
+class MapPlaceOut(BaseModel):
+    id: str
+    name: str
+    lat: float
+    lng: float
+    place_type: str
+
+
+class PoliceReportCreate(BaseModel):
+    lat: float
+    lng: float
+
+
+class PoliceReportOut(BaseModel):
+    id: str
+    lat: float
+    lng: float
+    created_at: datetime
+    expires_at: datetime
+    upvotes: int = 0
+    downvotes: int = 0
+
+
+class PoliceVote(BaseModel):
+    vote: Literal["up", "down"]
+    lat: float
+    lng: float
+
+
 # -----------------
 # Places Autocomplete Models
 # -----------------
