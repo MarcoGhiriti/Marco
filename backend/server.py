@@ -3677,6 +3677,211 @@ async def get_leaderboard(limit: int = Query(default=50, ge=1, le=100)):
     return result
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# MARKETPLACE ENDPOINTS (Second Hand / OLX-like listings)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class MarketplaceListingIn(BaseModel):
+    title: str
+    description: Optional[str] = None
+    price: float
+    currency: str = "EUR"
+    location: str
+    category: str  # motorcycle, accessories, gear, parts
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    year: Optional[int] = None
+    engine_cc: Optional[int] = None
+    horsepower: Optional[int] = None
+    kilometers: Optional[int] = None
+    license_type: Optional[str] = None  # A1, A2, A
+    condition: str = "Used"  # New, Used
+    images: list[str] = []  # base64 encoded images
+
+class MarketplaceListingOut(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    price: float
+    currency: str
+    location: str
+    category: str
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    year: Optional[int] = None
+    engine_cc: Optional[int] = None
+    horsepower: Optional[int] = None
+    kilometers: Optional[int] = None
+    license_type: Optional[str] = None
+    condition: str
+    images: list[str] = []
+    seller_id: str
+    seller_username: str
+    created_at: str
+    is_active: bool = True
+
+@api_router.get("/marketplace/listings", response_model=list[MarketplaceListingOut])
+async def get_marketplace_listings(
+    category: Optional[str] = None,
+    q: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all marketplace listings with optional filters"""
+    filter_query: dict = {"is_active": True}
+    
+    if category:
+        filter_query["category"] = category
+    
+    if q:
+        filter_query["$or"] = [
+            {"title": {"$regex": q, "$options": "i"}},
+            {"description": {"$regex": q, "$options": "i"}},
+            {"brand": {"$regex": q, "$options": "i"}},
+            {"model": {"$regex": q, "$options": "i"}},
+        ]
+    
+    listings = await db.marketplace_listings.find(filter_query).sort("created_at", -1).to_list(100)
+    
+    result = []
+    for listing in listings:
+        result.append(MarketplaceListingOut(
+            id=str(listing["_id"]),
+            title=listing["title"],
+            description=listing.get("description"),
+            price=listing["price"],
+            currency=listing.get("currency", "EUR"),
+            location=listing["location"],
+            category=listing["category"],
+            brand=listing.get("brand"),
+            model=listing.get("model"),
+            year=listing.get("year"),
+            engine_cc=listing.get("engine_cc"),
+            horsepower=listing.get("horsepower"),
+            kilometers=listing.get("kilometers"),
+            license_type=listing.get("license_type"),
+            condition=listing.get("condition", "Used"),
+            images=listing.get("images", []),
+            seller_id=str(listing["seller_id"]),
+            seller_username=listing.get("seller_username", "Unknown"),
+            created_at=listing["created_at"].isoformat(),
+            is_active=listing.get("is_active", True),
+        ))
+    
+    return result
+
+@api_router.post("/marketplace/listings", response_model=MarketplaceListingOut)
+async def create_marketplace_listing(
+    data: MarketplaceListingIn,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a new marketplace listing"""
+    user_id = ObjectId(current_user["id"])
+    user = await db.users.find_one({"_id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    listing_doc = {
+        "title": data.title,
+        "description": data.description,
+        "price": data.price,
+        "currency": data.currency,
+        "location": data.location,
+        "category": data.category,
+        "brand": data.brand,
+        "model": data.model,
+        "year": data.year,
+        "engine_cc": data.engine_cc,
+        "horsepower": data.horsepower,
+        "kilometers": data.kilometers,
+        "license_type": data.license_type,
+        "condition": data.condition,
+        "images": data.images[:10],  # Max 10 images
+        "seller_id": user_id,
+        "seller_username": user.get("username", "Unknown"),
+        "created_at": datetime.utcnow(),
+        "is_active": True,
+    }
+    
+    result = await db.marketplace_listings.insert_one(listing_doc)
+    listing_doc["_id"] = result.inserted_id
+    
+    return MarketplaceListingOut(
+        id=str(listing_doc["_id"]),
+        title=listing_doc["title"],
+        description=listing_doc.get("description"),
+        price=listing_doc["price"],
+        currency=listing_doc.get("currency", "EUR"),
+        location=listing_doc["location"],
+        category=listing_doc["category"],
+        brand=listing_doc.get("brand"),
+        model=listing_doc.get("model"),
+        year=listing_doc.get("year"),
+        engine_cc=listing_doc.get("engine_cc"),
+        horsepower=listing_doc.get("horsepower"),
+        kilometers=listing_doc.get("kilometers"),
+        license_type=listing_doc.get("license_type"),
+        condition=listing_doc.get("condition", "Used"),
+        images=listing_doc.get("images", []),
+        seller_id=str(listing_doc["seller_id"]),
+        seller_username=listing_doc.get("seller_username", "Unknown"),
+        created_at=listing_doc["created_at"].isoformat(),
+        is_active=listing_doc.get("is_active", True),
+    )
+
+@api_router.get("/marketplace/listings/{listing_id}", response_model=MarketplaceListingOut)
+async def get_marketplace_listing(
+    listing_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get a single marketplace listing by ID"""
+    listing = await db.marketplace_listings.find_one({"_id": ObjectId(listing_id)})
+    
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    return MarketplaceListingOut(
+        id=str(listing["_id"]),
+        title=listing["title"],
+        description=listing.get("description"),
+        price=listing["price"],
+        currency=listing.get("currency", "EUR"),
+        location=listing["location"],
+        category=listing["category"],
+        brand=listing.get("brand"),
+        model=listing.get("model"),
+        year=listing.get("year"),
+        engine_cc=listing.get("engine_cc"),
+        horsepower=listing.get("horsepower"),
+        kilometers=listing.get("kilometers"),
+        license_type=listing.get("license_type"),
+        condition=listing.get("condition", "Used"),
+        images=listing.get("images", []),
+        seller_id=str(listing["seller_id"]),
+        seller_username=listing.get("seller_username", "Unknown"),
+        created_at=listing["created_at"].isoformat(),
+        is_active=listing.get("is_active", True),
+    )
+
+@api_router.delete("/marketplace/listings/{listing_id}")
+async def delete_marketplace_listing(
+    listing_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete a marketplace listing (only by owner)"""
+    user_id = ObjectId(current_user["id"])
+    listing = await db.marketplace_listings.find_one({"_id": ObjectId(listing_id)})
+    
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    if listing["seller_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this listing")
+    
+    await db.marketplace_listings.delete_one({"_id": ObjectId(listing_id)})
+    return {"status": "deleted"}
+
+
 # Include router
 fastapi_app.include_router(api_router)
 
