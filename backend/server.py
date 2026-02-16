@@ -1805,6 +1805,26 @@ async def friends_cancel(payload: FriendAccept, current_user: dict = Depends(get
     return {"ok": True}
 
 
+@api_router.post("/friends/remove")
+async def friends_remove(payload: FriendAccept, current_user: dict = Depends(get_current_user)):
+    """Remove an existing friend."""
+    friend_id = payload.from_user_id
+    uid = current_user["id"]
+
+    if friend_id not in (current_user.get("friends") or []):
+        raise HTTPException(status_code=400, detail="Not in friends list")
+
+    await db.users.update_one(
+        {"_id": _as_object_id(uid)},
+        {"$pull": {"friends": friend_id}},
+    )
+    await db.users.update_one(
+        {"_id": _as_object_id(friend_id)},
+        {"$pull": {"friends": uid}},
+    )
+    return {"ok": True}
+
+
 class InboxConversation(BaseModel):
     kind: Literal["dm", "group"]
     # DM fields
