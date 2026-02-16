@@ -3699,6 +3699,7 @@ class MarketplaceListingIn(BaseModel):
     license_type: Optional[str] = None  # A1, A2, A
     condition: str = "Used"  # New, Used
     images: list[str] = []  # base64 encoded images
+    phone: Optional[str] = None  # Contact phone number
 
 class MarketplaceListingOut(BaseModel):
     id: str
@@ -3718,6 +3719,8 @@ class MarketplaceListingOut(BaseModel):
     condition: str
     images: list[str] = []
     seller_id: str
+    seller_username: str
+    phone: Optional[str] = None
     seller_username: str
     created_at: str
     is_active: bool = True
