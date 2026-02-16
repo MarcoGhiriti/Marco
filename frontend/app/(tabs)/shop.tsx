@@ -983,6 +983,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
   },
+  sellerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  sellerName: {
+    color: Colors.accent,
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    maxWidth: 100,
+  },
   listingKm: {
     color: Colors.muted,
     fontSize: 11,
