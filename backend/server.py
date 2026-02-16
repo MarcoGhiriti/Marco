@@ -2440,6 +2440,224 @@ async def list_events(
     return result
 
 
+@api_router.get("/map/events", response_model=list[EventOut])
+async def map_events(
+    min_lat: float,
+    max_lat: float,
+    min_lng: float,
+    max_lng: float,
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
+    now = datetime.utcnow()
+    query = {
+        "start_time": {"$gte": now},
+        "start_point.0": {"$gte": min_lat, "$lte": max_lat},
+        "start_point.1": {"$gte": min_lng, "$lte": max_lng},
+    }
+    cursor = db.events.find(query).sort("created_at", -1)
+    events = await cursor.to_list(length=200)
+    result: list[EventOut] = []
+    for e in events:
+        participants = e.get("participants") or []
+        result.append(
+            EventOut(
+                id=_oid_str(e.get("_id")),
+                title=e.get("title", ""),
+                description=e.get("description", ""),
+                start_point=e.get("start_point", [0, 0]),
+                location_name=e.get("location_name", ""),
+                start_time=e.get("start_time") or datetime.utcnow(),
+                poster_base64=e.get("poster_base64"),
+                associated_route_id=e.get("associated_route_id"),
+                participants_count=len(participants),
+                is_joined=uid in participants,
+                created_by=e.get("created_by", ""),
+                created_at=e.get("created_at") or datetime.utcnow(),
+            )
+        )
+    return result
+
+
+@api_router.get("/map/gas-service", response_model=list[MapPlaceOut])
+async def map_gas_service(
+    min_lat: float,
+    max_lat: float,
+    min_lng: float,
+    max_lng: float,
+    current_user: dict = Depends(get_current_user),
+):
+    if not GOOGLE_MAPS_API_KEY:
+        raise HTTPException(status_code=500, detail="Google Maps API key missing")
+    center_lat = (min_lat + max_lat) / 2
+    center_lng = (min_lng + max_lng) / 2
+    diagonal_km = haversine_distance(min_lat, min_lng, max_lat, max_lng)
+    radius_m = min(50000, max(1000, int((diagonal_km / 2) * 1000)))
+    place_types = [("gas_station", "gas"), ("car_repair", "service")]
+    results: Dict[str, MapPlaceOut] = {}
+    async with httpx.AsyncClient() as client:
+        for place_type, label in place_types:
+            params = {
+                "location": f"{center_lat},{center_lng}",
+                "radius": radius_m,
+                "type": place_type,
+                "key": GOOGLE_MAPS_API_KEY,
+            }
+            resp = await client.get(
+                "https://maps.googleapis.com/maps/api/place/nearbysearch/json",
+                params=params,
+                timeout=20,
+            )
+            data = resp.json()
+            for place in data.get("results", []):
+                geometry = place.get("geometry", {}).get("location", {})
+                lat = geometry.get("lat")
+                lng = geometry.get("lng")
+                if lat is None or lng is None:
+                    continue
+                if not (min_lat <= lat <= max_lat and min_lng <= lng <= max_lng):
+                    continue
+                place_id = place.get("place_id")
+                if not place_id or place_id in results:
+                    continue
+                results[place_id] = MapPlaceOut(
+                    id=place_id,
+                    name=place.get("name", "Unknown"),
+                    lat=lat,
+                    lng=lng,
+                    place_type=label,
+                )
+    return list(results.values())
+
+
+@api_router.post("/map/police-reports", response_model=PoliceReportOut)
+async def create_police_report(
+    payload: PoliceReportCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    now = datetime.utcnow()
+    expires_at = now + timedelta(minutes=30)
+    doc = {
+        "user_id": current_user["id"],
+        "location": [payload.lat, payload.lng],
+        "created_at": now,
+        "expires_at": expires_at,
+        "upvotes": 0,
+        "downvotes": 0,
+        "votes": {},
+    }
+    result = await db.police_reports.insert_one(doc)
+    return PoliceReportOut(
+        id=_oid_str(result.inserted_id),
+        lat=payload.lat,
+        lng=payload.lng,
+        created_at=now,
+        expires_at=expires_at,
+        upvotes=0,
+        downvotes=0,
+    )
+
+
+@api_router.get("/map/police-reports", response_model=list[PoliceReportOut])
+async def get_police_reports(
+    min_lat: float,
+    max_lat: float,
+    min_lng: float,
+    max_lng: float,
+    current_user: dict = Depends(get_current_user),
+):
+    now = datetime.utcnow()
+    query = {
+        "expires_at": {"$gt": now},
+        "location.0": {"$gte": min_lat, "$lte": max_lat},
+        "location.1": {"$gte": min_lng, "$lte": max_lng},
+    }
+    reports = await db.police_reports.find(query).to_list(length=200)
+    return [
+        PoliceReportOut(
+            id=_oid_str(report.get("_id")),
+            lat=report["location"][0],
+            lng=report["location"][1],
+            created_at=report["created_at"],
+            expires_at=report["expires_at"],
+            upvotes=report.get("upvotes", 0),
+            downvotes=report.get("downvotes", 0),
+        )
+        for report in reports
+    ]
+
+
+@api_router.post("/map/police-reports/{report_id}/vote", response_model=PoliceReportOut)
+async def vote_police_report(
+    report_id: str,
+    payload: PoliceVote,
+    current_user: dict = Depends(get_current_user),
+):
+    report = await db.police_reports.find_one({"_id": ObjectId(report_id)})
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    now = datetime.utcnow()
+    if report.get("expires_at") and report["expires_at"] <= now:
+        raise HTTPException(status_code=404, detail="Report expired")
+    distance_km = haversine_distance(payload.lat, payload.lng, report["location"][0], report["location"][1])
+    if distance_km > 1:
+        raise HTTPException(status_code=400, detail="Too far from report")
+
+    votes = report.get("votes", {})
+    previous_vote = votes.get(current_user["id"])
+    upvotes = report.get("upvotes", 0)
+    downvotes = report.get("downvotes", 0)
+
+    if previous_vote == payload.vote:
+        return PoliceReportOut(
+            id=_oid_str(report.get("_id")),
+            lat=report["location"][0],
+            lng=report["location"][1],
+            created_at=report["created_at"],
+            expires_at=report["expires_at"],
+            upvotes=upvotes,
+            downvotes=downvotes,
+        )
+
+    if previous_vote == "up":
+        upvotes = max(0, upvotes - 1)
+    elif previous_vote == "down":
+        downvotes = max(0, downvotes - 1)
+
+    expires_at = report.get("expires_at", now)
+    if payload.vote == "up":
+        upvotes += 1
+        expires_at = now + timedelta(minutes=30)
+    else:
+        downvotes += 1
+        if downvotes >= upvotes + 2:
+            expires_at = now
+
+    votes[current_user["id"]] = payload.vote
+
+    await db.police_reports.update_one(
+        {"_id": report["_id"]},
+        {
+            "$set": {
+                "upvotes": upvotes,
+                "downvotes": downvotes,
+                "votes": votes,
+                "expires_at": expires_at,
+            }
+        },
+    )
+
+    return PoliceReportOut(
+        id=_oid_str(report.get("_id")),
+        lat=report["location"][0],
+        lng=report["location"][1],
+        created_at=report["created_at"],
+        expires_at=expires_at,
+        upvotes=upvotes,
+        downvotes=downvotes,
+    )
+
+
 @api_router.get("/events/my", response_model=list[EventOut])
 async def get_my_events(current_user: dict = Depends(get_current_user)):
     """Get events created by the current user."""
