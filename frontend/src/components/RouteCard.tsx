@@ -26,6 +26,7 @@ export function RouteCard({
   onStartRide,
   onEndRide,
 }: RouteCardProps) {
+  const { t } = useTranslation();
   const diffColor = useMemo(() => {
     if (item.difficulty === "easy") return Colors.success;
     if (item.difficulty === "medium") return "#FFC107";
@@ -109,7 +110,7 @@ export function RouteCard({
           </View>
           <View style={styles.statItem}>
             <Ionicons name="time-outline" size={14} color={Colors.accent} />
-            <Text style={styles.statText}>{item.duration_min ?? 0} min</Text>
+            <Text style={styles.statText}>{formatDuration(item.duration_min)}</Text>
           </View>
           <View style={styles.statItem}>
             <Ionicons name="people-outline" size={14} color={Colors.accent} />
@@ -118,7 +119,7 @@ export function RouteCard({
           {(item.stops_count ?? 0) > 0 && (
             <View style={styles.statItem}>
               <Ionicons name="flag-outline" size={14} color={Colors.accent} />
-              <Text style={styles.statText}>{item.stops_count} stops</Text>
+              <Text style={styles.statText}>{item.stops_count} {t("routes.stops")}</Text>
             </View>
           )}
         </View>
