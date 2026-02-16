@@ -16,8 +16,10 @@ type MapCanvasProps = {
   policeReports: any[];
   showEvents: boolean;
   showGas: boolean;
+  showService: boolean;
   onToggleEvents: () => void;
   onToggleGas: () => void;
+  onToggleService: () => void;
   onReportPolice: () => void;
   onVotePolice: (reportId: string, vote: "up" | "down", lat: number, lng: number) => void;
   isFetching: boolean;
