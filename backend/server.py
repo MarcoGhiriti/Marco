@@ -4146,6 +4146,67 @@ async def delete_marketplace_listing(
     return {"status": "deleted"}
 
 
+# ──────────────────── STATIC MAP IMAGE PROXY ────────────────────
+import urllib.parse
+
+STATIC_MAP_STYLES = "&".join([
+    "style=element:geometry|color:0x101615",
+    "style=element:labels.text.fill|color:0x8da39c",
+    "style=element:labels.text.stroke|color:0x101615",
+    "style=feature:road|element:geometry|color:0x242d2b",
+    "style=feature:road|element:geometry.stroke|color:0x141b19",
+    "style=feature:road.highway|element:geometry|color:0x303b38",
+    "style=feature:road.highway|element:geometry.stroke|color:0x394543",
+    "style=feature:water|element:geometry|color:0x0f1b18",
+    "style=feature:landscape|element:geometry|color:0x0f1413",
+    "style=feature:poi|visibility:off",
+    "style=feature:transit|visibility:off",
+])
+
+
+@api_router.get("/map/static-image")
+async def get_static_map_image(
+    # Route mode params
+    polyline_str: Optional[str] = Query(None, description="Encoded polyline string"),
+    start_lat: Optional[float] = None,
+    start_lng: Optional[float] = None,
+    end_lat: Optional[float] = None,
+    end_lng: Optional[float] = None,
+    start_city: Optional[str] = None,
+    end_city: Optional[str] = None,
+    # Single-point mode params
+    lat: Optional[float] = None,
+    lng: Optional[float] = None,
+    zoom: int = 14,
+    # Common
+    w: int = 640,
+    h: int = 220,
+):
+    """Return Google Maps Static API URL for map previews."""
+    gmaps_key = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+    if not gmaps_key:
+        raise HTTPException(status_code=500, detail="Google Maps API key not configured")
+
+    base = f"https://maps.googleapis.com/maps/api/staticmap?size={w}x{h}&scale=2&maptype=roadmap&{STATIC_MAP_STYLES}"
+
+    if polyline_str:
+        # Route mode with encoded polyline
+        path_param = f"&path=color:0x36F19AFF|weight:4|enc:{polyline_str}"
+        markers = ""
+        if start_lat is not None and start_lng is not None:
+            markers += f"&markers=size:small|color:0x36F19A|{start_lat},{start_lng}"
+        if end_lat is not None and end_lng is not None:
+            markers += f"&markers=size:small|color:0xFF3B30|{end_lat},{end_lng}"
+        url = f"{base}{path_param}{markers}&key={gmaps_key}"
+    elif lat is not None and lng is not None:
+        # Single-point mode
+        url = f"{base}&center={lat},{lng}&zoom={zoom}&markers=size:mid|color:0x36F19A|{lat},{lng}&key={gmaps_key}"
+    else:
+        raise HTTPException(status_code=400, detail="Provide polyline_str or lat+lng")
+
+    return {"url": url}
+
+
 # Include router
 fastapi_app.include_router(api_router)
 
