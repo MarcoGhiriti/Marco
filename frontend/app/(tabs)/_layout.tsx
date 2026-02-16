@@ -1,22 +1,15 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, StyleSheet, Platform, Dimensions, Pressable } from "react-native";
+import { View, StyleSheet, Platform } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
-  interpolate,
-  Extrapolate,
 } from "react-native-reanimated";
 import { Colors } from "../../src/theme/colors";
-import { useAuthStore } from "../../src/state/authStore";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const TAB_COUNT = 5;
-const TAB_WIDTH = SCREEN_WIDTH / TAB_COUNT;
-const INDICATOR_WIDTH = 32;
 const CENTER_BUTTON_SIZE = 58;
 
 // Animated Tab Icon Component
@@ -29,12 +22,13 @@ function AnimatedTabIcon({
   focused: boolean;
   isCenter?: boolean;
 }) {
-  const scale = useSharedValue(1);
-  const translateY = useSharedValue(0);
-  const indicatorOpacity = useSharedValue(0);
-  const glowOpacity = useSharedValue(0);
+  const scale = useSharedValue(focused ? 1.15 : 1);
+  const translateY = useSharedValue(focused ? -4 : 0);
+  const indicatorOpacity = useSharedValue(focused ? 1 : 0);
+  const glowOpacity = useSharedValue(focused && isCenter ? 0.5 : 0);
 
-  useEffect(() => {
+  // Update values when focused changes
+  React.useEffect(() => {
     if (focused) {
       scale.value = withSpring(1.15, { damping: 12, stiffness: 200 });
       translateY.value = withSpring(-4, { damping: 12, stiffness: 200 });
@@ -48,7 +42,7 @@ function AnimatedTabIcon({
       indicatorOpacity.value = withTiming(0, { duration: 150 });
       glowOpacity.value = withTiming(0, { duration: 150 });
     }
-  }, [focused]);
+  }, [focused, isCenter]);
 
   const iconAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -102,8 +96,6 @@ function AnimatedTabIcon({
 }
 
 export default function TabsLayout() {
-  const { accessToken } = useAuthStore();
-
   return (
     <Tabs
       screenOptions={{
