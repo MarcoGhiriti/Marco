@@ -211,9 +211,7 @@ metadata:
 
 
 test_plan:
-  current_focus:
-    - "Marketplace: phone field + My Listings + listing detail"
-    - "Marketplace backend filters (mine + 3 months)"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
