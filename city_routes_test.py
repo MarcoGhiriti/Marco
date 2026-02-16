@@ -24,7 +24,7 @@ import httpx
 class CityRoutesBackendTester:
     def __init__(self):
         # Use the production URL from frontend/.env
-        self.base_url = "https://motogo-social.preview.emergentagent.com"
+        self.base_url = "https://riders-platform-1.preview.emergentagent.com"
         self.api_url = f"{self.base_url}/api"
         
         # Test data storage
