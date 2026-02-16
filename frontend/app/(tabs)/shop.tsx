@@ -313,6 +313,7 @@ function CreateListingModal({
   const [licenseType, setLicenseType] = useState("");
   const [condition, setCondition] = useState("Used");
   const [images, setImages] = useState<string[]>([]);
+  const [phone, setPhone] = useState("");
 
   const resetForm = () => {
     setStep(1);
@@ -331,6 +332,7 @@ function CreateListingModal({
     setLicenseType("");
     setCondition("Used");
     setImages([]);
+    setPhone("");
   };
 
   const handlePickImage = async () => {
