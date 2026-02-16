@@ -395,28 +395,52 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* MY CONTENT - Tab Switcher */}
+        {/* MY CONTENT - Expandable Section */}
         <View style={styles.section}>
-          <View style={styles.tabSwitcher}>
-            <Pressable 
-              onPress={() => setActiveTab("routes")} 
-              style={[styles.tabBtn, activeTab === "routes" && styles.tabBtnActive]}
-            >
-              <Ionicons name="map" size={18} color={activeTab === "routes" ? Colors.accent : Colors.muted} />
-              <Text style={[styles.tabBtnText, activeTab === "routes" && styles.tabBtnTextActive]}>
-                My Routes ({myRoutes.length})
-              </Text>
-            </Pressable>
-            <Pressable 
-              onPress={() => setActiveTab("events")} 
-              style={[styles.tabBtn, activeTab === "events" && styles.tabBtnActive]}
-            >
-              <Ionicons name="calendar" size={18} color={activeTab === "events" ? Colors.accent : Colors.muted} />
-              <Text style={[styles.tabBtnText, activeTab === "events" && styles.tabBtnTextActive]}>
-                My Events ({myEvents.length})
-              </Text>
-            </Pressable>
-          </View>
+          <Pressable 
+            onPress={() => setShowMyContent(!showMyContent)} 
+            style={styles.myContentHeader}
+          >
+            <View style={styles.myContentHeaderLeft}>
+              <View style={styles.myContentIconBox}>
+                <Ionicons name="folder-open" size={20} color={Colors.accent} />
+              </View>
+              <View>
+                <Text style={styles.myContentTitle}>My Created Content</Text>
+                <Text style={styles.myContentSub}>
+                  {myRoutes.length} routes · {myEvents.length} events
+                </Text>
+              </View>
+            </View>
+            <Ionicons 
+              name={showMyContent ? "chevron-up" : "chevron-down"} 
+              size={20} 
+              color={Colors.muted} 
+            />
+          </Pressable>
+
+          {showMyContent && (
+            <>
+              <View style={styles.tabSwitcher}>
+                <Pressable 
+                  onPress={() => setActiveTab("routes")} 
+                  style={[styles.tabBtn, activeTab === "routes" && styles.tabBtnActive]}
+                >
+                  <Ionicons name="map" size={18} color={activeTab === "routes" ? Colors.accent : Colors.muted} />
+                  <Text style={[styles.tabBtnText, activeTab === "routes" && styles.tabBtnTextActive]}>
+                    My Routes ({myRoutes.length})
+                  </Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => setActiveTab("events")} 
+                  style={[styles.tabBtn, activeTab === "events" && styles.tabBtnActive]}
+                >
+                  <Ionicons name="calendar" size={18} color={activeTab === "events" ? Colors.accent : Colors.muted} />
+                  <Text style={[styles.tabBtnText, activeTab === "events" && styles.tabBtnTextActive]}>
+                    My Events ({myEvents.length})
+                  </Text>
+                </Pressable>
+              </View>
 
           {/* Create Button */}
           <Pressable 
