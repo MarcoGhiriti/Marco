@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,11 +19,24 @@ import { useAuthStore } from "../../src/state/authStore";
 type UserProfile = {
   id: string;
   username: string;
-  email?: string;
-  avatar?: string | null;
+  profile_photo_base64?: string | null;
+  bio?: string;
+  bike?: { model?: string; cc?: number } | null;
+  country?: string | null;
   level?: number;
-  km_tracked?: number;
+  km_total?: number;
+  joined_routes?: number;
+  joined_events?: number;
+  license_type?: string | null;
+  license_verified?: boolean;
+  relationship: "self" | "not_friends" | "request_sent" | "request_received" | "friends";
+  created_at?: string;
 };
+
+const LEVEL_NAMES = [
+  "Newbie", "Beginner", "Rider", "Explorer", "Adventurer",
+  "Veteran", "Expert", "Master", "Legend", "Ultimate",
+];
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,57 +46,99 @@ export default function UserProfileScreen() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isFriend, setIsFriend] = useState(false);
-  const [requestSent, setRequestSent] = useState(false);
-  const [sendingRequest, setSendingRequest] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
-  const isOwnProfile = me?.id === id;
-
-  useEffect(() => {
-    loadUser();
-    checkFriendship();
-  }, [id]);
-
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     if (!headers || !id) return;
     setLoading(true);
+    setError(null);
     try {
-      const userData = await apiGet<UserProfile>(`/api/users/${id}`, headers);
-      setUser(userData);
+      const data = await apiGet<UserProfile>(`/api/users/${id}`, headers);
+      setUser(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error loading profile");
+      setError(e instanceof Error ? e.message : "Eroare la încărcare");
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers, id]);
 
-  const checkFriendship = async () => {
-    if (!headers || !id) return;
-    try {
-      const friends = await apiGet<{ id: string }[]>("/api/friends", headers);
-      setIsFriend(friends.some((f) => f.id === id));
-    } catch (e) {
-      console.log("Error checking friendship", e);
-    }
-  };
+  useEffect(() => { loadUser(); }, [loadUser]);
 
   const sendFriendRequest = async () => {
     if (!headers || !user) return;
-    setSendingRequest(true);
+    setActionLoading(true);
     try {
       await apiPost("/api/friends/request", { username: user.username }, headers);
-      setRequestSent(true);
-      Alert.alert("Success", `Friend request sent to ${user.username}`);
+      setUser(prev => prev ? { ...prev, relationship: "request_sent" } : prev);
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Could not send request");
+      Alert.alert("Eroare", e instanceof Error ? e.message : "Nu s-a putut trimite cererea");
     } finally {
-      setSendingRequest(false);
+      setActionLoading(false);
     }
+  };
+
+  const cancelRequest = async () => {
+    if (!headers || !user) return;
+    setActionLoading(true);
+    try {
+      await apiPost("/api/friends/cancel", { from_user_id: user.id }, headers);
+      setUser(prev => prev ? { ...prev, relationship: "not_friends" } : prev);
+    } catch (e) {
+      Alert.alert("Eroare", e instanceof Error ? e.message : "Nu s-a putut anula cererea");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const acceptRequest = async () => {
+    if (!headers || !user) return;
+    setActionLoading(true);
+    try {
+      await apiPost("/api/friends/accept", { from_user_id: user.id }, headers);
+      setUser(prev => prev ? { ...prev, relationship: "friends" } : prev);
+    } catch (e) {
+      Alert.alert("Eroare", e instanceof Error ? e.message : "Nu s-a putut accepta cererea");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const declineRequest = async () => {
+    if (!headers || !user) return;
+    setActionLoading(true);
+    try {
+      await apiPost("/api/friends/reject", { from_user_id: user.id }, headers);
+      setUser(prev => prev ? { ...prev, relationship: "not_friends" } : prev);
+    } catch (e) {
+      Alert.alert("Eroare", e instanceof Error ? e.message : "Nu s-a putut refuza cererea");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const removeFriend = async () => {
+    if (!headers || !user) return;
+    Alert.alert("Șterge prieten", `Sigur vrei să îl scoți pe ${user.username} din lista de prieteni?`, [
+      { text: "Anulează", style: "cancel" },
+      {
+        text: "Șterge", style: "destructive", onPress: async () => {
+          setActionLoading(true);
+          try {
+            await apiPost("/api/friends/remove", { from_user_id: user.id }, headers);
+            setUser(prev => prev ? { ...prev, relationship: "not_friends" } : prev);
+          } catch (e) {
+            Alert.alert("Eroare", e instanceof Error ? e.message : "Nu s-a putut șterge prietenul");
+          } finally {
+            setActionLoading(false);
+          }
+        },
+      },
+    ]);
   };
 
   const openChat = () => {
@@ -91,28 +146,13 @@ export default function UserProfileScreen() {
     router.push(`/community/dm/${id}`);
   };
 
-  const getLevelInfo = (level: number) => {
-    const levels = [
-      { name: "Newbie", minKm: 0 },
-      { name: "Beginner", minKm: 100 },
-      { name: "Rider", minKm: 500 },
-      { name: "Explorer", minKm: 1000 },
-      { name: "Adventurer", minKm: 2500 },
-      { name: "Veteran", minKm: 5000 },
-      { name: "Expert", minKm: 10000 },
-      { name: "Master", minKm: 20000 },
-      { name: "Legend", minKm: 50000 },
-      { name: "Ultimate", minKm: 100000 },
-    ];
-    return levels[Math.min(level || 0, levels.length - 1)];
-  };
+  const levelName = LEVEL_NAMES[Math.min((user?.level || 1) - 1, LEVEL_NAMES.length - 1)];
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.center}>
+      <SafeAreaView style={s.safe}>
+        <View style={s.center}>
           <ActivityIndicator size="large" color={Colors.accent} />
-          <Text style={styles.centerText}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
@@ -120,133 +160,212 @@ export default function UserProfileScreen() {
 
   if (error || !user) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={Colors.text} />
+      <SafeAreaView style={s.safe}>
+        <View style={s.header}>
+          <Pressable onPress={() => router.back()} style={s.backBtn} data-testid="profile-back-btn">
+            <Ionicons name="chevron-back" size={22} color={Colors.text} />
           </Pressable>
         </View>
-        <View style={styles.center}>
+        <View style={s.center}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.danger} />
-          <Text style={styles.errorText}>{error || "User not found"}</Text>
+          <Text style={s.errorText}>{error || "Utilizator negăsit"}</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const levelInfo = getLevelInfo(user.level || 0);
-
   return (
-    <SafeAreaView style={styles.safe}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text} />
+    <SafeAreaView style={s.safe}>
+      <View style={s.header}>
+        <Pressable onPress={() => router.back()} style={s.backBtn} data-testid="profile-back-btn">
+          <Ionicons name="chevron-back" size={22} color={Colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 44 }} />
+        <Text style={s.headerTitle}>Profil</Text>
+        {user.relationship === "self" ? (
+          <Pressable onPress={() => router.push("/profile/edit")} style={s.editBtn} data-testid="edit-profile-btn">
+            <Ionicons name="create-outline" size={18} color={Colors.accent} />
+          </Pressable>
+        ) : (
+          <View style={{ width: 44 }} />
+        )}
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={s.content}>
         {/* Avatar & Name */}
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            {user.avatar ? (
+        <View style={s.profileHeader}>
+          <View style={s.avatarRing}>
+            {user.profile_photo_base64 ? (
               <Image
                 source={{
-                  uri: user.avatar.startsWith("data:")
-                    ? user.avatar
-                    : `data:image/jpeg;base64,${user.avatar}`,
+                  uri: user.profile_photo_base64.startsWith("data:")
+                    ? user.profile_photo_base64
+                    : `data:image/jpeg;base64,${user.profile_photo_base64}`,
                 }}
-                style={styles.avatar}
+                style={s.avatar}
               />
             ) : (
-              <Ionicons name="person" size={48} color={Colors.muted} />
+              <View style={s.avatarPlaceholder}>
+                <Ionicons name="person" size={40} color={Colors.muted} />
+              </View>
             )}
           </View>
-          <Text style={styles.username}>{user.username}</Text>
-          <View style={styles.levelBadge}>
+          <Text style={s.username} data-testid="profile-username">{user.username}</Text>
+
+          {/* Level Badge */}
+          <View style={s.levelBadge}>
             <Ionicons name="star" size={14} color={Colors.accent} />
-            <Text style={styles.levelText}>
-              Level {user.level || 0} • {levelInfo.name}
-            </Text>
+            <Text style={s.levelText}>Nivel {user.level || 1} - {levelName}</Text>
           </View>
+
+          {/* Bio */}
+          {user.bio ? <Text style={s.bio}>{user.bio}</Text> : null}
         </View>
 
-        {/* Stats Card */}
-        <View style={styles.statsCard}>
-          <View style={styles.statItem}>
-            <Ionicons name="speedometer" size={24} color={Colors.accent} />
-            <Text style={styles.statValue}>{(user.km_tracked || 0).toFixed(0)} km</Text>
-            <Text style={styles.statLabel}>Total Distance</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Ionicons name="ribbon" size={24} color={Colors.accent} />
-            <Text style={styles.statValue}>Level {user.level || 0}</Text>
-            <Text style={styles.statLabel}>{levelInfo.name}</Text>
-          </View>
+        {/* Info Cards */}
+        <View style={s.infoRow}>
+          {user.bike?.model && (
+            <View style={s.infoChip}>
+              <Ionicons name="bicycle" size={14} color={Colors.accent} />
+              <Text style={s.infoChipText}>{user.bike.model}{user.bike.cc ? ` ${user.bike.cc}cc` : ""}</Text>
+            </View>
+          )}
+          {user.country && (
+            <View style={s.infoChip}>
+              <Ionicons name="location" size={14} color={Colors.accent} />
+              <Text style={s.infoChipText}>{user.country}</Text>
+            </View>
+          )}
+          {user.license_type && (
+            <View style={[s.infoChip, user.license_verified && s.infoChipVerified]}>
+              <Ionicons name="card" size={14} color={user.license_verified ? Colors.success : Colors.muted} />
+              <Text style={[s.infoChipText, user.license_verified && { color: Colors.success }]}>
+                Permis {user.license_type}{user.license_verified ? " ✓" : ""}
+              </Text>
+            </View>
+          )}
         </View>
 
-        {/* Action Buttons */}
-        {!isOwnProfile && (
-          <View style={styles.actionsSection}>
-            {isFriend ? (
-              <>
-                <View style={styles.friendBadge}>
-                  <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
-                  <Text style={styles.friendBadgeText}>You are friends</Text>
-                </View>
-                <Pressable onPress={openChat} style={styles.chatBtn}>
-                  <Ionicons name="chatbubble" size={20} color={Colors.bg} />
-                  <Text style={styles.chatBtnText}>Send Message</Text>
-                </Pressable>
-              </>
-            ) : (
+        {/* Stats */}
+        <View style={s.statsCard}>
+          {user.km_total !== undefined && (
+            <View style={s.statItem}>
+              <Ionicons name="speedometer" size={22} color={Colors.accent} />
+              <Text style={s.statValue}>{Math.round(user.km_total)}</Text>
+              <Text style={s.statLabel}>km total</Text>
+            </View>
+          )}
+          {user.joined_routes !== undefined && (
+            <>
+              {user.km_total !== undefined && <View style={s.statDivider} />}
+              <View style={s.statItem}>
+                <Ionicons name="map" size={22} color={Colors.accent} />
+                <Text style={s.statValue}>{user.joined_routes}</Text>
+                <Text style={s.statLabel}>rute</Text>
+              </View>
+            </>
+          )}
+          {user.joined_events !== undefined && (
+            <>
+              <View style={s.statDivider} />
+              <View style={s.statItem}>
+                <Ionicons name="calendar" size={22} color={Colors.accent} />
+                <Text style={s.statValue}>{user.joined_events}</Text>
+                <Text style={s.statLabel}>events</Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Action Buttons based on relationship */}
+        {user.relationship !== "self" && (
+          <View style={s.actions}>
+            {user.relationship === "not_friends" && (
               <Pressable
+                style={s.primaryBtn}
                 onPress={sendFriendRequest}
-                disabled={requestSent || sendingRequest}
-                style={[
-                  styles.addFriendBtn,
-                  (requestSent || sendingRequest) && styles.addFriendBtnDisabled,
-                ]}
+                disabled={actionLoading}
+                data-testid="add-friend-btn"
               >
-                {sendingRequest ? (
-                  <ActivityIndicator size="small" color={Colors.bg} />
-                ) : (
+                {actionLoading ? <ActivityIndicator color={Colors.bg} size="small" /> : (
                   <>
-                    <Ionicons
-                      name={requestSent ? "checkmark" : "person-add"}
-                      size={20}
-                      color={requestSent ? Colors.text : Colors.bg}
-                    />
-                    <Text
-                      style={[
-                        styles.addFriendBtnText,
-                        requestSent && styles.addFriendBtnTextDisabled,
-                      ]}
-                    >
-                      {requestSent ? "Request Sent" : "Add Friend"}
-                    </Text>
+                    <Ionicons name="person-add" size={18} color={Colors.bg} />
+                    <Text style={s.primaryBtnText}>Adaugă prieten</Text>
                   </>
                 )}
               </Pressable>
             )}
+
+            {user.relationship === "request_sent" && (
+              <Pressable
+                style={s.secondaryBtn}
+                onPress={cancelRequest}
+                disabled={actionLoading}
+                data-testid="cancel-request-btn"
+              >
+                <Ionicons name="hourglass" size={18} color={Colors.text} />
+                <Text style={s.secondaryBtnText}>Cerere trimisă - Anulează</Text>
+              </Pressable>
+            )}
+
+            {user.relationship === "request_received" && (
+              <View style={s.requestActions}>
+                <Pressable
+                  style={[s.primaryBtn, { flex: 1 }]}
+                  onPress={acceptRequest}
+                  disabled={actionLoading}
+                  data-testid="accept-request-btn"
+                >
+                  <Ionicons name="checkmark" size={18} color={Colors.bg} />
+                  <Text style={s.primaryBtnText}>Acceptă</Text>
+                </Pressable>
+                <Pressable
+                  style={[s.secondaryBtn, { flex: 1 }]}
+                  onPress={declineRequest}
+                  disabled={actionLoading}
+                  data-testid="decline-request-btn"
+                >
+                  <Text style={s.secondaryBtnText}>Refuză</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {user.relationship === "friends" && (
+              <>
+                <View style={s.friendBadge}>
+                  <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                  <Text style={s.friendBadgeText}>Prieteni</Text>
+                </View>
+                <Pressable style={s.primaryBtn} onPress={openChat} data-testid="send-message-btn">
+                  <Ionicons name="chatbubble" size={18} color={Colors.bg} />
+                  <Text style={s.primaryBtnText}>Trimite mesaj</Text>
+                </Pressable>
+                <Pressable style={s.dangerBtn} onPress={removeFriend} data-testid="remove-friend-btn">
+                  <Ionicons name="person-remove" size={16} color={Colors.danger} />
+                  <Text style={s.dangerBtnText}>Șterge prieten</Text>
+                </Pressable>
+              </>
+            )}
           </View>
         )}
 
-        {isOwnProfile && (
-          <View style={styles.ownProfileNote}>
-            <Ionicons name="information-circle" size={20} color={Colors.muted} />
-            <Text style={styles.ownProfileNoteText}>This is your profile</Text>
-          </View>
+        {user.relationship === "self" && (
+          <Pressable
+            style={s.primaryBtn}
+            onPress={() => router.push("/profile/edit")}
+            data-testid="edit-profile-full-btn"
+          >
+            <Ionicons name="create-outline" size={18} color={Colors.bg} />
+            <Text style={s.primaryBtnText}>Editează profilul</Text>
+          </Pressable>
         )}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
   header: {
     flexDirection: "row",
@@ -271,103 +390,112 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.text,
     fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "800",
     textAlign: "center",
   },
-  content: {
-    padding: 16,
-    gap: 20,
-  },
-  center: {
-    flex: 1,
+  editBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.accent + "40",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
   },
-  centerText: {
-    color: Colors.muted,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-  },
-  errorText: {
-    color: Colors.danger,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "center",
-  },
-  profileHeader: {
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 20,
-  },
-  avatarContainer: {
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+  errorText: { color: Colors.danger, fontSize: 14, fontWeight: "600", textAlign: "center" },
+  content: { padding: 16, gap: 16 },
+  profileHeader: { alignItems: "center", gap: 10, paddingVertical: 8 },
+  avatarRing: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: Colors.card,
     borderWidth: 3,
     borderColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+    backgroundColor: Colors.card,
   },
-  avatar: {
+  avatar: { width: 100, height: 100, borderRadius: 50 },
+  avatarPlaceholder: {
     width: 100,
     height: 100,
     borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.card,
   },
-  username: {
-    color: Colors.text,
-    fontSize: 24,
-    fontFamily: "Inter_900Black",
-  },
+  username: { color: Colors.text, fontSize: 22, fontWeight: "900" },
   levelBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     backgroundColor: Colors.card,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  levelText: {
-    color: Colors.text,
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
+  levelText: { color: Colors.text, fontSize: 13, fontWeight: "600" },
+  bio: { color: Colors.muted, fontSize: 13, textAlign: "center", lineHeight: 18, paddingHorizontal: 20 },
+  infoRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",
   },
+  infoChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  infoChipVerified: { borderColor: Colors.success + "50" },
+  infoChipText: { color: Colors.text, fontSize: 12, fontWeight: "600" },
   statsCard: {
     flexDirection: "row",
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 18,
+    padding: 16,
   },
-  statItem: {
-    flex: 1,
+  statItem: { flex: 1, alignItems: "center", gap: 6 },
+  statDivider: { width: 1, backgroundColor: Colors.border },
+  statValue: { color: Colors.text, fontSize: 18, fontWeight: "900" },
+  statLabel: { color: Colors.muted, fontSize: 11, fontWeight: "600" },
+  actions: { gap: 10 },
+  requestActions: { flexDirection: "row", gap: 10 },
+  primaryBtn: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: 14,
+    paddingVertical: 14,
   },
-  statDivider: {
-    width: 1,
-    backgroundColor: Colors.border,
-    marginHorizontal: 16,
+  primaryBtnText: { color: Colors.bg, fontSize: 15, fontWeight: "700" },
+  secondaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    paddingVertical: 14,
   },
-  statValue: {
-    color: Colors.text,
-    fontSize: 18,
-    fontFamily: "Inter_900Black",
-  },
-  statLabel: {
-    color: Colors.muted,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
-  actionsSection: {
-    gap: 12,
-  },
+  secondaryBtnText: { color: Colors.text, fontSize: 15, fontWeight: "700" },
   friendBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -375,65 +503,17 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.success,
-    borderRadius: 16,
-    padding: 16,
+    borderColor: Colors.success + "40",
+    borderRadius: 14,
+    paddingVertical: 12,
   },
-  friendBadgeText: {
-    color: Colors.success,
-    fontSize: 15,
-    fontFamily: "Inter_700Bold",
-  },
-  chatBtn: {
+  friendBadgeText: { color: Colors.success, fontSize: 14, fontWeight: "700" },
+  dangerBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    backgroundColor: Colors.accent,
-    borderRadius: 16,
-    padding: 16,
+    gap: 6,
+    paddingVertical: 10,
   },
-  chatBtnText: {
-    color: Colors.bg,
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-  },
-  addFriendBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    backgroundColor: Colors.accent,
-    borderRadius: 16,
-    padding: 16,
-  },
-  addFriendBtnDisabled: {
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  addFriendBtnText: {
-    color: Colors.bg,
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-  },
-  addFriendBtnTextDisabled: {
-    color: Colors.text,
-  },
-  ownProfileNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 16,
-    padding: 16,
-  },
-  ownProfileNoteText: {
-    color: Colors.muted,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-  },
+  dangerBtnText: { color: Colors.danger, fontSize: 13, fontWeight: "600" },
 });
