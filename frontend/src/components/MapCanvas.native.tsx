@@ -1,9 +1,19 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Animated, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import ClusteredMapView from "react-native-map-clustering";
 import { Callout, Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
+
+const openDirections = (lat: number, lng: number, label: string) => {
+  const encoded = encodeURIComponent(label);
+  const url = Platform.select({
+    ios: `maps:0,0?q=${encoded}@${lat},${lng}`,
+    android: `google.navigation:q=${lat},${lng}`,
+    default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+  });
+  Linking.openURL(url as string);
+};
 
 type MapRegion = {
   latitude: number;
