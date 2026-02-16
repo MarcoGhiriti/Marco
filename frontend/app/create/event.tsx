@@ -18,6 +18,7 @@ import { Colors } from "../../src/theme/colors";
 import { apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import { PlaceSearchInput } from "../../src/components/PlaceSearchInput";
+import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 
 interface PlaceDetails {
   place_id: string;
@@ -39,65 +40,32 @@ const EVENT_TYPES = [
 
 // Map Preview for single location
 function EventMapPreview({ location }: { location: PlaceDetails | null }) {
-  const width = 340;
-  const height = 180;
+  if (!location) {
+    return (
+      <View style={mapStyles.container}>
+        <View style={mapStyles.placeholder}>
+          <Ionicons name="location-outline" size={48} color={Colors.muted} />
+          <Text style={mapStyles.placeholderText}>Select meeting point</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={mapStyles.container}>
-      {!location ? (
-        <View style={mapStyles.placeholder}>
-          <Ionicons name="location-outline" size={48} color={Colors.muted} />
-          <Text style={mapStyles.placeholderText}>
-            Select meeting point
-          </Text>
+      <RouteMiniMap
+        lat={location.lat}
+        lng={location.lng}
+        locationName={location.name}
+        height={180}
+      />
+      <View style={mapStyles.locationInfo}>
+        <Ionicons name="location" size={18} color={Colors.accent} />
+        <View style={mapStyles.locationTextContainer}>
+          <Text style={mapStyles.locationName} numberOfLines={1}>{location.name}</Text>
+          <Text style={mapStyles.locationAddress} numberOfLines={1}>{location.address}</Text>
         </View>
-      ) : (
-        <View style={mapStyles.mapContent}>
-          <Svg width={width} height={height}>
-            {/* Grid pattern */}
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Rect
-                key={`h${i}`}
-                x={0}
-                y={i * 25}
-                width={width}
-                height={1}
-                fill={Colors.border}
-                opacity={0.3}
-              />
-            ))}
-            {Array.from({ length: 14 }).map((_, i) => (
-              <Rect
-                key={`v${i}`}
-                x={i * 25}
-                y={0}
-                width={1}
-                height={height}
-                fill={Colors.border}
-                opacity={0.3}
-              />
-            ))}
-            
-            {/* Center pin */}
-            <Circle cx={width / 2} cy={height / 2} r={20} fill={Colors.accent} opacity={0.2} />
-            <Circle cx={width / 2} cy={height / 2} r={12} fill={Colors.accent} />
-            <Circle cx={width / 2} cy={height / 2} r={4} fill={Colors.bg} />
-          </Svg>
-          
-          {/* Location info overlay */}
-          <View style={mapStyles.locationInfo}>
-            <Ionicons name="location" size={18} color={Colors.accent} />
-            <View style={mapStyles.locationTextContainer}>
-              <Text style={mapStyles.locationName} numberOfLines={1}>
-                {location.name}
-              </Text>
-              <Text style={mapStyles.locationAddress} numberOfLines={1}>
-                {location.address}
-              </Text>
-            </View>
-          </View>
-        </View>
-      )}
+      </View>
     </View>
   );
 }
