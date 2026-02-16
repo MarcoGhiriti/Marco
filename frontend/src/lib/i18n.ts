@@ -3,11 +3,11 @@ import { initReactI18next } from "react-i18next";
 import * as Localization from "expo-localization";
 
 import en from "../locales/en.json";
+import ro from "../locales/ro.json";
 
 const resources = {
-  en: {
-    translation: en,
-  },
+  en: { translation: en },
+  ro: { translation: ro },
 } as const;
 
 // Detect device locale, default to English.
