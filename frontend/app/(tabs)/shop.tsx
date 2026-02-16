@@ -876,8 +876,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   categoriesRow: {
-    paddingHorizontal: 16,
-    paddingBottom: 4,
+    paddingHorizontal: 12,
+    paddingBottom: 2,
     gap: 6,
   },
   categoryChip: {
@@ -949,8 +949,8 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   listingInfo: {
-    padding: 12,
-    gap: 4,
+    padding: 10,
+    gap: 2,
   },
   listingTitle: {
     color: Colors.text,
