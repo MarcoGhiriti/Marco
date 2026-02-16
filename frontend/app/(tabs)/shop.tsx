@@ -706,12 +706,12 @@ export default function ShopScreen() {
         <TopTabs.Screen 
           name="New" 
           component={NewTab}
-          options={{ tabBarLabel: "🆕 New" }}
+          options={{ tabBarLabel: "New" }}
         />
         <TopTabs.Screen 
           name="SecondHand" 
           component={SecondHandTab}
-          options={{ tabBarLabel: "🔄 Second Hand" }}
+          options={{ tabBarLabel: "Second Hand" }}
         />
       </TopTabs.Navigator>
     </SafeAreaView>
