@@ -501,6 +501,8 @@ class BikeInfo(BaseModel):
 class PrivacySettings(BaseModel):
     location_visible: bool = False
     routes_visible: Literal["public", "friends", "private"] = "public"
+    km_visible: bool = True
+    last_active_visible: bool = True
 
 
 class UserPublic(BaseModel):
