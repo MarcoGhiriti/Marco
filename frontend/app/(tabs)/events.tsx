@@ -307,14 +307,14 @@ export default function CalendarScreen() {
           name="Events" 
           component={MyEventsTab}
           options={{ 
-            tabBarLabel: "📅 Events",
+            tabBarLabel: "Events",
           }}
         />
         <TopTabs.Screen 
           name="Routes" 
           component={MyRoutesTab}
           options={{ 
-            tabBarLabel: "🛣️ Routes",
+            tabBarLabel: "Routes",
           }}
         />
       </TopTabs.Navigator>
