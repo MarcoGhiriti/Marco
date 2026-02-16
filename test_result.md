@@ -238,7 +238,10 @@ metadata:
 
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Map screen: Report Police + event markers toggle"
+    - "Mini-map grid gray streets"
+    - "Marketplace listing click fix (null km)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
