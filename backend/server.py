@@ -1567,18 +1567,67 @@ async def users_search(
     return results
 
 
-@api_router.get("/users/{user_id}", response_model=UserSearchOut)
+@api_router.get("/users/{user_id}")
 async def get_user(user_id: str, current_user: dict = Depends(get_current_user)):
-    """Get a user's public profile info."""
-    user = await db.users.find_one({"_id": _as_object_id(user_id)}, {"username": 1, "profile_photo_base64": 1})
+    """Get a user's public profile info with relationship status."""
+    user = await db.users.find_one({"_id": _as_object_id(user_id)}, {"password_hash": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    return UserSearchOut(
-        id=oid_str(user.get("_id")),
-        username=user.get("username", ""),
-        profile_photo_base64=user.get("profile_photo_base64"),
-    )
+
+    uid = current_user["id"]
+    target_id = oid_str(user.get("_id"))
+    privacy = user.get("privacy", {})
+
+    # Determine relationship
+    my_friends = current_user.get("friends") or []
+    my_requests_out = current_user.get("friend_requests_out") or []
+    my_requests_in = current_user.get("friend_requests_in") or []
+
+    if uid == target_id:
+        relationship = "self"
+    elif target_id in my_friends:
+        relationship = "friends"
+    elif target_id in my_requests_out:
+        relationship = "request_sent"
+    elif target_id in my_requests_in:
+        relationship = "request_received"
+    else:
+        relationship = "not_friends"
+
+    is_friend = relationship == "friends"
+
+    # Build response respecting privacy
+    bike = user.get("bike")
+    result = {
+        "id": target_id,
+        "username": user.get("username", ""),
+        "profile_photo_base64": user.get("profile_photo_base64"),
+        "bio": user.get("bio", ""),
+        "level": user.get("level", 1),
+        "relationship": relationship,
+        "created_at": user.get("created_at", "").isoformat() if hasattr(user.get("created_at", ""), "isoformat") else str(user.get("created_at", "")),
+    }
+
+    # Bike info - always visible
+    if bike:
+        result["bike"] = bike
+
+    # License type - always visible (not the photo)
+    result["license_type"] = user.get("license_type")
+    result["license_verified"] = user.get("license_verified", False)
+
+    # Privacy-controlled fields
+    if privacy.get("location_visible", False) or relationship == "self":
+        result["country"] = user.get("country")
+    if privacy.get("km_visible", True) or relationship == "self" or is_friend:
+        result["km_total"] = float(user.get("km_total", 0))
+    if privacy.get("routes_visible", "public") != "private" or relationship == "self":
+        joined_routes = await db.routes.count_documents({"participants": target_id})
+        joined_events = await db.events.count_documents({"participants": target_id})
+        result["joined_routes"] = joined_routes
+        result["joined_events"] = joined_events
+
+    return result
 
 
 @api_router.get("/stats")
