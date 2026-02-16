@@ -202,6 +202,30 @@ frontend:
         agent: "main"
         comment: "Am adăugat protecție pentru null la kilometers (list și detail) pentru a evita crash la click pe anunț. Necesită retestare UI."
 
+  - task: "Mini-map: străzi adiacente gri"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/RouteMiniMap.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Am ajustat grid lines la gri (muted) + opacitate/width pentru a simula străzi adiacente. Necesită verificare vizuală."
+
+  - task: "Map screen: doar Report Police + event markers toggle"
+    implemented: true
+    working: false
+    file: "/app/frontend/app/(tabs)/map.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Am refăcut MapScreen: MapView pe mobile cu toggle pentru event markers + FAB Report Police; pe web card simplificat. Necesită testare UI."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
