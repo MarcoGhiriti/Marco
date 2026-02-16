@@ -275,7 +275,7 @@ function MyRoutesTab() {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Ionicons name="trail-sign-outline" size={64} color={Colors.muted} />
-            <Text style={styles.emptyTitle}>No routes joined</Text>
+            <Text style={styles.emptyTitle}>No upcoming routes</Text>
             <Text style={styles.emptyText}>
               Browse and join routes to see them here
             </Text>
