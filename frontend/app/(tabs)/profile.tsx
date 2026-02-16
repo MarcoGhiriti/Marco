@@ -518,61 +518,63 @@ export default function ProfileScreen() {
                 </>
               )}
 
-          {/* Events Tab Content */}
-          {activeTab === "events" && (
-            <>
-              {myEvents.length === 0 ? (
-                <View style={styles.emptyRoutes}>
-                  <Ionicons name="calendar-outline" size={48} color={Colors.muted} />
-                  <Text style={styles.emptyRoutesText}>No events created yet</Text>
-                  <Text style={styles.emptyRoutesSub}>Create your first event to gather riders!</Text>
-                </View>
-              ) : (
-                <View style={styles.myRoutesList}>
-                  {myEvents.map((event) => {
-                    const eventDate = new Date(event.start_time);
-                    const dateStr = eventDate.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
-                    
-                    return (
-                      <Pressable 
-                        key={event.id} 
-                        onPress={() => router.push(`/event/${event.id}`)}
-                        style={styles.myEventCard}
-                      >
-                        <View style={styles.eventIconBox}>
-                          <Ionicons name="calendar" size={24} color={Colors.accent} />
-                        </View>
-                        <View style={styles.myRouteContent}>
-                          <Text style={styles.myRouteTitle} numberOfLines={1}>{event.title}</Text>
-                          <Text style={styles.myEventLocation} numberOfLines={1}>
-                            <Ionicons name="location" size={12} color={Colors.muted} /> {event.location_name || "Location TBD"}
-                          </Text>
-                          <View style={styles.myRouteStats}>
-                            <Text style={styles.myRouteStat}>
-                              <Ionicons name="time-outline" size={12} color={Colors.accent} /> {dateStr}
-                            </Text>
-                            <Text style={styles.myRouteStat}>
-                              <Ionicons name="people-outline" size={12} color={Colors.accent} /> {event.participants_count}
-                            </Text>
-                          </View>
-                          
+              {/* Events Tab Content */}
+              {activeTab === "events" && (
+                <>
+                  {myEvents.length === 0 ? (
+                    <View style={styles.emptyRoutes}>
+                      <Ionicons name="calendar-outline" size={48} color={Colors.muted} />
+                      <Text style={styles.emptyRoutesText}>No events created yet</Text>
+                      <Text style={styles.emptyRoutesSub}>Create your first event to gather riders!</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.myRoutesList}>
+                      {myEvents.map((event) => {
+                        const eventDate = new Date(event.start_time);
+                        const dateStr = eventDate.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
+                        
+                        return (
                           <Pressable 
-                            onPress={() => router.push(`/event/${event.id}`)} 
-                            style={styles.editRouteBtn}
+                            key={event.id} 
+                            onPress={() => router.push(`/event/${event.id}`)}
+                            style={styles.myEventCard}
                           >
-                            <Ionicons name="create-outline" size={16} color={Colors.accent} />
-                            <Text style={styles.editRouteBtnText}>Edit</Text>
+                            <View style={styles.eventIconBox}>
+                              <Ionicons name="calendar" size={24} color={Colors.accent} />
+                            </View>
+                            <View style={styles.myRouteContent}>
+                              <Text style={styles.myRouteTitle} numberOfLines={1}>{event.title}</Text>
+                              <Text style={styles.myEventLocation} numberOfLines={1}>
+                                <Ionicons name="location" size={12} color={Colors.muted} /> {event.location_name || "Location TBD"}
+                              </Text>
+                              <View style={styles.myRouteStats}>
+                                <Text style={styles.myRouteStat}>
+                                  <Ionicons name="time-outline" size={12} color={Colors.accent} /> {dateStr}
+                                </Text>
+                                <Text style={styles.myRouteStat}>
+                                  <Ionicons name="people-outline" size={12} color={Colors.accent} /> {event.participants_count}
+                                </Text>
+                              </View>
+                              
+                              <Pressable 
+                                onPress={() => router.push(`/event/${event.id}`)} 
+                                style={styles.editRouteBtn}
+                              >
+                                <Ionicons name="create-outline" size={16} color={Colors.accent} />
+                                <Text style={styles.editRouteBtnText}>Edit</Text>
+                              </Pressable>
+                            </View>
                           </Pressable>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </>
               )}
             </>
           )}
