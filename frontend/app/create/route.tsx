@@ -12,12 +12,13 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Polyline as SvgPolyline, Circle } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
 import { apiPost, apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import { PlaceSearchInput } from "../../src/components/PlaceSearchInput";
+import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 
 interface PlaceDetails {
   place_id: string;
@@ -42,7 +43,7 @@ type LicenseStatus = {
 
 const DIFFICULTY_OPTIONS = ["easy", "medium", "hard"] as const;
 
-// SVG Map Preview Component
+// Map Preview Component using Google Static Maps
 function RoutePreviewMap({ 
   startPoint, 
   endPoint, 
@@ -54,138 +55,49 @@ function RoutePreviewMap({
   waypoints: PlaceDetails[];
   polyline: number[][];
 }) {
-  const width = 340;
-  const height = 200;
-
-  const svgData = useMemo(() => {
-    const allPoints: { lat: number; lng: number; type: 'start' | 'end' | 'waypoint' }[] = [];
-    if (startPoint) allPoints.push({ lat: startPoint.lat, lng: startPoint.lng, type: 'start' });
-    waypoints.forEach(wp => allPoints.push({ lat: wp.lat, lng: wp.lng, type: 'waypoint' }));
-    if (endPoint) allPoints.push({ lat: endPoint.lat, lng: endPoint.lng, type: 'end' });
-
-    if (polyline.length >= 2) {
-      // Full polyline rendering
-      const pad = 20;
-      const w = width - pad * 2;
-      const h = height - pad * 2;
-      
-      let minLat = polyline[0][0], maxLat = polyline[0][0];
-      let minLng = polyline[0][1], maxLng = polyline[0][1];
-      
-      for (const p of polyline) {
-        minLat = Math.min(minLat, p[0]);
-        maxLat = Math.max(maxLat, p[0]);
-        minLng = Math.min(minLng, p[1]);
-        maxLng = Math.max(maxLng, p[1]);
-      }
-      
-      const latSpan = Math.max(0.001, maxLat - minLat);
-      const lngSpan = Math.max(0.001, maxLng - minLng);
-      
-      const pts = polyline.map(p => {
-        const x = pad + ((p[1] - minLng) / lngSpan) * w;
-        const y = pad + (1 - (p[0] - minLat) / latSpan) * h;
-        return `${x.toFixed(1)},${y.toFixed(1)}`;
-      }).join(" ");
-      
-      // Calculate marker positions
-      const markers = allPoints.map(p => ({
-        x: pad + ((p.lng - minLng) / lngSpan) * w,
-        y: pad + (1 - (p.lat - minLat) / latSpan) * h,
-        type: p.type,
-      }));
-      
-      return { points: pts, markers };
-    }
-    
-    // Just show markers without polyline
-    if (allPoints.length === 0) return { points: "", markers: [] };
-    
-    const pad = 20;
-    const w = width - pad * 2;
-    const h = height - pad * 2;
-    
-    let minLat = allPoints[0].lat, maxLat = allPoints[0].lat;
-    let minLng = allPoints[0].lng, maxLng = allPoints[0].lng;
-    
-    for (const p of allPoints) {
-      minLat = Math.min(minLat, p.lat);
-      maxLat = Math.max(maxLat, p.lat);
-      minLng = Math.min(minLng, p.lng);
-      maxLng = Math.max(maxLng, p.lng);
-    }
-    
-    const latSpan = Math.max(0.01, maxLat - minLat);
-    const lngSpan = Math.max(0.01, maxLng - minLng);
-    
-    const markers = allPoints.map(p => ({
-      x: pad + ((p.lng - minLng) / lngSpan) * w,
-      y: pad + (1 - (p.lat - minLat) / latSpan) * h,
-      type: p.type,
-    }));
-    
-    return { points: "", markers };
-  }, [startPoint, endPoint, waypoints, polyline]);
-
   const hasData = startPoint || endPoint || waypoints.length > 0 || polyline.length > 0;
 
-  return (
-    <View style={mapStyles.container}>
-      {!hasData ? (
+  if (!hasData) {
+    return (
+      <View style={mapStyles.container}>
         <View style={mapStyles.placeholder}>
           <Ionicons name="map-outline" size={48} color={Colors.muted} />
-          <Text style={mapStyles.placeholderText}>
-            Select route points
-          </Text>
+          <Text style={mapStyles.placeholderText}>Select route points</Text>
         </View>
-      ) : (
-        <Svg width={width} height={height}>
-          {/* Polyline */}
-          {svgData.points && (
-            <SvgPolyline
-              points={svgData.points}
-              fill="none"
-              stroke={Colors.accent}
-              strokeWidth={3}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          )}
-          
-          {/* Markers */}
-          {svgData.markers.map((m, i) => {
-            const color = m.type === 'start' ? Colors.success : m.type === 'end' ? Colors.danger : Colors.accent;
-            return (
-              <React.Fragment key={i}>
-                <Circle cx={m.x} cy={m.y} r={12} fill={color} opacity={0.3} />
-                <Circle cx={m.x} cy={m.y} r={8} fill={color} />
-              </React.Fragment>
-            );
-          })}
-        </Svg>
-      )}
-      
-      {/* Legend */}
-      {hasData && (
-        <View style={mapStyles.legend}>
-          <View style={mapStyles.legendItem}>
-            <View style={[mapStyles.legendDot, { backgroundColor: Colors.success }]} />
-            <Text style={mapStyles.legendText}>Start</Text>
-          </View>
-          {waypoints.length > 0 && (
-            <View style={mapStyles.legendItem}>
-              <View style={[mapStyles.legendDot, { backgroundColor: Colors.accent }]} />
-              <Text style={mapStyles.legendText}>Oprire</Text>
-            </View>
-          )}
-          <View style={mapStyles.legendItem}>
-            <View style={[mapStyles.legendDot, { backgroundColor: Colors.danger }]} />
-            <Text style={mapStyles.legendText}>Finish</Text>
-          </View>
-        </View>
-      )}
-    </View>
-  );
+      </View>
+    );
+  }
+
+  // Route with polyline
+  if (polyline.length >= 2) {
+    return (
+      <View style={mapStyles.container}>
+        <RouteMiniMap
+          polyline={polyline}
+          startCity={startPoint?.name}
+          endCity={endPoint?.name}
+          height={200}
+        />
+      </View>
+    );
+  }
+
+  // Just markers (no polyline yet) - show single point
+  const firstPoint = startPoint || endPoint || waypoints[0];
+  if (firstPoint) {
+    return (
+      <View style={mapStyles.container}>
+        <RouteMiniMap
+          lat={firstPoint.lat}
+          lng={firstPoint.lng}
+          locationName={firstPoint.name}
+          height={200}
+        />
+      </View>
+    );
+  }
+
+  return null;
 }
 
 const mapStyles = StyleSheet.create({
