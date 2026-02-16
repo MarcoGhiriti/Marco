@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
@@ -73,6 +73,7 @@ const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number) => 
 
 export default function MapScreen() {
   const router = useRouter();
+  const isWeb = Platform.OS === "web";
   const { accessToken } = useAuthStore();
   const mapRef = useRef<any>(null);
   const userPanning = useRef(false);
@@ -95,6 +96,7 @@ export default function MapScreen() {
   }, [accessToken]);
 
   const requestLocation = useCallback(async () => {
+    if (isWeb) return null;
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
       Alert.alert("Location required", "Please enable location permissions for the map.");
@@ -151,18 +153,21 @@ export default function MapScreen() {
   }, [fetchMapData, requestLocation]);
 
   useEffect(() => {
-    if (authHeader) {
+    if (authHeader && !isWeb) {
       initMap();
     }
-  }, [authHeader, initMap]);
+  }, [authHeader, initMap, isWeb]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchMapData(region);
-    }, [fetchMapData, region])
+      if (!isWeb) {
+        fetchMapData(region);
+      }
+    }, [fetchMapData, region, isWeb])
   );
 
   const handleRecenter = useCallback(async () => {
+    if (isWeb) return;
     const location = userLocation ?? (await requestLocation());
     if (!location) return;
     const nextRegion = {
@@ -190,6 +195,7 @@ export default function MapScreen() {
   };
 
   const handleSearchArea = async () => {
+    if (isWeb) return;
     await fetchMapData(region);
     setShowSearchArea(false);
   };
