@@ -14,11 +14,6 @@ MotoGO is a motorcycle social application built with React Native (Expo) fronten
 - License verification (AI-powered via GPT-4o)
 - User profiles with privacy controls
 
-## User Personas
-- **Rider**: Casual motorcyclist who wants to find routes and events
-- **Seller**: User who lists motorcycle gear for sale
-- **Community Leader**: User who organizes group rides and events
-
 ## Tech Stack
 - **Frontend**: React Native (Expo), TypeScript, Expo Router
 - **Backend**: FastAPI, Python, Motor (async MongoDB)
@@ -44,16 +39,17 @@ MotoGO is a motorcycle social application built with React Native (Expo) fronten
 ### Interactive Map (V2)
 - ClusteredMapView with dark theme
 - Gas station and service point markers with custom callouts
-- **Directions button** on gas/service markers → opens Google Maps
+- **Directions button** on gas/service/event markers -> opens Google Maps
+- **User location marker** (blue dot) on recenter
+- **Event callouts** with Detalii + Directii buttons
 - Recenter GPS button
 - "Search this area" button
-- Route and event markers
 
 ### Marketplace
 - Second-hand listings with categories, search, filtering
 - Create listing modal with multi-step wizard
 - Listing detail page
-- Seller username shown on listing cards (tappable → profile)
+- Seller username shown on listing cards (tappable -> profile)
 - Reduced padding between categories and listings
 
 ### Community
@@ -71,17 +67,27 @@ MotoGO is a motorcycle social application built with React Native (Expo) fronten
 ### Universal User Profile
 - Single UserProfileScreen accessible from everywhere
 - Relationship-based actions:
-  - self → Edit Profile
-  - not_friends → Add Friend
-  - request_sent → Cancel Request
-  - request_received → Accept/Decline
-  - friends → Message + Remove Friend
+  - self -> Edit Profile
+  - not_friends -> Add Friend
+  - request_sent -> Cancel Request
+  - request_received -> Accept/Decline
+  - friends -> Message + Remove Friend
 - Profile content: avatar, username, level, bio, bike, country, license, stats
 - Privacy-controlled fields respected
-- Username/avatar tappable in: marketplace, community, notifications
+- Username/avatar tappable in: marketplace, community, notifications, friends list, group members
 
-### Stories
-- Create and view stories with photo/video
+### Privacy Settings
+- Location visibility toggle
+- Km total visibility toggle
+- Last active visibility toggle
+- Routes visibility (public/friends/private cycle)
+- All in Edit Profile screen
+
+### Bug Fixes Applied
+- FlatList in ScrollView error (PlaceSearchInput) -> replaced with ScrollView+map
+- RouteMiniMap not showing -> backend proxy returns actual bytes (200) instead of redirect (302)
+- RouteMiniMap container alignItems:center removed from route/event/create pages
+- RouteMiniMap wrap width: 100% for proper sizing
 
 ## API Endpoints (Key)
 - POST /api/auth/login, /api/auth/register
@@ -92,7 +98,7 @@ MotoGO is a motorcycle social application built with React Native (Expo) fronten
 - GET /api/friends, /api/friends/requests
 - POST /api/friends/request, /accept, /reject, /cancel, /remove
 - GET /api/notifications, POST /api/notifications/{id}/read
-- GET /api/map/static-image (proxy to Google Maps Static API)
+- GET /api/map/static-image (proxy to Google Maps Static API - returns bytes)
 - GET /api/map/nearby-places
 
 ## Credentials
@@ -105,22 +111,24 @@ MotoGO is a motorcycle social application built with React Native (Expo) fronten
 
 ### P0 - Completed This Session
 - [x] Notifications screen simplified (no tabs) + Community button
-- [x] RouteMiniMap fix (width: 100%)
-- [x] Marketplace padding reduced
-- [x] Map V2: Directions button on gas/service markers
+- [x] RouteMiniMap fix (width: 100% + alignItems:center removed + backend proxy bytes)
+- [x] Marketplace padding reduced + seller name clickable
+- [x] Map V2: Directions on gas/service/event markers, user location dot
 - [x] Universal User Profile with relationship states
-- [x] Remove Friend endpoint
-- [x] Privacy settings in Edit Profile
-- [x] Username/avatar tappable everywhere
+- [x] Remove Friend endpoint + UI
+- [x] Privacy settings in Edit Profile (4 toggles)
+- [x] Username/avatar tappable everywhere (friends, marketplace, community, notifications, groups)
+- [x] PlaceSearchInput FlatList->ScrollView fix
+- [x] Event callouts on map with Detalii + Directii
 
 ### P1 - Next Up
-- [ ] Marketplace: "Anunțurile mele" page (view/delete own listings)
+- [ ] Marketplace: "Anunturile mele" page (view/delete own listings)
 - [ ] Community page enhancements
 
 ### P2 - Upcoming
 - [ ] Marketplace: 3-month listing expiry
 - [ ] Internationalization (EN + language switcher)
-- [ ] Backend refactor (server.py → separate routers)
+- [ ] Backend refactor (server.py -> separate routers)
 
 ### P3 - Backlog
 - [ ] "Forgot Password" flow (blocked - needs email API key)
