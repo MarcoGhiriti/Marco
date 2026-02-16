@@ -452,13 +452,33 @@ export default function HomeScreen() {
             />
           }
         >
-          {/* Stories Bar */}
-          <StoriesBar
-            stories={stories}
-            currentUserId={me?.id}
-            onAddStory={handleAddStory}
-            onViewStory={handleViewStory}
-          />
+          {/* Stories Bar + Feed Toggle Buttons */}
+          <View style={styles.storiesRow}>
+            <View style={{ flex: 1 }}>
+              <StoriesBar
+                stories={stories}
+                currentUserId={me?.id}
+                onAddStory={handleAddStory}
+                onViewStory={handleViewStory}
+              />
+            </View>
+            <View style={styles.feedToggles}>
+              <Pressable
+                style={[styles.feedToggle, feedShowRoutes && styles.feedToggleActive]}
+                onPress={() => setFeedShowRoutes(p => !p)}
+                data-testid="feed-toggle-routes"
+              >
+                <Ionicons name="trail-sign" size={16} color={feedShowRoutes ? Colors.bg : Colors.text} />
+              </Pressable>
+              <Pressable
+                style={[styles.feedToggle, feedShowEvents && styles.feedToggleActiveEvent]}
+                onPress={() => setFeedShowEvents(p => !p)}
+                data-testid="feed-toggle-events"
+              >
+                <Ionicons name="calendar" size={16} color={feedShowEvents ? Colors.bg : Colors.text} />
+              </Pressable>
+            </View>
+          </View>
 
           {/* License Required Banner */}
           {!isLicenseVerified && (
