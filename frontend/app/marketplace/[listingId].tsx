@@ -127,7 +127,7 @@ export default function ListingDetailScreen() {
       {
         label: "Kilometers",
         value:
-          listing.kilometers !== undefined
+          listing.kilometers !== undefined && listing.kilometers !== null
             ? `${listing.kilometers.toLocaleString()} km`
             : "",
       },
