@@ -53,7 +53,7 @@ export function RouteCard({
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `🏍️ Check out this route on Moto GO!\n\n📍 ${item.title}\n📏 ${item.distance_km.toFixed(1)} km\n⏱️ ${item.duration_min} min\n\n${item.description || "Join me for this ride!"}`,
+        message: `🏍️ Check out this route on Moto GO!\n\n📍 ${item.title}\n📏 ${(item.distance_km ?? 0).toFixed(1)} km\n⏱️ ${item.duration_min ?? 0} min\n\n${item.description || "Join me for this ride!"}`,
         title: item.title,
       });
     } catch (error) {
