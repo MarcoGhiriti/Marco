@@ -504,6 +504,17 @@ function CreateListingModal({
                   placeholderTextColor={Colors.muted}
                   style={styles.textInput}
                 />
+
+                {/* Phone */}
+                <Text style={styles.inputLabel}>Phone (optional)</Text>
+                <TextInput
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="07xx xxx xxx"
+                  placeholderTextColor={Colors.muted}
+                  style={styles.textInput}
+                  keyboardType="phone-pad"
+                />
               </>
             )}
 
