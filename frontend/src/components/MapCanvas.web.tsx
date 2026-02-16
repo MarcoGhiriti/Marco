@@ -4,11 +4,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
 
 type MapCanvasProps = {
+  mapRef: React.RefObject<any>;
+  region: any;
+  onRegionChangeComplete: (region: any) => void;
+  onPanDrag: () => void;
+  onRecenter: () => void;
+  onSearchArea: () => void;
+  showSearchArea: boolean;
   events: any[];
-  loading: boolean;
+  gasMarkers: any[];
+  policeReports: any[];
   showEvents: boolean;
-  onToggleEvents: (value: boolean) => void;
+  showGas: boolean;
+  onToggleEvents: () => void;
+  onToggleGas: () => void;
   onReportPolice: () => void;
+  onVotePolice: (reportId: string, vote: "up" | "down", lat: number, lng: number) => void;
+  isFetching: boolean;
 };
 
 export default function MapCanvas(_props: MapCanvasProps) {
