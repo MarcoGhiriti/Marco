@@ -103,17 +103,17 @@ export function RouteCard({
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Ionicons name="navigate-outline" size={14} color={Colors.accent} />
-            <Text style={styles.statText}>{item.distance_km.toFixed(1)} km</Text>
+            <Text style={styles.statText}>{(item.distance_km ?? 0).toFixed(1)} km</Text>
           </View>
           <View style={styles.statItem}>
             <Ionicons name="time-outline" size={14} color={Colors.accent} />
-            <Text style={styles.statText}>{item.duration_min} min</Text>
+            <Text style={styles.statText}>{item.duration_min ?? 0} min</Text>
           </View>
           <View style={styles.statItem}>
             <Ionicons name="people-outline" size={14} color={Colors.accent} />
-            <Text style={styles.statText}>{item.participants_count}</Text>
+            <Text style={styles.statText}>{item.participants_count ?? 0}</Text>
           </View>
-          {item.stops_count > 0 && (
+          {(item.stops_count ?? 0) > 0 && (
             <View style={styles.statItem}>
               <Ionicons name="flag-outline" size={14} color={Colors.accent} />
               <Text style={styles.statText}>{item.stops_count} stops</Text>
