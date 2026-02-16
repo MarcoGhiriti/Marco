@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Keyboard,
-  FlatList,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
@@ -158,30 +158,32 @@ export function PlaceSearchInput({
 
       {showResults && results.length > 0 && (
         <View style={styles.resultsContainer}>
-          <FlatList
-            data={results}
-            keyExtractor={(item) => item.place_id}
+          <ScrollView
             keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <Pressable
-                style={styles.resultItem}
-                onPress={() => handleSelectPlace(item)}
-              >
-                <Ionicons name="location" size={18} color={Colors.accent} />
-                <View style={styles.resultTextContainer}>
-                  <Text style={styles.resultMainText} numberOfLines={1}>
-                    {item.main_text}
-                  </Text>
-                  {item.secondary_text ? (
-                    <Text style={styles.resultSecondaryText} numberOfLines={1}>
-                      {item.secondary_text}
+            nestedScrollEnabled
+          >
+            {results.map((item, idx) => (
+              <View key={item.place_id}>
+                {idx > 0 && <View style={styles.separator} />}
+                <Pressable
+                  style={styles.resultItem}
+                  onPress={() => handleSelectPlace(item)}
+                >
+                  <Ionicons name="location" size={18} color={Colors.accent} />
+                  <View style={styles.resultTextContainer}>
+                    <Text style={styles.resultMainText} numberOfLines={1}>
+                      {item.main_text}
                     </Text>
-                  ) : null}
-                </View>
-              </Pressable>
-            )}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
+                    {item.secondary_text ? (
+                      <Text style={styles.resultSecondaryText} numberOfLines={1}>
+                        {item.secondary_text}
+                      </Text>
+                    ) : null}
+                  </View>
+                </Pressable>
+              </View>
+            ))}
+          </ScrollView>
         </View>
       )}
     </View>
