@@ -453,70 +453,70 @@ export default function ProfileScreen() {
                 </Text>
               </Pressable>
 
-          {/* Routes Tab Content */}
-          {activeTab === "routes" && (
-            <>
-              {myRoutes.length === 0 ? (
-                <View style={styles.emptyRoutes}>
-                  <Ionicons name="map-outline" size={48} color={Colors.muted} />
-                  <Text style={styles.emptyRoutesText}>No routes created yet</Text>
-                  <Text style={styles.emptyRoutesSub}>Create your first route to start tracking rides!</Text>
-                </View>
-              ) : (
-                <View style={styles.myRoutesList}>
-                  {myRoutes.map((route) => {
-                    const isActiveRoute = activeRide?.route_id === route.id;
-                    
-                    return (
-                      <Pressable 
-                        key={route.id} 
-                        onPress={() => router.push(`/route/${route.id}`)}
-                        style={styles.myRouteCard}
-                      >
-                        <RouteMiniMap polyline={route.polyline} />
-                        <View style={styles.myRouteContent}>
-                          <Text style={styles.myRouteTitle} numberOfLines={1}>{route.title}</Text>
-                          <View style={styles.myRouteStats}>
-                            <Text style={styles.myRouteStat}>
-                              <Ionicons name="navigate-outline" size={12} color={Colors.accent} /> {route.distance_km.toFixed(1)} km
-                            </Text>
-                            <Text style={styles.myRouteStat}>
-                              <Ionicons name="people-outline" size={12} color={Colors.accent} /> {route.participants_count}
-                            </Text>
-                          </View>
-                          
-                          {/* Action Buttons */}
-                          <View style={styles.myRouteActions}>
-                            {isActiveRoute ? (
-                              <Pressable onPress={handleEndRide} style={styles.endRideBtn}>
-                                <Ionicons name="flag" size={16} color="#FFF" />
-                                <Text style={styles.endRideBtnText}>End</Text>
-                              </Pressable>
-                            ) : !activeRide ? (
-                              <Pressable onPress={() => handleStartRide(route.id)} style={styles.startRideBtn}>
-                                <Ionicons name="play" size={16} color="#FFF" />
-                                <Text style={styles.startRideBtnText}>Start</Text>
-                              </Pressable>
-                            ) : (
-                              <View style={styles.rideLocked}>
-                                <Ionicons name="lock-closed" size={14} color={Colors.muted} />
+              {/* Routes Tab Content */}
+              {activeTab === "routes" && (
+                <>
+                  {myRoutes.length === 0 ? (
+                    <View style={styles.emptyRoutes}>
+                      <Ionicons name="map-outline" size={48} color={Colors.muted} />
+                      <Text style={styles.emptyRoutesText}>No routes created yet</Text>
+                      <Text style={styles.emptyRoutesSub}>Create your first route to start tracking rides!</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.myRoutesList}>
+                      {myRoutes.map((route) => {
+                        const isActiveRoute = activeRide?.route_id === route.id;
+                        
+                        return (
+                          <Pressable 
+                            key={route.id} 
+                            onPress={() => router.push(`/route/${route.id}`)}
+                            style={styles.myRouteCard}
+                          >
+                            <RouteMiniMap polyline={route.polyline} />
+                            <View style={styles.myRouteContent}>
+                              <Text style={styles.myRouteTitle} numberOfLines={1}>{route.title}</Text>
+                              <View style={styles.myRouteStats}>
+                                <Text style={styles.myRouteStat}>
+                                  <Ionicons name="navigate-outline" size={12} color={Colors.accent} /> {route.distance_km.toFixed(1)} km
+                                </Text>
+                                <Text style={styles.myRouteStat}>
+                                  <Ionicons name="people-outline" size={12} color={Colors.accent} /> {route.participants_count}
+                                </Text>
                               </View>
-                            )}
-                            <Pressable 
-                              onPress={() => router.push(`/route/${route.id}`)} 
-                              style={styles.editRouteBtn}
-                            >
-                              <Ionicons name="create-outline" size={16} color={Colors.accent} />
-                            </Pressable>
-                          </View>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                              
+                              {/* Action Buttons */}
+                              <View style={styles.myRouteActions}>
+                                {isActiveRoute ? (
+                                  <Pressable onPress={handleEndRide} style={styles.endRideBtn}>
+                                    <Ionicons name="flag" size={16} color="#FFF" />
+                                    <Text style={styles.endRideBtnText}>End</Text>
+                                  </Pressable>
+                                ) : !activeRide ? (
+                                  <Pressable onPress={() => handleStartRide(route.id)} style={styles.startRideBtn}>
+                                    <Ionicons name="play" size={16} color="#FFF" />
+                                    <Text style={styles.startRideBtnText}>Start</Text>
+                                  </Pressable>
+                                ) : (
+                                  <View style={styles.rideLocked}>
+                                    <Ionicons name="lock-closed" size={14} color={Colors.muted} />
+                                  </View>
+                                )}
+                                <Pressable 
+                                  onPress={() => router.push(`/route/${route.id}`)} 
+                                  style={styles.editRouteBtn}
+                                >
+                                  <Ionicons name="create-outline" size={16} color={Colors.accent} />
+                                </Pressable>
+                              </View>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  )}
+                </>
               )}
-            </>
-          )}
 
           {/* Events Tab Content */}
           {activeTab === "events" && (
