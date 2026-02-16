@@ -235,6 +235,12 @@ frontend:
         agent: "main"
         comment: "Fix: RouteMiniMap.native export aliniat (named export) pentru a elimina crash în RouteCard. Necesită retestare." 
       - working: false
+        agent: "user"
+        comment: "Expo Go: Cannot read property 'map' of undefined în RouteMiniMap.native (points undefined)." 
+      - working: false
+        agent: "main"
+        comment: "Fix: RouteMiniMap.native acceptă points default [] + guard Array.isArray pentru a evita crash." 
+      - working: false
         agent: "main"
         comment: "Manual web: Home se încarcă fără crash după fix (RouteCard render OK)."
       - working: false
