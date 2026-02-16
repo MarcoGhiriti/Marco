@@ -150,7 +150,11 @@ function ChatsTab() {
             <Text style={styles.sectionTitle}>Friend Requests</Text>
             {requests.incoming.map((u) => (
               <View key={u.id} style={styles.requestCard}>
-                <View style={styles.requestUser}>
+                <Pressable 
+                  style={styles.requestUser}
+                  onPress={() => router.push(`/profile/${u.id}`)}
+                  data-testid={`profile-link-${u.id}`}
+                >
                   <View style={styles.requestAvatar}>
                     {u.profile_photo_base64 ? (
                       <Image source={{ uri: u.profile_photo_base64 }} style={styles.requestAvatarImg} />
@@ -159,7 +163,7 @@ function ChatsTab() {
                     )}
                   </View>
                   <Text style={styles.requestUsername}>{u.username}</Text>
-                </View>
+                </Pressable>
                 <View style={styles.requestActions}>
                   <Pressable onPress={() => rejectRequest(u.id)} style={styles.rejectBtn}>
                     <Ionicons name="close" size={18} color={Colors.danger} />
