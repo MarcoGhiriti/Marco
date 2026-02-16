@@ -5,6 +5,7 @@
 - Optional phone field for listings (frontend + backend).
 - Marketplace backend filters: `mine=true` and 3‑month listing limit; phone included in responses.
 - Map screen update (native): event markers toggle + Report Police FAB.
+- Map screen header actions: add Route + add Event.
 - Mini‑map: MapView pe native (străzi reale), fără grid.
 
 ### In Progress / Needs Retest
