@@ -175,7 +175,7 @@ function SecondHandTab() {
             <Ionicons name="location-outline" size={12} color={Colors.muted} />
             <Text style={styles.listingLocation}>{item.location}</Text>
           </View>
-          {item.kilometers !== undefined && (
+          {item.kilometers !== undefined && item.kilometers !== null && (
             <Text style={styles.listingKm}>{item.kilometers.toLocaleString()} km</Text>
           )}
         </View>
