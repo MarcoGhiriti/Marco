@@ -203,6 +203,9 @@ frontend:
         comment: "Am adăugat protecție pentru null la kilometers (list și detail) pentru a evita crash la click pe anunț. Necesită retestare UI."
       - working: false
         agent: "testing"
+        comment: "Testing agent: nu a putut loga (Continue button nefuncțional în mobile viewport)."
+      - working: false
+        agent: "testing"
         comment: "❌ CRITICAL LOGIN ISSUE: Nu pot testa marketplace deoarece login-ul cu user1@example.com/Password123 nu funcționează pe mobile viewport (390x844 & 360x800). App-ul se încarcă cu splash screen apoi redirecționează înapoi la login. Continue button este vizibil dar nu răspunde la click (nici cu force=True, nici cu JavaScript). Posibilă problemă de autentificare backend sau validare frontend. BLOCKER pentru testarea completă a marketplace-ului."
 
   - task: "Mini-map: străzi adiacente gri"
@@ -216,6 +219,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Am ajustat grid lines la gri (muted) + opacitate/width pentru a simula străzi adiacente. Necesită verificare vizuală."
+      - working: false
+        agent: "testing"
+        comment: "Testing agent: nu a putut loga, testarea mini-map nu a fost posibilă." 
       - working: false
         agent: "testing"
         comment: "❌ NU POATE FI TESTAT: Login blocker împiedică accesul la Routes/Home tab pentru verificarea mini-map-ului cu grid gri. Din cod se observă că grid lines folosesc Colors.muted cu strokeOpacity={0.35} și strokeWidth={0.6} - implementarea pare corectă tehnic, dar necesită testare vizuală după rezolvarea problemei de login."
@@ -242,12 +248,15 @@ frontend:
         comment: "Fix: map.native.tsx nu mai re-exportă map.tsx (evită recursion/stack overflow în Expo Go). Necesită retestare pe device." 
       - working: false
         agent: "testing"
+        comment: "Testing agent: login blocat, nu a putut verifica Map screen." 
+      - working: false
+        agent: "testing"
         comment: "❌ NU POATE FI TESTAT: Login blocker împiedică accesul la Map tab pentru verificarea MapView native cu Report Police button și Show Events toggle. Din cod se observă că MapCanvas.native.tsx conține MapView cu Report Police FAB și Show Events toggle, iar MapCanvas.web.tsx afișează placeholder card 'Interactive Map - Live map is available on mobile devices' - implementarea pare corectă tehnic, dar necesită testare vizuală după rezolvarea problemei de login." 
 
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 6
+  test_sequence: 7
   run_ui: true
 
 # NOTE(main): Am început implementarea pentru ride banner vizibil și participanților.
@@ -282,6 +291,8 @@ agent_communication:
     message: "✅ MARKETPLACE BACKEND TESTING COMPLET: Toate endpoint-urile marketplace funcționează perfect conform cerințelor! 1) Login user1@example.com/Password123 ✅ 2) POST /api/marketplace/listings cu phone +40721234567 și imagine base64 ✅ 3) GET /api/marketplace/listings?mine=true returnează listing-ul creat ✅ 4) GET /api/marketplace/listings/{id} include câmpul phone corect ✅ 5) Filtrul de 3 luni funcționează - doar listing-uri created_at >= 90 zile ✅ 6) DELETE /api/marketplace/listings/{id} ca owner funcționează și verifică ștergerea ✅. Backend marketplace este complet funcțional și gata pentru producție!"
   - agent: "testing"
     message: "✅ MARKETPLACE FRONTEND TESTING COMPLET: Login OK, Shop->Second Hand OK, listări încărcate, click pe anunț fără eroare, Phone field prezent, My Listings OK, delete OK (mobile 390x844 & 360x800)."
+  - agent: "testing"
+    message: "❌ Login blocked on mobile viewports (Continue unresponsive) - unable to test marketplace/minimap/map. Expo logs show unauthorized request from preview." 
   - agent: "testing"
     message: "✅ MARKETPLACE UI TESTING COMPLET pe mobile (390x844 & 360x800): Toate cerințele de testare îndeplinite perfect! 1) Login user1@example.com funcționează ✅ 2) Navigare Shop -> Second Hand funcționează ✅ 3) Listările se încarcă corect (loading spinner vizibil) ✅ 4) CLICK PE ANUNȚ FUNCȚIONEAZĂ FĂRĂ EROARE - eroarea raportată de user NU a fost reprodusă ✅ 5) Add Listing modal conține câmpul Phone (optional) ✅ 6) My Listings page (buton person) se deschide corect ✅ 7) Delete functionality cu confirmare funcționează ✅ 8) UI complet responsive pe ambele viewport-uri mobile ✅. CONCLUZIE: Marketplace UI funcționează perfect - nu există erori critice!"
   - agent: "testing"
