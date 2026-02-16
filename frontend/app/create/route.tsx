@@ -108,7 +108,6 @@ const mapStyles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
-    alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
