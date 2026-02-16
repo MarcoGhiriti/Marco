@@ -183,7 +183,9 @@ function ChatsTab() {
             <Text style={styles.sectionTitle}>Search results</Text>
             {results.map((u) => (
               <View key={u.id} style={styles.rowCard}>
-                <Text style={styles.rowTitle}>{u.username}</Text>
+                <Pressable onPress={() => router.push(`/profile/${u.id}`)} style={{ flex: 1 }}>
+                  <Text style={styles.rowTitle}>{u.username}</Text>
+                </Pressable>
                 <Pressable onPress={() => sendRequest(u.username)} style={styles.smallGhost}>
                   <Text style={styles.smallGhostText}>Add</Text>
                 </Pressable>
