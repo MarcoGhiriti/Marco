@@ -103,6 +103,8 @@ export default function MapCanvas({
   onReportPolice,
   onVotePolice,
   isFetching,
+  userLocation,
+  onEventPress,
 }: MapCanvasProps) {
   const searchAnim = useRef(new Animated.Value(showSearchArea ? 1 : 0)).current;
 
