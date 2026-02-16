@@ -54,18 +54,18 @@ export function getLevelColor(level: number): string {
 }
 
 
-// All available badges with unlock requirements
+// All available badges with unlock requirements - IDs match backend BADGE_INFO
 const ALL_BADGES = [
-  { id: "first_ride", name: "First Ride", description: "Complete your first ride", icon: "flag", requirement: "Complete 1 ride", km: 0 },
-  { id: "century", name: "Century Rider", description: "Ride 100 km total", icon: "speedometer", requirement: "Ride 100 km", km: 100 },
-  { id: "explorer_500", name: "Explorer", description: "Ride 500 km total", icon: "compass", requirement: "Ride 500 km", km: 500 },
-  { id: "adventurer_1k", name: "Adventurer", description: "Ride 1,000 km total", icon: "map", requirement: "Ride 1,000 km", km: 1000 },
-  { id: "warrior_2500", name: "Road Warrior", description: "Ride 2,500 km total", icon: "navigate", requirement: "Ride 2,500 km", km: 2500 },
-  { id: "king_5k", name: "Highway King", description: "Ride 5,000 km total", icon: "car-sport", requirement: "Ride 5,000 km", km: 5000 },
-  { id: "master_10k", name: "Moto Master", description: "Ride 10,000 km total", icon: "ribbon", requirement: "Ride 10,000 km", km: 10000 },
-  { id: "legend_25k", name: "Legend", description: "Ride 25,000 km total", icon: "star", requirement: "Ride 25,000 km", km: 25000 },
-  { id: "social_5", name: "Social Rider", description: "Complete 5 group rides", icon: "people", requirement: "5 group rides", km: 0 },
-  { id: "event_master", name: "Event Master", description: "Attend 10 events", icon: "calendar", requirement: "10 events", km: 0 },
+  { id: "first_ride", name: "First Ride", description: "Complete your first ride", icon: "bicycle", requirement: "Complete 1 ride", km: 0 },
+  { id: "km_100", name: "Century Rider", description: "Ride 100 km total", icon: "speedometer", requirement: "Ride 100 km", km: 100 },
+  { id: "km_500", name: "Road Warrior", description: "Ride 500 km total", icon: "flash", requirement: "Ride 500 km", km: 500 },
+  { id: "km_1000", name: "Highway King", description: "Ride 1,000 km total", icon: "trophy", requirement: "Ride 1,000 km", km: 1000 },
+  { id: "km_2500", name: "Road Master", description: "Ride 2,500 km total", icon: "medal", requirement: "Ride 2,500 km", km: 2500 },
+  { id: "km_5000", name: "Legend", description: "Ride 5,000 km total", icon: "star", requirement: "Ride 5,000 km", km: 5000 },
+  { id: "km_10000", name: "Immortal", description: "Ride 10,000 km total", icon: "ribbon", requirement: "Ride 10,000 km", km: 10000 },
+  { id: "event_creator", name: "Event Organizer", description: "Create your first event", icon: "calendar", requirement: "Create 1 event", km: 0 },
+  { id: "route_creator", name: "Route Creator", description: "Create your first route", icon: "trail-sign", requirement: "Create 1 route", km: 0 },
+  { id: "social_5", name: "Social Rider", description: "Make 5 friends", icon: "people", requirement: "5 friends", km: 0 },
 ];
 
 const LEVEL_TITLES = [
