@@ -208,7 +208,7 @@ frontend:
         agent: "testing"
         comment: "❌ CRITICAL LOGIN ISSUE: Nu pot testa marketplace deoarece login-ul cu user1@example.com/Password123 nu funcționează pe mobile viewport (390x844 & 360x800). App-ul se încarcă cu splash screen apoi redirecționează înapoi la login. Continue button este vizibil dar nu răspunde la click (nici cu force=True, nici cu JavaScript). Posibilă problemă de autentificare backend sau validare frontend. BLOCKER pentru testarea completă a marketplace-ului."
 
-  - task: "Mini-map: străzi adiacente gri"
+  - task: "Mini-map: străzi reale, fără grid"
     implemented: true
     working: false
     file: "/app/frontend/src/components/RouteMiniMap.tsx"
