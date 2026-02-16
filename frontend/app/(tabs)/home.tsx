@@ -107,7 +107,6 @@ export default function HomeScreen() {
   const loadRoutes = useCallback(async () => {
     if (!authHeader) return;
     try {
-      // Build URL with location params if available
       let url = "/api/routes";
       if (userLocation) {
         url += `?lat=${userLocation.lat}&lng=${userLocation.lng}&radius_km=500`;
@@ -118,6 +117,16 @@ export default function HomeScreen() {
       console.error("Failed to load routes:", e);
     }
   }, [authHeader, userLocation]);
+
+  const loadEvents = useCallback(async () => {
+    if (!authHeader) return;
+    try {
+      const data = await apiGet<EventOut[]>("/api/events", authHeader);
+      setEvents(data);
+    } catch (e) {
+      console.error("Failed to load events:", e);
+    }
+  }, [authHeader]);
 
   const loadStories = useCallback(async () => {
     if (!authHeader) return;
