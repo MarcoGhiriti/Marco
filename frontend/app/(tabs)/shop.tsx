@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     gap: 10,
   },
   searchBox: {
@@ -867,8 +867,8 @@ const styles = StyleSheet.create({
   },
   categoriesRow: {
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 8,
+    paddingBottom: 4,
+    gap: 6,
   },
   categoryChip: {
     alignItems: "center",
