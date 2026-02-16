@@ -15,7 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
-import { apiGet } from "../../src/lib/api";
+import { apiDelete, apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -91,7 +91,60 @@ export default function ListingDetailScreen() {
     router.push(`/community/dm/${listing.seller_id}`);
   };
 
+  const handleDelete = () => {
+    if (!listing || !authHeader) return;
+    Alert.alert("Delete listing?", "This action cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await apiDelete(`/api/marketplace/listings/${listing.id}`, authHeader);
+            Alert.alert("Deleted", "Listing has been removed.");
+            router.back();
+          } catch (e) {
+            Alert.alert("Error", "Failed to delete listing");
+          }
+        },
+      },
+    ]);
+  };
+
   const isOwner = me?.id === listing?.seller_id;
+
+  const detailItems = useMemo(() => {
+    if (!listing) return [] as { label: string; value: string }[];
+    const expiresAt = new Date(
+      new Date(listing.created_at).getTime() + 90 * 24 * 60 * 60 * 1000
+    );
+    const items = [
+      { label: "Category", value: listing.category },
+      { label: "Condition", value: listing.condition },
+      { label: "Brand", value: listing.brand || "" },
+      { label: "Model", value: listing.model || "" },
+      { label: "Year", value: listing.year ? String(listing.year) : "" },
+      {
+        label: "Kilometers",
+        value:
+          listing.kilometers !== undefined
+            ? `${listing.kilometers.toLocaleString()} km`
+            : "",
+      },
+      {
+        label: "Engine",
+        value: listing.engine_cc ? `${listing.engine_cc} cc` : "",
+      },
+      {
+        label: "Power",
+        value: listing.horsepower ? `${listing.horsepower} HP` : "",
+      },
+      { label: "License", value: listing.license_type || "" },
+      { label: "Phone", value: listing.phone || "" },
+      { label: "Expires", value: expiresAt.toLocaleDateString() },
+    ];
+    return items.filter((item) => item.value);
+  }, [listing]);
 
   if (loading) {
     return (
@@ -193,54 +246,18 @@ export default function ListingDetailScreen() {
           <Text style={styles.categoryText}>{listing.category}</Text>
         </View>
 
-        {/* Motorcycle Details */}
-        {listing.category === "motorcycle" && (
+        {/* Details */}
+        {detailItems.length > 0 && (
           <View style={styles.specsCard}>
-            <Text style={styles.specsTitle}>Specifications</Text>
-            
+            <Text style={styles.specsTitle}>Details</Text>
+
             <View style={styles.specsGrid}>
-              {listing.brand && (
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Brand</Text>
-                  <Text style={styles.specValue}>{listing.brand}</Text>
+              {detailItems.map((item) => (
+                <View key={item.label} style={styles.specItem}>
+                  <Text style={styles.specLabel}>{item.label}</Text>
+                  <Text style={styles.specValue}>{item.value}</Text>
                 </View>
-              )}
-              {listing.model && (
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Model</Text>
-                  <Text style={styles.specValue}>{listing.model}</Text>
-                </View>
-              )}
-              {listing.year && (
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Year</Text>
-                  <Text style={styles.specValue}>{listing.year}</Text>
-                </View>
-              )}
-              {listing.kilometers !== undefined && (
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Kilometers</Text>
-                  <Text style={styles.specValue}>{listing.kilometers.toLocaleString()} km</Text>
-                </View>
-              )}
-              {listing.engine_cc && (
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Engine</Text>
-                  <Text style={styles.specValue}>{listing.engine_cc} cc</Text>
-                </View>
-              )}
-              {listing.horsepower && (
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Power</Text>
-                  <Text style={styles.specValue}>{listing.horsepower} HP</Text>
-                </View>
-              )}
-              {listing.license_type && (
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>License</Text>
-                  <Text style={styles.specValue}>{listing.license_type}</Text>
-                </View>
-              )}
+              ))}
             </View>
           </View>
         )}
@@ -286,6 +303,15 @@ export default function ListingDetailScreen() {
             <Text style={[styles.callBtnText, !listing.phone && styles.callBtnTextDisabled]}>
               {listing.phone ? "Call" : "No Phone"}
             </Text>
+          </Pressable>
+        </View>
+      )}
+
+      {isOwner && (
+        <View style={styles.ownerBar}>
+          <Pressable style={styles.deleteBtn} onPress={handleDelete}>
+            <Ionicons name="trash" size={20} color={Colors.bg} />
+            <Text style={styles.deleteBtnText}>Delete Listing</Text>
           </Pressable>
         </View>
       )}
