@@ -1059,6 +1059,44 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  // My Content Expandable Header
+  myContentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 14,
+  },
+  myContentHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  myContentIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  myContentTitle: {
+    color: Colors.text,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+  },
+  myContentSub: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 2,
+  },
+
   center: { paddingVertical: 12, alignItems: "center" },
   errorText: { color: Colors.danger, fontSize: 12, fontFamily: "Inter_700Bold" },
 
