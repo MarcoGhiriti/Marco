@@ -7,6 +7,7 @@
 - Map screen update (native): event markers toggle + Report Police FAB.
 - Custom map styling (dark + neon accents) on native.
 - Map filters: Events + Gas/Service chips, recenter, Search this area.
+- Gas/Service markers via Google Places API.
 - Police reports: confirm flow, TTL 30 min, voting (Still there?) with distance check.
 - Marker clustering for map layers.
 - Map screen header actions: add Route + add Event.
