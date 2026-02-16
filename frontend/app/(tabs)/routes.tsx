@@ -347,18 +347,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: "hidden",
   },
-  routeImageContainer: {
+  routeMapContainer: {
     height: 140,
     backgroundColor: Colors.card2,
-  },
-  routeImage: {
-    width: "100%",
-    height: "100%",
-  },
-  routeImagePlaceholder: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
   difficultyBadge: {
     position: "absolute",
