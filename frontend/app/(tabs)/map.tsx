@@ -1,9 +1,55 @@
-import React from "react";
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useCallback, useMemo, useState } from "react";
+import { Alert, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Colors } from "../../src/theme/colors";
+import { apiGet } from "../../src/lib/api";
+import { useAuthStore } from "../../src/state/authStore";
+import MapCanvas from "../../src/components/MapCanvas";
+
+type EventMarker = {
+  id: string;
+  title: string;
+  start_point: number[];
+  start_time: string;
+  location_name?: string;
+};
 
 export default function MapScreen() {
+  const { accessToken } = useAuthStore();
+  const [events, setEvents] = useState<EventMarker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showEvents, setShowEvents] = useState(true);
+
+  const authHeader = useMemo(() => {
+    if (!accessToken) return undefined;
+    return { Authorization: `Bearer ${accessToken}` };
+  }, [accessToken]);
+
+  const loadEvents = useCallback(async () => {
+    if (!authHeader) return;
+    try {
+      setLoading(true);
+      const data = await apiGet<EventMarker[]>("/api/events", authHeader);
+      const now = new Date();
+      const upcoming = (data || []).filter((e) => new Date(e.start_time) >= now);
+      setEvents(upcoming);
+    } catch (e) {
+      console.error("Failed to load events", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [authHeader]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadEvents();
+    }, [loadEvents])
+  );
+
+  const handleReportPolice = () => {
+    Alert.alert("Report Police", "This feature is available on the live mobile map.");
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -14,14 +60,13 @@ export default function MapScreen() {
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Ionicons name="map" size={64} color={Colors.accent} />
-          <Text style={styles.title}>Interactive Map</Text>
-          <Text style={styles.desc}>Live map is available on mobile devices.</Text>
-          <Text style={styles.descSub}>
-            Only event markers + Report Police are shown. Open Expo Go on your phone to use it.
-          </Text>
-        </View>
+        <MapCanvas
+          events={events}
+          loading={loading}
+          showEvents={showEvents}
+          onToggleEvents={setShowEvents}
+          onReportPolice={handleReportPolice}
+        />
       </View>
     </SafeAreaView>
   );
@@ -37,28 +82,4 @@ const styles = StyleSheet.create({
   },
   h1: { color: Colors.text, fontSize: 22, fontFamily: "Inter_900Black" },
   sub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  card: {
-    margin: 16,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: "center",
-    gap: 12,
-  },
-  title: { color: Colors.text, fontSize: 20, fontFamily: "Inter_900Black" },
-  desc: {
-    color: Colors.text,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  descSub: {
-    color: Colors.muted,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "center",
-  },
 });
