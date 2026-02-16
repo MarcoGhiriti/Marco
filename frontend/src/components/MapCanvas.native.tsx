@@ -463,4 +463,25 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_700Bold",
   },
+  eventLocationText: {
+    color: Colors.muted,
+    fontSize: 10,
+    maxWidth: 150,
+  },
+  userDotOuter: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(0, 122, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  userDotInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#007AFF",
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
 });
