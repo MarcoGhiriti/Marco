@@ -187,7 +187,7 @@ frontend:
     file: "/app/frontend/app/(tabs)/shop.tsx, /app/frontend/app/marketplace/[listingId].tsx, /app/frontend/app/marketplace/my-listings.tsx"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -201,6 +201,9 @@ frontend:
       - working: false
         agent: "main"
         comment: "Am adăugat protecție pentru null la kilometers (list și detail) pentru a evita crash la click pe anunț. Necesită retestare UI."
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL LOGIN ISSUE: Nu pot testa marketplace deoarece login-ul cu user1@example.com/Password123 nu funcționează pe mobile viewport (390x844 & 360x800). App-ul se încarcă cu splash screen apoi redirecționează înapoi la login. Continue button este vizibil dar nu răspunde la click (nici cu force=True, nici cu JavaScript). Posibilă problemă de autentificare backend sau validare frontend. BLOCKER pentru testarea completă a marketplace-ului."
 
   - task: "Mini-map: străzi adiacente gri"
     implemented: true
