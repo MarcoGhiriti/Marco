@@ -243,15 +243,15 @@ export default function TabsLayout() {
       {/* Hidden tabs - not shown in tab bar */}
       <Tabs.Screen
         name="community"
-        options={{ href: null, tabBarButton: () => null }}
+        options={{ tabBarButton: () => null }}
       />
       <Tabs.Screen
         name="store"
-        options={{ href: null, tabBarButton: () => null }}
+        options={{ tabBarButton: () => null }}
       />
       <Tabs.Screen
         name="profile"
-        options={{ href: null, tabBarButton: () => null }}
+        options={{ tabBarButton: () => null }}
       />
     </Tabs>
   );
