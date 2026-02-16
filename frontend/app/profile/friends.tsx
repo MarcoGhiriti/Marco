@@ -108,20 +108,26 @@ export default function FriendsScreen() {
 
   const renderFriend = ({ item }: { item: Friend }) => (
     <View style={styles.friendRow}>
-      <View style={styles.avatar}>
-        {item.profile_photo_base64 ? (
-          <Image
-            source={{ uri: item.profile_photo_base64 }}
-            style={styles.avatarImage}
-          />
-        ) : (
-          <Ionicons name="person" size={20} color={Colors.muted} />
-        )}
-      </View>
-      <View style={styles.friendInfo}>
-        <Text style={styles.friendName}>{item.username}</Text>
-        <Text style={styles.friendSub}>Friend</Text>
-      </View>
+      <Pressable
+        style={styles.friendTap}
+        onPress={() => router.push(`/profile/${item.id}`)}
+        data-testid={`friend-profile-${item.id}`}
+      >
+        <View style={styles.avatar}>
+          {item.profile_photo_base64 ? (
+            <Image
+              source={{ uri: item.profile_photo_base64 }}
+              style={styles.avatarImage}
+            />
+          ) : (
+            <Ionicons name="person" size={20} color={Colors.muted} />
+          )}
+        </View>
+        <View style={styles.friendInfo}>
+          <Text style={styles.friendName}>{item.username}</Text>
+          <Text style={styles.friendSub}>Friend</Text>
+        </View>
+      </Pressable>
       <Pressable
         onPress={() => handleMessage(item.id)}
         style={styles.actionBtn}
@@ -133,20 +139,26 @@ export default function FriendsScreen() {
 
   const renderSearchResult = ({ item }: { item: SearchUser }) => (
     <View style={styles.friendRow}>
-      <View style={styles.avatar}>
-        {item.profile_photo_base64 ? (
-          <Image
-            source={{ uri: item.profile_photo_base64 }}
-            style={styles.avatarImage}
-          />
-        ) : (
-          <Ionicons name="person" size={20} color={Colors.muted} />
-        )}
-      </View>
-      <View style={styles.friendInfo}>
-        <Text style={styles.friendName}>{item.username}</Text>
-        <Text style={styles.friendSub}>Not a friend yet</Text>
-      </View>
+      <Pressable
+        style={styles.friendTap}
+        onPress={() => router.push(`/profile/${item.id}`)}
+        data-testid={`search-profile-${item.id}`}
+      >
+        <View style={styles.avatar}>
+          {item.profile_photo_base64 ? (
+            <Image
+              source={{ uri: item.profile_photo_base64 }}
+              style={styles.avatarImage}
+            />
+          ) : (
+            <Ionicons name="person" size={20} color={Colors.muted} />
+          )}
+        </View>
+        <View style={styles.friendInfo}>
+          <Text style={styles.friendName}>{item.username}</Text>
+          <Text style={styles.friendSub}>Not a friend yet</Text>
+        </View>
+      </Pressable>
       <Pressable
         onPress={() => handleAddFriend(item.username, item.id)}
         disabled={addingFriend === item.id}
