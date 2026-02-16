@@ -81,18 +81,9 @@ export default function RoutesScreen() {
         style={styles.routeCard}
         onPress={() => router.push(`/route/${item.id}`)}
       >
-        {/* Route Preview Image or Placeholder */}
-        <View style={styles.routeImageContainer}>
-          {item.preview_image_base64 ? (
-            <Image 
-              source={{ uri: item.preview_image_base64 }} 
-              style={styles.routeImage} 
-            />
-          ) : (
-            <View style={styles.routeImagePlaceholder}>
-              <Ionicons name="map-outline" size={32} color={Colors.accent} />
-            </View>
-          )}
+        {/* Route Mini Map */}
+        <View style={styles.routeMapContainer}>
+          <RouteMiniMap polyline={item.polyline} />
           
           {/* Difficulty Badge */}
           <View style={[
@@ -138,10 +129,6 @@ export default function RoutesScreen() {
               <View style={styles.statItem}>
                 <Ionicons name="people-outline" size={14} color={Colors.accent} />
                 <Text style={styles.statText}>{item.participants?.length || 0}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Ionicons name="star" size={14} color="#FFD700" />
-                <Text style={styles.statText}>{item.rating?.toFixed(1) || "5.0"}</Text>
               </View>
             </View>
             
