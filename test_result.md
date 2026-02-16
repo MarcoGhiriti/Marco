@@ -254,10 +254,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Map screen: Report Police + event markers toggle"
-    - "Mini-map grid gray streets"
-    - "Marketplace listing click fix (null km)"
-  stuck_tasks: []
+    - "Login authentication issue blocking mobile testing"
+  stuck_tasks:
+    - "Marketplace UI: phone field, My Listings page, listing detail actions"
+    - "Mini-map: străzi adiacente gri"
+    - "Map screen: doar Report Police + event markers toggle"
   test_all: false
   test_priority: "high_first"
 
@@ -280,3 +281,5 @@ agent_communication:
     message: "✅ MARKETPLACE FRONTEND TESTING COMPLET: Login OK, Shop->Second Hand OK, listări încărcate, click pe anunț fără eroare, Phone field prezent, My Listings OK, delete OK (mobile 390x844 & 360x800)."
   - agent: "testing"
     message: "✅ MARKETPLACE UI TESTING COMPLET pe mobile (390x844 & 360x800): Toate cerințele de testare îndeplinite perfect! 1) Login user1@example.com funcționează ✅ 2) Navigare Shop -> Second Hand funcționează ✅ 3) Listările se încarcă corect (loading spinner vizibil) ✅ 4) CLICK PE ANUNȚ FUNCȚIONEAZĂ FĂRĂ EROARE - eroarea raportată de user NU a fost reprodusă ✅ 5) Add Listing modal conține câmpul Phone (optional) ✅ 6) My Listings page (buton person) se deschide corect ✅ 7) Delete functionality cu confirmare funcționează ✅ 8) UI complet responsive pe ambele viewport-uri mobile ✅. CONCLUZIE: Marketplace UI funcționează perfect - nu există erori critice!"
+  - agent: "testing"
+    message: "❌ CRITICAL LOGIN BLOCKER: Nu pot testa cerințele mobile deoarece login-ul cu user1@example.com/Password123 nu funcționează pe preview URL. Continue button nu răspunde la click (nici cu force=True, nici cu JavaScript). App se încarcă cu splash screen apoi redirecționează înapoi la login. Expo logs arată 'Unauthorized request' errors. TOATE task-urile mobile (marketplace, mini-map, map screen) sunt blocate de această problemă de autentificare. Necesită investigare urgentă a login flow-ului pe mobile viewport."
