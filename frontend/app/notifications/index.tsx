@@ -385,6 +385,7 @@ export default function NotificationsScreen() {
           tabBarActiveTintColor: Colors.accent,
           tabBarInactiveTintColor: Colors.muted,
           tabBarIndicatorStyle: { backgroundColor: Colors.accent, height: 3, borderRadius: 2 },
+          sceneStyle: { backgroundColor: Colors.bg },
         }}
       >
         <TopTabs.Screen name="Updates" component={UpdatesTab} />
