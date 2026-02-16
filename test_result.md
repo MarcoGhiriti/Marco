@@ -274,6 +274,9 @@ frontend:
         agent: "main"
         comment: "Backend: /api/map/events, /api/map/gas-service, /api/map/police-reports (create/vote) testate cu curl/requests – OK. UI device încă necesar." 
       - working: false
+        agent: "main"
+        comment: "Fix: map.shared mutat la _map.shared pentru a evita rută extra (posibilă dublare Map în tab bar). Necesită retestare pe device." 
+      - working: false
         agent: "testing"
         comment: "❌ NU POATE FI TESTAT: Login blocker împiedică accesul la Map tab pentru verificarea MapView native cu Report Police button și Show Events toggle. Din cod se observă că MapCanvas.native.tsx conține MapView cu Report Police FAB și Show Events toggle, iar MapCanvas.web.tsx afișează placeholder card 'Interactive Map - Live map is available on mobile devices' - implementarea pare corectă tehnic, dar necesită testare vizuală după rezolvarea problemei de login." 
 
