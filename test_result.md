@@ -121,15 +121,18 @@ backend:
 
   - task: "Marketplace phone field + 3-month listing limit + my listings filter"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Am adăugat câmp phone în responses, filtrare 3 luni la listări, query param mine=true pentru listările utilizatorului și validare expirare în get listing. Necesită testare backend."
+      - working: true
+        agent: "testing"
+        comment: "✅ MARKETPLACE BACKEND TESTING COMPLET: Toate endpoint-urile funcționează perfect! 1) Login user1@example.com/Password123 ✅ 2) POST /api/marketplace/listings cu phone +40721234567 și imagine base64 ✅ 3) GET /api/marketplace/listings?mine=true returnează listing-ul creat ✅ 4) GET /api/marketplace/listings/{id} include câmpul phone corect ✅ 5) Filtrul de 3 luni funcționează - doar listing-uri create_at >= 90 zile ✅ 6) DELETE /api/marketplace/listings/{id} ca owner funcționează și verifică ștergerea ✅. Toate validările de autentificare, ownership și filtrare sunt corecte."
 
 frontend:
   - task: "Badge dot pe tab Community + dot pe conversații (DM/Groups)"
