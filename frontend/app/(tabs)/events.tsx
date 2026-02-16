@@ -151,7 +151,7 @@ function MyEventsTab() {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Ionicons name="calendar-outline" size={64} color={Colors.muted} />
-            <Text style={styles.emptyTitle}>No events joined</Text>
+            <Text style={styles.emptyTitle}>No upcoming events</Text>
             <Text style={styles.emptyText}>
               Browse and join events to see them here
             </Text>
