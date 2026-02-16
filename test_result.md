@@ -228,6 +228,9 @@ frontend:
       - working: false
         agent: "main"
         comment: "Preview web returnează 520 (host error) după restart; nu pot verifica UI pe web momentan. Necesită retestare când preview revine." 
+      - working: false
+        agent: "main"
+        comment: "Am separat MapCanvas (native/web) + am golit cache-ul; preview web funcționează și cardul map apare. Necesită testare pe mobile pentru MapView + markers." 
 
 metadata:
   created_by: "main_agent"
