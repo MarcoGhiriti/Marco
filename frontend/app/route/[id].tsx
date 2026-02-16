@@ -651,13 +651,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: "hidden",
-    alignItems: "center",
     paddingVertical: 10,
   },
   legend: {
     flexDirection: "row",
     gap: 20,
     marginTop: 10,
+    justifyContent: "center",
   },
   legendItem: {
     flexDirection: "row",
