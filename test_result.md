@@ -119,6 +119,18 @@ backend:
         agent: "testing"
         comment: "✅ BACKEND TESTING COMPLET: Endpoint-ul GET /api/rides/active-for-home funcționează perfect conform specificației! Testare completă efectuată: 1) User creator: POST /api/rides/start -> GET active-for-home returnează status 'active' cu creator_id corect. 2) User participant: GET active-for-home returnează același ride cu status 'active' și creator_id corect (view-only). 3) POST /api/rides/pause -> ambii useri văd status 'paused'. 4) User outsider (non-participant) -> returnează null corect. Toate validările de autentificare, route membership și status transitions funcționează corect."
 
+  - task: "Marketplace phone field + 3-month listing limit + my listings filter"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Am adăugat câmp phone în responses, filtrare 3 luni la listări, query param mine=true pentru listările utilizatorului și validare expirare în get listing. Necesită testare backend."
+
 frontend:
   - task: "Badge dot pe tab Community + dot pe conversații (DM/Groups)"
     implemented: true
@@ -166,10 +178,22 @@ frontend:
         agent: "testing"
         comment: "✅ AUTO-SCROLL WORKING: Regression test efectuat pe mobile dims. Implementarea scrollToBottom() cu FlatList.scrollToEnd() este corectă în cod. Am verificat că funcția este apelată la send message, la mesaje noi și la load history. Cod implementat corect în ambele fișiere DM și Group chat. Limitare: Nu am putut testa live functionality deoarece user1 nu are friends pentru DM testing, dar implementarea tehnică este completă și corectă."
 
+  - task: "Marketplace UI: phone field, My Listings page, listing detail actions"
+    implemented: true
+    working: false
+    file: "/app/frontend/app/(tabs)/shop.tsx, /app/frontend/app/marketplace/[listingId].tsx, /app/frontend/app/marketplace/my-listings.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Am adăugat câmp telefon în form, buton My Listings + ecran nou, detalii listing cu acțiuni Message/Call/Delete. Necesită testare UI."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 3
+  test_sequence: 4
   run_ui: false
 
 # NOTE(main): Am început implementarea pentru ride banner vizibil și participanților.
@@ -179,8 +203,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Ride banner pentru participanți (view-only)"
-    - "Switch limbă RO/EN & traducere EN"
+    - "Marketplace: phone field + My Listings + listing detail"
+    - "Marketplace backend filters (mine + 3 months)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -196,3 +220,5 @@ agent_communication:
     message: "✅ BACKEND TESTING COMPLET pentru Active Ride Banner: Endpoint-ul GET /api/rides/active-for-home funcționează perfect! Testare completă efectuată cu 3 utilizatori: creator (start/pause ride), participant (view-only access), outsider (null response). Toate scenariile testate: active status, paused status, participant view, non-participant exclusion. Validări de autentificare și route membership OK. Endpoint-ul este gata pentru producție!"
   - agent: "testing"
     message: "✅ REGRESSION TEST COMPLET pe chat flows și badges (mobile dims 390x844): Login user1@example.com funcționează perfect. Community tab navigation OK. Badge dots system funcționează - am observat red dots pe group cards indicând unread messages. Auto-scroll implementation este corectă în cod (scrollToBottom cu FlatList.scrollToEnd). Limitare: user1 nu are friends în listă pentru DM testing complet, dar infrastructura funcționează. Toate flow-urile principale sunt WORKING - nu există blocaje critice."
+  - agent: "main"
+    message: "Am implementat marketplace upgrades: câmp phone, filtrare 3 luni, query mine=true, ecran My Listings și acțiuni delete/call/message în listing detail. Te rog testează backend + frontend pentru aceste flow-uri."
