@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, Any
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://map-v2-fix.preview.emergentagent.com/api"
+BACKEND_URL = "https://messaging-rollback.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_EMAIL = "user1@example.com"

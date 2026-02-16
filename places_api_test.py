@@ -12,7 +12,7 @@ from datetime import datetime
 import httpx
 
 # Get backend URL from frontend env
-BACKEND_URL = "https://map-v2-fix.preview.emergentagent.com/api"
+BACKEND_URL = "https://messaging-rollback.preview.emergentagent.com/api"
 
 class TestResults:
     def __init__(self):

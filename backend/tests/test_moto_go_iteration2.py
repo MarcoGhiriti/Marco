@@ -8,7 +8,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://map-v2-fix.preview.emergentagent.com"
+    BASE_URL = "https://messaging-rollback.preview.emergentagent.com"
 
 # Test user credentials
 TEST_EMAIL = "user1@example.com"
