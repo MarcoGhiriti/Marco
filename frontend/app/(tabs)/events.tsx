@@ -38,7 +38,7 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-// My Events Tab - Only events user has joined
+// My Events Tab - Only UPCOMING events user has joined
 function MyEventsTab() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
@@ -54,11 +54,19 @@ function MyEventsTab() {
   const loadEvents = useCallback(async () => {
     if (!authHeader) return;
     try {
-      // Get all events and filter to ones user has joined
+      // Get all events and filter to ones user has joined AND are upcoming
       const data = await apiGet<EventOut[]>("/api/events", authHeader);
-      // Filter to only events where user is a participant
-      const joinedEvents = data.filter(e => e.is_joined);
-      setEvents(joinedEvents);
+      const now = new Date();
+      // Filter to only UPCOMING events where user is a participant
+      const upcomingJoinedEvents = data.filter(e => {
+        const eventDate = new Date(e.start_time);
+        return e.is_joined && eventDate > now;
+      });
+      // Sort by date (soonest first)
+      upcomingJoinedEvents.sort((a, b) => 
+        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+      );
+      setEvents(upcomingJoinedEvents);
     } catch (e) {
       console.error("Failed to load events:", e);
     } finally {
