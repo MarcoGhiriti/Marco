@@ -632,4 +632,29 @@ const styles = StyleSheet.create({
   callBtnTextDisabled: {
     color: Colors.muted,
   },
+  ownerBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    paddingBottom: 32,
+    backgroundColor: Colors.bg,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.danger,
+    paddingVertical: 16,
+    borderRadius: 14,
+  },
+  deleteBtnText: {
+    color: Colors.bg,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+  },
 });
