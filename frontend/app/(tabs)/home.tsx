@@ -356,12 +356,6 @@ export default function HomeScreen() {
             <Text style={styles.sub}>Recommended routes</Text>
           </View>
           <View style={styles.headerRight}>
-            <Pressable 
-              onPress={() => router.push("/(tabs)/shop")} 
-              style={styles.shopBtn}
-            >
-              <Ionicons name="storefront" size={18} color={Colors.bg} />
-            </Pressable>
             <Pressable onPress={() => router.push("/search/routes")} style={styles.iconBtn}>
               <Ionicons name="search-outline" size={20} color={Colors.text} />
             </Pressable>
@@ -376,6 +370,20 @@ export default function HomeScreen() {
                     {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
                   </Text>
                 </View>
+              )}
+            </Pressable>
+            {/* Profile Avatar */}
+            <Pressable 
+              onPress={() => router.push("/(tabs)/profile")} 
+              style={styles.profileAvatarBtn}
+            >
+              {me?.profile_photo_base64 ? (
+                <Image 
+                  source={{ uri: me.profile_photo_base64 }} 
+                  style={styles.profileAvatarImg} 
+                />
+              ) : (
+                <Ionicons name="person" size={20} color={Colors.bg} />
               )}
             </Pressable>
           </View>
