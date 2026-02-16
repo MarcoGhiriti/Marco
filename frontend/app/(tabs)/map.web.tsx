@@ -1,1 +1,1 @@
-export { default } from "./map.shared";
+export { default } from "./_map.shared";
