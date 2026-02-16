@@ -505,22 +505,23 @@ export default function HomeScreen() {
           {loading ? (
             <View style={styles.center}>
               <ActivityIndicator color={Colors.accent} />
-              <Text style={styles.centerText}>Loading routes…</Text>
+              <Text style={styles.centerText}>Loading…</Text>
             </View>
           ) : error ? (
             <View style={styles.center}>
               <Ionicons name="alert-circle-outline" size={22} color={Colors.danger} />
-              <Text style={styles.errorTitle}>Couldn't load routes</Text>
+              <Text style={styles.errorTitle}>Couldn't load feed</Text>
               <Text style={styles.errorText}>{error}</Text>
             </View>
-          ) : routes.length === 0 ? (
+          ) : !feedShowRoutes && !feedShowEvents ? (
             <View style={styles.center}>
-              <Ionicons name="trail-sign-outline" size={22} color={Colors.muted} />
-              <Text style={styles.centerText}>No routes yet.</Text>
+              <Ionicons name="toggle-outline" size={22} color={Colors.muted} />
+              <Text style={styles.centerText}>Enable routes or events filter</Text>
             </View>
           ) : (
             <View style={styles.routesList}>
-              {routes.map((r) => (
+              {/* Routes */}
+              {feedShowRoutes && routes.map((r) => (
                 <RouteCard
                   key={r.id}
                   item={r}
@@ -544,6 +545,49 @@ export default function HomeScreen() {
                   onEndRide={handleEndRide}
                 />
               ))}
+
+              {/* Events */}
+              {feedShowEvents && events.map((ev) => (
+                <Pressable
+                  key={`evt-${ev.id}`}
+                  style={styles.eventFeedCard}
+                  onPress={() => router.push(`/event/${ev.id}`)}
+                  data-testid={`home-event-card-${ev.id}`}
+                >
+                  <RouteMiniMap
+                    lat={ev.start_point?.[0]}
+                    lng={ev.start_point?.[1]}
+                    locationName={ev.location_name}
+                    height={120}
+                  />
+                  <View style={styles.eventFeedInfo}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.eventFeedTitle} numberOfLines={1}>{ev.title}</Text>
+                      <View style={styles.eventFeedMeta}>
+                        <Ionicons name="time-outline" size={13} color={Colors.muted} />
+                        <Text style={styles.eventFeedMetaText}>
+                          {new Date(ev.start_time).toLocaleDateString("ro", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </Text>
+                      </View>
+                      <View style={styles.eventFeedMeta}>
+                        <Ionicons name="people-outline" size={13} color={Colors.accent} />
+                        <Text style={[styles.eventFeedMetaText, { color: Colors.accent }]}>{ev.participants_count ?? 0} going</Text>
+                      </View>
+                    </View>
+                    <View style={styles.eventBadge}>
+                      <Ionicons name="calendar" size={14} color={Colors.bg} />
+                      <Text style={styles.eventBadgeText}>Event</Text>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+
+              {feedShowRoutes && routes.length === 0 && feedShowEvents && events.length === 0 && (
+                <View style={styles.center}>
+                  <Ionicons name="trail-sign-outline" size={22} color={Colors.muted} />
+                  <Text style={styles.centerText}>No content yet.</Text>
+                </View>
+              )}
             </View>
           )}
 
