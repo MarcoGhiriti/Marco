@@ -269,10 +269,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Login authentication issue blocking mobile testing"
+    - "Map screen: Report Police + event markers toggle"
+    - "Mini-map: străzi reale, fără grid"
+    - "Marketplace listing click fix (null km)"
   stuck_tasks:
     - "Marketplace UI: phone field, My Listings page, listing detail actions"
-    - "Mini-map: străzi adiacente gri"
+    - "Mini-map: străzi reale, fără grid"
     - "Map screen: doar Report Police + event markers toggle"
   test_all: false
   test_priority: "high_first"
