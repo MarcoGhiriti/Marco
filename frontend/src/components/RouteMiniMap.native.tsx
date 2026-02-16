@@ -16,14 +16,15 @@ type RouteMiniMapProps = {
 };
 
 export function RouteMiniMap({
-  points,
+  points = [],
   height = 100,
   width = 300,
   color = Colors.accent,
 }: RouteMiniMapProps) {
+  const safePoints = Array.isArray(points) ? points : [];
   const coordinates = useMemo(
-    () => points.map((point) => ({ latitude: point.lat, longitude: point.lng })),
-    [points]
+    () => safePoints.map((point) => ({ latitude: point.lat, longitude: point.lng })),
+    [safePoints]
   );
 
   const region = useMemo(() => {
