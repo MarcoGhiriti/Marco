@@ -25,6 +25,7 @@ import socketio
 from bson import ObjectId
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
@@ -4190,7 +4191,6 @@ async def get_static_map_image(
     base = f"https://maps.googleapis.com/maps/api/staticmap?size={w}x{h}&scale=2&maptype=roadmap&{STATIC_MAP_STYLES}"
 
     if polyline_str:
-        # Route mode with encoded polyline
         path_param = f"&path=color:0x36F19AFF|weight:4|enc:{polyline_str}"
         markers = ""
         if start_lat is not None and start_lng is not None:
@@ -4199,12 +4199,11 @@ async def get_static_map_image(
             markers += f"&markers=size:small|color:0xFF3B30|{end_lat},{end_lng}"
         url = f"{base}{path_param}{markers}&key={gmaps_key}"
     elif lat is not None and lng is not None:
-        # Single-point mode
         url = f"{base}&center={lat},{lng}&zoom={zoom}&markers=size:mid|color:0x36F19A|{lat},{lng}&key={gmaps_key}"
     else:
         raise HTTPException(status_code=400, detail="Provide polyline_str or lat+lng")
 
-    return {"url": url}
+    return RedirectResponse(url=url, status_code=302)
 
 
 # Include router
