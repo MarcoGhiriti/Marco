@@ -401,7 +401,7 @@ const s = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.card, alignItems: "center", justifyContent: "center" },
   headerTitle: { color: Colors.text, fontSize: 18, fontWeight: "800" },
-  tabContainer: { flex: 1 },
+  tabContainer: { flex: 1, backgroundColor: Colors.bg },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   empty: { paddingTop: 80, alignItems: "center", gap: 12 },
   emptyText: { color: Colors.muted, fontSize: 14, fontWeight: "600" },
