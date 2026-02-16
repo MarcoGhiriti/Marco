@@ -1,8 +1,10 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View, Share, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Colors } from "../theme/colors";
 import { RouteMiniMap } from "./RouteMiniMap";
+import { formatDuration, openDirectionsInGoogleMaps } from "../lib/utils";
 import type { RouteOut } from "../types/api";
 
 interface RouteCardProps {
