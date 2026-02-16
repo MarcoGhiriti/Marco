@@ -145,6 +145,18 @@ export default function MapCanvas({
         clusterBorderColor={Colors.bg}
         spiralEnabled
       >
+        {/* User location marker */}
+        {userLocation && (
+          <Marker
+            coordinate={{ latitude: userLocation.lat, longitude: userLocation.lng }}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <View style={styles.userDotOuter}>
+              <View style={styles.userDotInner} />
+            </View>
+          </Marker>
+        )}
+
         {showEvents &&
           events.map((event) => {
             const [lat, lng] = event.start_point || [];
@@ -153,10 +165,30 @@ export default function MapCanvas({
               <Marker
                 key={`event-${event.id}`}
                 coordinate={{ latitude: lat, longitude: lng }}
-                title={event.title}
-                description={event.location_name}
                 pinColor={Colors.accent}
-              />
+              >
+                <Callout tooltip onPress={() => onEventPress?.(event.id)}>
+                  <View style={styles.placeCallout}>
+                    <View style={styles.placeCalloutHeader}>
+                      <Ionicons name="calendar" size={14} color={Colors.accent} />
+                      <Text style={styles.placeCalloutName} numberOfLines={1}>{event.title}</Text>
+                    </View>
+                    {event.location_name && (
+                      <Text style={styles.eventLocationText} numberOfLines={1}>{event.location_name}</Text>
+                    )}
+                    <View style={{ flexDirection: "row", gap: 6 }}>
+                      <Pressable style={styles.directionsBtn} onPress={() => onEventPress?.(event.id)}>
+                        <Ionicons name="eye" size={14} color={Colors.bg} />
+                        <Text style={styles.directionsBtnText}>Detalii</Text>
+                      </Pressable>
+                      <Pressable style={[styles.directionsBtn, { backgroundColor: "#4A90D9" }]} onPress={() => openDirections(lat, lng, event.title)}>
+                        <Ionicons name="navigate" size={14} color={Colors.bg} />
+                        <Text style={styles.directionsBtnText}>Direcții</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </Callout>
+              </Marker>
             );
           })}
 
