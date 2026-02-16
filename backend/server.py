@@ -4393,4 +4393,4 @@ async def realtime_health():
 
 
 # IMPORTANT: use /api/socket.io so Kubernetes ingress routes to backend (only /api/* is proxied).
-app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app, socketio_path="api/socket.io")
+app = socketio_lib.ASGIApp(sio, other_asgi_app=fastapi_app, socketio_path="api/socket.io")
