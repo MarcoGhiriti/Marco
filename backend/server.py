@@ -4386,6 +4386,10 @@ fastapi_app.add_middleware(
 async def shutdown_db_client():
     client.close()
 
+@fastapi_app.on_event("startup")
+async def startup_ensure_indexes():
+    await ensure_indexes()
+
 
 @fastapi_app.get("/api/realtime/health")
 async def realtime_health():
