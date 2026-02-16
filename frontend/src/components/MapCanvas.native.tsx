@@ -48,8 +48,10 @@ type MapCanvasProps = {
   policeReports: PoliceReport[];
   showEvents: boolean;
   showGas: boolean;
+  showService: boolean;
   onToggleEvents: () => void;
   onToggleGas: () => void;
+  onToggleService: () => void;
   onReportPolice: () => void;
   onVotePolice: (reportId: string, vote: "up" | "down", lat: number, lng: number) => void;
   isFetching: boolean;
@@ -82,8 +84,10 @@ export default function MapCanvas({
   policeReports,
   showEvents,
   showGas,
+  showService,
   onToggleEvents,
   onToggleGas,
+  onToggleService,
   onReportPolice,
   onVotePolice,
   isFetching,
@@ -143,12 +147,26 @@ export default function MapCanvas({
           })}
 
         {showGas &&
-          gasMarkers.map((place) => (
+          gasMarkers
+            .filter((place) => place.place_type === "gas")
+            .map((place) => (
             <Marker
               key={`place-${place.id}`}
               coordinate={{ latitude: place.lat, longitude: place.lng }}
               title={place.name}
-              pinColor={place.place_type === "gas" ? "#FFB020" : "#4A90D9"}
+              pinColor="#FFB020"
+            />
+          ))}
+
+        {showService &&
+          gasMarkers
+            .filter((place) => place.place_type === "service")
+            .map((place) => (
+            <Marker
+              key={`svc-${place.id}`}
+              coordinate={{ latitude: place.lat, longitude: place.lng }}
+              title={place.name}
+              pinColor="#4A90D9"
             />
           ))}
 
@@ -198,10 +216,16 @@ export default function MapCanvas({
           <Ionicons name="calendar" size={18} color={showEvents ? Colors.bg : Colors.text} />
         </Pressable>
         <Pressable
-          style={[styles.filterChip, showGas && styles.filterChipActive]}
+          style={[styles.filterChip, showGas && styles.filterChipActiveGas]}
           onPress={onToggleGas}
         >
           <Ionicons name="flame" size={18} color={showGas ? Colors.bg : Colors.text} />
+        </Pressable>
+        <Pressable
+          style={[styles.filterChip, showService && styles.filterChipActiveService]}
+          onPress={onToggleService}
+        >
+          <Ionicons name="build" size={18} color={showService ? Colors.bg : Colors.text} />
         </Pressable>
       </View>
 
