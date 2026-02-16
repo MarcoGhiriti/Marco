@@ -3768,6 +3768,7 @@ async def get_marketplace_listings(
             images=listing.get("images", []),
             seller_id=str(listing["seller_id"]),
             seller_username=listing.get("seller_username", "Unknown"),
+            phone=listing.get("phone"),
             created_at=listing["created_at"].isoformat(),
             is_active=listing.get("is_active", True),
         ))
@@ -3802,6 +3803,7 @@ async def create_marketplace_listing(
         "license_type": data.license_type,
         "condition": data.condition,
         "images": data.images[:10],  # Max 10 images
+        "phone": data.phone,
         "seller_id": user_id,
         "seller_username": user.get("username", "Unknown"),
         "created_at": datetime.utcnow(),
