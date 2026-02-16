@@ -183,11 +183,11 @@ frontend:
 
   - task: "Marketplace UI: phone field, My Listings page, listing detail actions"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/app/(tabs)/shop.tsx, /app/frontend/app/marketplace/[listingId].tsx, /app/frontend/app/marketplace/my-listings.tsx"
     stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -198,6 +198,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ MARKETPLACE UI TESTING COMPLET pe mobile (390x844 & 360x800): 1) Login user1@example.com funcționează perfect ✅ 2) Navigare Shop -> Second Hand funcționează ✅ 3) Listările se încarcă corect (loading spinner vizibil) ✅ 4) CLICK PE ANUNȚ FUNCȚIONEAZĂ FĂRĂ EROARE - nu am reprodus eroarea raportată de user ✅ 5) Add Listing modal se deschide și conține câmpul Phone (optional) ✅ 6) My Listings page (buton person) se deschide corect ✅ 7) Delete functionality funcționează cu confirmare ✅ 8) UI complet responsive pe ambele viewport-uri mobile ✅. CONCLUZIE: Eroarea raportată de user NU a fost reprodusă - toate funcționalitățile marketplace funcționează perfect pe mobile!"
+      - working: false
+        agent: "main"
+        comment: "Am adăugat protecție pentru null la kilometers (list și detail) pentru a evita crash la click pe anunț. Necesită retestare UI."
 
 metadata:
   created_by: "main_agent"
