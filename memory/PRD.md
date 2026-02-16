@@ -6,6 +6,9 @@
 - Marketplace backend filters: `mine=true` and 3‑month listing limit; phone included in responses.
 - Map screen update (native): event markers toggle + Report Police FAB.
 - Custom map styling (dark + neon accents) on native.
+- Map filters: Events + Gas/Service chips, recenter, Search this area.
+- Police reports: confirm flow, TTL 30 min, voting (Still there?) with distance check.
+- Marker clustering for map layers.
 - Map screen header actions: add Route + add Event.
 - Mini‑map: MapView pe native (străzi reale), fără grid.
 
