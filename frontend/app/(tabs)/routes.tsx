@@ -35,12 +35,72 @@ export default function RoutesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"explore" | "my">("explore");
+  const [activeRide, setActiveRide] = useState<RideSessionOut | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
+  // Cross-platform alert helper
+  const showAlert = (title: string, message: string, buttons?: Array<{ text: string; style?: string; onPress?: () => void }>) => {
+    if (Platform.OS === "web") {
+      if (buttons && buttons.length > 1) {
+        const confirmed = window.confirm(`${title}\n\n${message}`);
+        if (confirmed && buttons[1]?.onPress) {
+          buttons[1].onPress();
+        } else if (!confirmed && buttons[0]?.onPress) {
+          buttons[0].onPress();
+        }
+      } else {
+        window.alert(`${title}\n\n${message}`);
+      }
+    } else {
+      Alert.alert(title, message, buttons as any);
+    }
+  };
+
+  // Get user location
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS === "web") return;
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return;
+        const loc = await Location.getCurrentPositionAsync({});
+        setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+      } catch (e) {
+        console.log("Location error:", e);
+      }
+    })();
+  }, []);
+
+  // Calculate distance between two points (Haversine formula)
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Get start point from polyline
+  const getStartPoint = (polyline: string): { lat: number; lng: number } | null => {
+    try {
+      const points = decodePolyline(polyline);
+      if (points && points.length > 0) {
+        return { lat: points[0].latitude, lng: points[0].longitude };
+      }
+    } catch (e) {
+      console.log("Polyline decode error:", e);
+    }
+    return null;
+  };
   const loadRoutes = useCallback(async () => {
     if (!authHeader) return;
     try {
