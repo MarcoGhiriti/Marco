@@ -35,9 +35,14 @@ export default function RoutesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"explore" | "my">("explore");
-  const [activeRide, setActiveRide] = useState<RideSessionOut | null>(null);
+  const [activeRide, setActiveRide] = useState<ActiveRideForHomeOut | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  
+  // Minimum participants required to start a route
+  const MIN_PARTICIPANTS_TO_START = 3;
+  // Maximum distance from start point (in km) to start a route
+  const MAX_DISTANCE_TO_START_KM = 3;
 
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
