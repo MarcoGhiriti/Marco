@@ -244,8 +244,8 @@ export default function ProfileScreen() {
 
   const motoLine = me?.bike?.model 
     ? `${me.bike.model}${me.bike?.cc ? ` · ${me.bike.cc}cc` : ""}` 
-    : "Motorcycle not set";
-  const country = me?.country ? me.country : "Country not set";
+    : t("profile.motorcycleNotSet");
+  const country = me?.country ? me.country : t("profile.countryNotSet");
 
   const levelInfo = calculateLevel(stats?.km_total ?? 0);
 
@@ -253,8 +253,8 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.h1}>Profile</Text>
-          <Text style={styles.sub}>Account, stats & settings</Text>
+          <Text style={styles.h1}>{t("profile.title")}</Text>
+          <Text style={styles.sub}>{t("profile.subtitle")}</Text>
         </View>
 
         {/* PROFILE HEADER */}
@@ -296,8 +296,8 @@ export default function ProfileScreen() {
               <Text style={styles.levelCardTitle}>Level {levelInfo.level} · {levelInfo.title}</Text>
               <Text style={styles.levelCardSub}>
                 {levelInfo.nextKm > 0 
-                  ? `${Math.round(stats?.km_total ?? 0)} / ${levelInfo.nextKm} km to next level`
-                  : "Maximum level reached!"}
+                  ? `${Math.round(stats?.km_total ?? 0)} / ${levelInfo.nextKm} km`
+                  : t("profile.maxLevel") || "Maximum level reached!"}
               </Text>
             </View>
           </View>
