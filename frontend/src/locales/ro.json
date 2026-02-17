@@ -188,6 +188,7 @@
     "premium": "Moto GO Premium",
     "premiumFeatures": "Functii premium:",
     "subscribeSoon": "Abonare - In curand",
+    "subscribeSoon": "Abonare - In curand",
     "profileSettings": "Setari profil",
     "appAndLegal": "Aplicatie si legal",
     "terms": "Termeni si Conditii",
@@ -220,7 +221,8 @@
     "driveSafe": "Cursa ta a inceput. Drum bun!",
     "kmRecorded": "Felicitari! Kilometrii tai au fost inregistrati.",
     "start": "Start",
-    "end": "Finish"
+    "end": "Finish",
+    "maxLevel": "Nivel maxim atins!"
   },
   "friends": {
     "addFriend": "Adauga prieten",
