@@ -12,7 +12,7 @@ from datetime import datetime
 import httpx
 
 # Get backend URL from frontend env
-BACKEND_URL = "https://profile-sync-14.preview.emergentagent.com/api"
+BACKEND_URL = "https://riders-hub-10.preview.emergentagent.com/api"
 
 class TestResults:
     def __init__(self):

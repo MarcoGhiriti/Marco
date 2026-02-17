@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv("/app/frontend/.env")
-BASE_URL = os.getenv("EXPO_PUBLIC_BACKEND_URL", "https://profile-sync-14.preview.emergentagent.com")
+BASE_URL = os.getenv("EXPO_PUBLIC_BACKEND_URL", "https://riders-hub-10.preview.emergentagent.com")
 API_BASE = f"{BASE_URL}/api"
 
 class TestUser:

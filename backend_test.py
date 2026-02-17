@@ -15,7 +15,7 @@ import httpx
 
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://profile-sync-14.preview.emergentagent.com/api"
+BACKEND_URL = "https://riders-hub-10.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_EMAIL = "user1@example.com"
