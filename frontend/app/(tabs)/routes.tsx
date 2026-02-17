@@ -109,12 +109,14 @@ export default function RoutesScreen() {
   const loadRoutes = useCallback(async () => {
     if (!authHeader) return;
     try {
-      const [allRoutes, userRoutes] = await Promise.all([
+      const [allRoutes, userRoutes, activeRideData] = await Promise.all([
         apiGet<RouteOut[]>("/api/routes", authHeader),
         apiGet<RouteOut[]>("/api/routes/my", authHeader),
+        apiGet<ActiveRideForHomeOut | null>("/api/rides/active-for-home", authHeader).catch(() => null),
       ]);
       setRoutes(allRoutes);
       setMyRoutes(userRoutes);
+      setActiveRide(activeRideData);
     } catch (e) {
       console.error("Failed to load routes:", e);
     } finally {
