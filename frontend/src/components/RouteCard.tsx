@@ -90,7 +90,7 @@ export function RouteCard({
           </View>
           <View style={[styles.diffBadge, { backgroundColor: diffColor }]}>
             <Text style={styles.diffText}>
-              {item.difficulty === "easy" ? "Easy" : item.difficulty === "medium" ? "Medium" : "Hard"}
+              {item.difficulty === "easy" ? t("routes.easy") : item.difficulty === "medium" ? t("routes.medium") : t("routes.hard")}
             </Text>
           </View>
         </View>
@@ -140,7 +140,7 @@ export function RouteCard({
               color={item.is_joined ? Colors.text : Colors.bg}
             />
             <Text style={[styles.joinBtnText, item.is_joined && styles.joinBtnTextJoined]}>
-              {item.is_joined ? "Joined" : "Join"}
+              {item.is_joined ? t("common.joined") : t("common.join")}
             </Text>
           </Pressable>
 
@@ -199,7 +199,7 @@ export function RouteCard({
           {isCreator && (
             <View style={styles.creatorBadge}>
               <Ionicons name="star" size={12} color={Colors.accent} />
-              <Text style={styles.creatorText}>Creator</Text>
+              <Text style={styles.creatorText}>{t("routes.creator")}</Text>
             </View>
           )}
         </View>
