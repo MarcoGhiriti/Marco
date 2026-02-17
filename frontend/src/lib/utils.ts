@@ -17,7 +17,13 @@ export function openDirectionsInGoogleMaps(polyline: number[][] | undefined) {
   const start = polyline[0];
   const end = polyline[polyline.length - 1];
   const url = `https://www.google.com/maps/dir/?api=1&origin=${start[0]},${start[1]}&destination=${end[0]},${end[1]}&travelmode=driving`;
-  if (typeof window !== "undefined") {
-    window.open(url, "_blank");
+  // Use Linking for React Native, window.open for web
+  try {
+    const { Linking } = require("react-native");
+    Linking.openURL(url);
+  } catch {
+    if (typeof window !== "undefined") {
+      window.open(url, "_blank");
+    }
   }
 }

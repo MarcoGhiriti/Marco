@@ -12,11 +12,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Colors } from "../../src/theme/colors";
 import { apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut } from "../../src/types/api";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
+import { formatDuration } from "../../src/lib/utils";
 
 export default function RoutesScreen() {
   const router = useRouter();
