@@ -121,7 +121,11 @@
     "fuel": "Fuel",
     "tolls": "Tolls",
     "startCity": "Start",
-    "endCity": "End"
+    "endCity": "End",
+    "ccRequired": "Engine Size Required",
+    "ccRequiredMessage": "This route requires a minimum of {{minCc}}cc. Your bike has {{userCc}}cc.",
+    "bikeNotConfigured": "Bike Not Configured",
+    "bikeNotConfiguredMessage": "To join this route, you need to set up your bike details first. Add your motorcycle's engine size in your profile."
   },
   "events": {
     "title": "Events",
