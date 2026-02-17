@@ -86,14 +86,18 @@ MotoGO is a React Native (Expo) motorcycle social app with FastAPI + MongoDB bac
 3. **Profile Route Deletion Bug Fix** - Added `useFocusEffect` hook in `profile.tsx` to refresh data when screen regains focus, preventing stale data after route deletion.
 4. **Romanian Translations** - Updated all difficulty labels (Ușor/Mediu/Greu), Join/Joined buttons (Inscrie-te/Inscris), and added `directionsBtn` style.
 5. **Fixed Syntax Error** - Corrected StyleSheet array syntax in `routes.tsx` that was causing Metro bundling failure.
+6. **CC Error Messages** - Added friendly alert messages in Romanian when user can't join a route due to engine size requirements (cc). Two cases: minimum cc not met, or bike not configured.
+7. **Custom Map Style** - Enhanced interactive map with a unique dark theme focused on motorcycle riding: highlighted highways with accent glow, subtle terrain, cleaner labels.
 
 ### Files Modified
 - `/app/frontend/src/lib/utils.ts` - `formatDuration()` and `openDirectionsInGoogleMaps()` functions
 - `/app/frontend/src/components/RouteCard.tsx` - Directions button, i18n translations, `directionsBtn` style
+- `/app/frontend/src/components/MapCanvas.native.tsx` - New custom MAP_STYLE with motorcycle-focused design
 - `/app/frontend/app/(tabs)/routes.tsx` - Fixed StyleSheet syntax, i18n for difficulty badges
+- `/app/frontend/app/(tabs)/home.tsx` - Added CC error handling with i18n alerts
 - `/app/frontend/app/(tabs)/profile.tsx` - `useFocusEffect` for data refresh, level translation
-- `/app/frontend/src/locales/en.json` - Added `maxLevel` key
-- `/app/frontend/src/locales/ro.json` - Complete Romanian translations
+- `/app/frontend/src/locales/en.json` - Added `maxLevel`, `ccRequired`, `ccRequiredMessage`, `bikeNotConfigured`, `bikeNotConfiguredMessage` keys
+- `/app/frontend/src/locales/ro.json` - Complete Romanian translations for new keys
 
 ### Testing
 - Code review verification passed (iteration_8.json)
