@@ -72,8 +72,32 @@ MotoGO is a React Native (Expo) motorcycle social app with FastAPI + MongoDB bac
 - Further backend refactoring: Split server.py into separate APIRouter files
 ### P2 (Nice to have)
 - Forgot Password flow (BLOCKED - needs email service API key)
-- Translate remaining components to use i18n keys
+- Translate remaining modal texts and level titles to Romanian
 ### P3 (Future)
 - Push notifications
 - Payment integration for marketplace
 - Premium subscription features
+
+## Session Log - February 17, 2026
+
+### Completed
+1. **Duration Format** - Implemented `formatDuration()` in `/app/frontend/src/lib/utils.ts` to convert route durations (e.g., 90 min → 1h 30min)
+2. **Directions Button** - Added "Direcții" button in `RouteCard.tsx` for route creators with active rides. Opens Google Maps with route directions.
+3. **Profile Route Deletion Bug Fix** - Added `useFocusEffect` hook in `profile.tsx` to refresh data when screen regains focus, preventing stale data after route deletion.
+4. **Romanian Translations** - Updated all difficulty labels (Ușor/Mediu/Greu), Join/Joined buttons (Inscrie-te/Inscris), and added `directionsBtn` style.
+5. **Fixed Syntax Error** - Corrected StyleSheet array syntax in `routes.tsx` that was causing Metro bundling failure.
+
+### Files Modified
+- `/app/frontend/src/lib/utils.ts` - `formatDuration()` and `openDirectionsInGoogleMaps()` functions
+- `/app/frontend/src/components/RouteCard.tsx` - Directions button, i18n translations, `directionsBtn` style
+- `/app/frontend/app/(tabs)/routes.tsx` - Fixed StyleSheet syntax, i18n for difficulty badges
+- `/app/frontend/app/(tabs)/profile.tsx` - `useFocusEffect` for data refresh, level translation
+- `/app/frontend/src/locales/en.json` - Added `maxLevel` key
+- `/app/frontend/src/locales/ro.json` - Complete Romanian translations
+
+### Testing
+- Code review verification passed (iteration_8.json)
+- API health check: OK
+- Frontend bundling: OK
+- Visual verification: Login screen renders correctly
+
