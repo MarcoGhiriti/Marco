@@ -121,7 +121,11 @@
     "fuel": "Combustibil",
     "tolls": "Taxe drum",
     "startCity": "Start",
-    "endCity": "Destinatie"
+    "endCity": "Destinatie",
+    "ccRequired": "Cilindree necesara",
+    "ccRequiredMessage": "Aceasta ruta necesita minim {{minCc}}cc. Motocicleta ta are {{userCc}}cc.",
+    "bikeNotConfigured": "Motocicleta neconfigurată",
+    "bikeNotConfiguredMessage": "Pentru a te inscrie la aceasta ruta, trebuie sa iti configurezi motocicleta. Adauga cilindreea motorului in profilul tau."
   },
   "events": {
     "title": "Evenimente",
