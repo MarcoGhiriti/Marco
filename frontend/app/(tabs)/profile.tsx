@@ -438,7 +438,7 @@ export default function ProfileScreen() {
                 >
                   <Ionicons name="map" size={18} color={activeTab === "routes" ? Colors.accent : Colors.muted} />
                   <Text style={[styles.tabBtnText, activeTab === "routes" && styles.tabBtnTextActive]}>
-                    My Routes ({myRoutes.length})
+                    {t("profile.myRoutes")} ({myRoutes.length})
                   </Text>
                 </Pressable>
                 <Pressable 
@@ -447,7 +447,7 @@ export default function ProfileScreen() {
                 >
                   <Ionicons name="calendar" size={18} color={activeTab === "events" ? Colors.accent : Colors.muted} />
                   <Text style={[styles.tabBtnText, activeTab === "events" && styles.tabBtnTextActive]}>
-                    My Events ({myEvents.length})
+                    {t("profile.myEvents")} ({myEvents.length})
                   </Text>
                 </Pressable>
               </View>
@@ -459,7 +459,7 @@ export default function ProfileScreen() {
               >
                 <Ionicons name="add-circle" size={20} color="#FFF" />
                 <Text style={styles.createContentBtnText}>
-                  Create {activeTab === "routes" ? "Route" : "Event"}
+                  {activeTab === "routes" ? t("profile.createRoute") : t("profile.createEvent")}
                 </Text>
               </Pressable>
 
@@ -469,8 +469,8 @@ export default function ProfileScreen() {
                   {myRoutes.length === 0 ? (
                     <View style={styles.emptyRoutes}>
                       <Ionicons name="map-outline" size={48} color={Colors.muted} />
-                      <Text style={styles.emptyRoutesText}>No routes created yet</Text>
-                      <Text style={styles.emptyRoutesSub}>Create your first route to start tracking rides!</Text>
+                      <Text style={styles.emptyRoutesText}>{t("profile.noRoutesCreated")}</Text>
+                      <Text style={styles.emptyRoutesSub}>{t("profile.createFirstRoute")}</Text>
                     </View>
                   ) : (
                     <View style={styles.myRoutesList}>
@@ -534,8 +534,8 @@ export default function ProfileScreen() {
                   {myEvents.length === 0 ? (
                     <View style={styles.emptyRoutes}>
                       <Ionicons name="calendar-outline" size={48} color={Colors.muted} />
-                      <Text style={styles.emptyRoutesText}>No events created yet</Text>
-                      <Text style={styles.emptyRoutesSub}>Create your first event to gather riders!</Text>
+                      <Text style={styles.emptyRoutesText}>{t("profile.noEventsCreated")}</Text>
+                      <Text style={styles.emptyRoutesSub}>{t("profile.createFirstEvent")}</Text>
                     </View>
                   ) : (
                     <View style={styles.myRoutesList}>
