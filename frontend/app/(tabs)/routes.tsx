@@ -20,9 +20,9 @@ import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
-import type { RouteOut, RideSessionOut } from "../../src/types/api";
+import type { RouteOut, RideSessionOut, ActiveRideForHomeOut } from "../../src/types/api";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
-import { formatDuration, decodePolyline } from "../../src/lib/utils";
+import { formatDuration, decodePolyline, openDirectionsInGoogleMaps } from "../../src/lib/utils";
 
 export default function RoutesScreen() {
   const router = useRouter();
