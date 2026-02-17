@@ -112,6 +112,7 @@ export default function LoginScreen() {
                 styles.primaryBtn,
                 disabled && styles.primaryBtnDisabled,
               ]}
+              data-testid="login-submit-btn"
             >
               {loading ? (
                 <ActivityIndicator color={Colors.bg} />
