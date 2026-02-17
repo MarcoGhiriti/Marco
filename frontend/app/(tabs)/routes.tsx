@@ -91,12 +91,12 @@ export default function RoutesScreen() {
           {/* Difficulty Badge */}
           <View style={[
             styles.difficultyBadge,
-            item.difficulty === "easy" && styles.difficultyEasy,
+            {item.difficulty === "easy" && styles.difficultyEasy,
             item.difficulty === "medium" && styles.difficultyMedium,
             item.difficulty === "hard" && styles.difficultyHard,
           ]}>
             <Text style={styles.difficultyText}>
-              {item.difficulty || "medium"}
+              {item.difficulty === "easy" ? t("routes.easy") : item.difficulty === "medium" ? t("routes.medium") : t("routes.hard")}
             </Text>
           </View>
         </View>
@@ -121,7 +121,7 @@ export default function RoutesScreen() {
           
           <View style={styles.routeLocationRow}>
             <Text style={styles.routeLocation} numberOfLines={1}>
-              {item.start_city || "Start"} → {item.end_city || "End"}
+              {item.start_city || t("routes.startCity")} → {item.end_city || t("routes.endCity")}
             </Text>
           </View>
           
@@ -135,7 +135,7 @@ export default function RoutesScreen() {
             
             {isOwner && (
               <View style={styles.ownerBadge}>
-                <Text style={styles.ownerBadgeText}>Your Route</Text>
+                <Text style={styles.ownerBadgeText}>{t("routes.yourRoute")}</Text>
               </View>
             )}
           </View>
