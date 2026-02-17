@@ -49,8 +49,8 @@ export async function apiPost<T>(
       if (json.detail) {
         throw new Error(json.detail);
       }
-    } catch (parseErr) {
-      // Not JSON or no detail field
+    } catch {
+      // Not JSON or no detail field - fall through to generic error
     }
     throw new Error(`POST ${path} failed: ${res.status} ${text}`);
   }
