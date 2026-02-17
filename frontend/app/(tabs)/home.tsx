@@ -133,7 +133,8 @@ export default function HomeScreen() {
     try {
       let url = "/api/routes";
       if (userLocation) {
-        url += `?lat=${userLocation.lat}&lng=${userLocation.lng}&radius_km=500`;
+        // Filter routes within 100km radius for discovery
+        url += `?lat=${userLocation.lat}&lng=${userLocation.lng}&radius_km=100`;
       }
       const data = await apiGet<RouteOut[]>(url, authHeader);
       setRoutes(data);
