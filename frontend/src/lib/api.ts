@@ -44,15 +44,16 @@ export async function apiPost<T>(
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     // Try to extract detail message from JSON error response
+    let errorMessage = `POST ${path} failed: ${res.status} ${text}`;
     try {
       const json = JSON.parse(text);
       if (json.detail) {
-        throw new Error(json.detail);
+        errorMessage = json.detail;
       }
     } catch {
-      // Not JSON or no detail field - fall through to generic error
+      // Not JSON or no detail field - use generic error
     }
-    throw new Error(`POST ${path} failed: ${res.status} ${text}`);
+    throw new Error(errorMessage);
   }
   return (await res.json()) as T;
 }
@@ -92,15 +93,16 @@ export async function apiPut<T>(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
+    let errorMessage = `PUT ${path} failed: ${res.status} ${text}`;
     try {
       const json = JSON.parse(text);
       if (json.detail) {
-        throw new Error(json.detail);
+        errorMessage = json.detail;
       }
-    } catch (parseErr) {
-      // Not JSON or no detail field
+    } catch {
+      // Not JSON or no detail field - use generic error
     }
-    throw new Error(`PUT ${path} failed: ${res.status} ${text}`);
+    throw new Error(errorMessage);
   }
   return (await res.json()) as T;
 }
