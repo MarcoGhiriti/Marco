@@ -53,6 +53,7 @@ type RideProgress = {
 export default function HomeScreen() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
+  const { t } = useTranslation();
   
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [events, setEvents] = useState<EventOut[]>([]);
