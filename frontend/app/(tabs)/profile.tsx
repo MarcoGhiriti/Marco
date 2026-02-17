@@ -592,7 +592,7 @@ export default function ProfileScreen() {
 
         {/* PERSONAL STATS */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal stats</Text>
+          <Text style={styles.sectionTitle}>{t("profile.personalStats")}</Text>
 
           {loading ? (
             <View style={styles.center}>
@@ -605,28 +605,28 @@ export default function ProfileScreen() {
               <View style={styles.statCard}>
                 <Ionicons name="navigate-outline" size={18} color={Colors.accent} />
                 <Text style={styles.statValue}>{Math.round(stats?.km_total ?? 0)}</Text>
-                <Text style={styles.statLabel}>Total km</Text>
+                <Text style={styles.statLabel}>{t("profile.totalKmLabel")}</Text>
               </View>
               <View style={styles.statCard}>
                 <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
                 <Text style={styles.statValue}>{Math.round(stats?.km_month ?? 0)}</Text>
-                <Text style={styles.statLabel}>This month</Text>
+                <Text style={styles.statLabel}>{t("profile.thisMonth")}</Text>
               </View>
               <View style={styles.statCard}>
                 <Ionicons name="trail-sign-outline" size={18} color={Colors.accent} />
                 <Text style={styles.statValue}>{stats?.completed_routes ?? 0}</Text>
-                <Text style={styles.statLabel}>Routes</Text>
+                <Text style={styles.statLabel}>{t("profile.routesLabel")}</Text>
               </View>
               <View style={styles.statCard}>
                 <Ionicons name="ticket-outline" size={18} color={Colors.accent} />
                 <Text style={styles.statValue}>{stats?.events_joined ?? 0}</Text>
-                <Text style={styles.statLabel}>Events</Text>
+                <Text style={styles.statLabel}>{t("profile.eventsLabel")}</Text>
               </View>
             </View>
           )}
 
           <Text style={styles.statsNote}>
-            Kilometers are calculated from completed routes only.
+            {t("profile.statsNote")}
           </Text>
         </View>
 
@@ -634,7 +634,7 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <View style={styles.premiumHeader}>
             <Ionicons name="lock-closed-outline" size={18} color={Colors.accent} />
-            <Text style={styles.sectionTitle}>Moto GO Premium</Text>
+            <Text style={styles.sectionTitle}>{t("profile.premium")}</Text>
             <View style={styles.premiumPill}>
               <Text style={styles.premiumPillText}>COMING SOON</Text>
             </View>
