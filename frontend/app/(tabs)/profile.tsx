@@ -162,6 +162,13 @@ export default function ProfileScreen() {
     load();
   }, [load]);
 
+  // Refetch data when screen is focused (fixes stale data after route/event deletion)
+  useFocusEffect(
+    useCallback(() => {
+      if (headers) load();
+    }, [headers])
+  );
+
   const pickLicensePhoto = async () => {
     if (Platform.OS === "web") {
       // Web: use file input
