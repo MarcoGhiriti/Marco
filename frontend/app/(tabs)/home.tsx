@@ -822,6 +822,17 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
   },
+  unreadDot: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.accent,
+    borderWidth: 2,
+    borderColor: Colors.bg,
+  },
   activeRideBanner: {
     marginHorizontal: 16,
     marginTop: 8,
