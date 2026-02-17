@@ -293,7 +293,7 @@ export default function ProfileScreen() {
               <Ionicons name="trophy" size={18} color={Colors.accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.levelCardTitle}>Level {levelInfo.level} · {levelInfo.title}</Text>
+              <Text style={styles.levelCardTitle}>{t("profile.level")} {levelInfo.level} · {levelInfo.title}</Text>
               <Text style={styles.levelCardSub}>
                 {levelInfo.nextKm > 0 
                   ? `${Math.round(stats?.km_total ?? 0)} / ${levelInfo.nextKm} km`
