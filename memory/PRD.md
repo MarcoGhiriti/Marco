@@ -106,3 +106,15 @@ MotoGO is a React Native (Expo) motorcycle social app with FastAPI + MongoDB bac
 - Frontend bundling: OK
 - Visual verification: Login screen renders correctly
 
+### Session Log - February 17, 2026 (Update)
+
+### Bug Fixes Completed
+1. **Feed "Couldn't load feed" Bug** - Fixed error parsing in `/app/frontend/src/lib/api.ts` to properly extract `detail` field from JSON error responses. Previously, the error message displayed raw 403 responses including full JSON.
+
+2. **Alert Not Working on Web** - Created cross-platform `showAlert()` helper function in `home.tsx` that uses `window.alert()` on web and native `Alert.alert()` on mobile. This fixes the silent failure when trying to join routes with insufficient CC.
+
+### Files Modified (This Update)
+- `/app/frontend/src/lib/api.ts` - Fixed error parsing in `apiPost` and `apiPut` functions
+- `/app/frontend/app/(tabs)/home.tsx` - Added `showAlert()` helper, replaced all `Alert.alert` calls with `showAlert`
+- `/app/frontend/app/auth/login.tsx` - Added `data-testid="login-submit-btn"` for testing
+
