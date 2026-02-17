@@ -317,7 +317,7 @@ export default function ProfileScreen() {
             </View>
             <View>
               <Text style={styles.friendsCount}>{friends.length}</Text>
-              <Text style={styles.friendsLabel}>Friends</Text>
+              <Text style={styles.friendsLabel}>{t("profile.friends")}</Text>
             </View>
           </View>
           <View style={styles.friendsPreview}>
@@ -357,17 +357,17 @@ export default function ProfileScreen() {
           <View style={styles.licenseInfo}>
             <Text style={styles.licenseTitle}>
               {licenseStatus?.license_verified 
-                ? `License Verified (${licenseStatus.license_type})` 
+                ? `${t("profile.licenseVerified")} (${licenseStatus.license_type})` 
                 : licenseStatus?.license_type 
-                  ? "Verification Pending"
-                  : "Verify Your License"}
+                  ? t("profile.verificationPending")
+                  : t("profile.verifyYourLicense")}
             </Text>
             <Text style={styles.licenseSub}>
               {licenseStatus?.license_verified 
-                ? "Your km tracking is enabled"
+                ? t("profile.kmTrackingEnabled")
                 : licenseStatus?.license_type 
-                  ? "Under review - usually takes 24h"
-                  : "Required for ranking & km tracking"}
+                  ? t("profile.underReview")
+                  : t("profile.requiredForRanking")}
             </Text>
           </View>
           <View style={[
@@ -398,8 +398,8 @@ export default function ProfileScreen() {
               <Ionicons name="trophy" size={24} color="#FFD700" />
             </View>
             <View style={styles.rankingInfo}>
-              <Text style={styles.rankingTitle}>Rankings & Badges</Text>
-              <Text style={styles.rankingSub}>View leaderboard, badges & levels</Text>
+              <Text style={styles.rankingTitle}>{t("profile.rankingsAndBadges")}</Text>
+              <Text style={styles.rankingSub}>{t("profile.viewLeaderboard")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
           </Pressable>
@@ -416,7 +416,7 @@ export default function ProfileScreen() {
                 <Ionicons name="folder-open" size={20} color={Colors.accent} />
               </View>
               <View>
-                <Text style={styles.myContentTitle}>My Created Content</Text>
+                <Text style={styles.myContentTitle}>{t("profile.myCreatedContent")}</Text>
                 <Text style={styles.myContentSub}>
                   {myRoutes.length} routes · {myEvents.length} events
                 </Text>
