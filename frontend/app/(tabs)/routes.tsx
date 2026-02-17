@@ -67,6 +67,123 @@ export default function RoutesScreen() {
     }
   };
 
+  // Handle Start Ride with validations
+  const handleStartRide = async (route: RouteOut) => {
+    // Validation 1: Check minimum participants
+    if (route.participants_count < MIN_PARTICIPANTS_TO_START) {
+      showAlert(
+        t("routes.cannotStart"),
+        "Dacă vrei ture singur sau de 2 persoane, cumpără abonamentul pentru rute private"
+      );
+      return;
+    }
+
+    // Validation 2: Check user is within 3km of start point
+    const startPoint = getStartPoint(route.polyline);
+    if (!startPoint) {
+      showAlert(t("common.error"), t("routes.noStartPoint"));
+      return;
+    }
+
+    if (!userLocation) {
+      showAlert(t("common.error"), t("routes.locationRequired"));
+      return;
+    }
+
+    const distanceToStart = calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      startPoint.lat,
+      startPoint.lng
+    );
+
+    if (distanceToStart > MAX_DISTANCE_TO_START_KM) {
+      showAlert(
+        t("routes.cannotStart"),
+        `${t("routes.tooFarFromStart")} (${distanceToStart.toFixed(1)} km)`
+      );
+      return;
+    }
+
+    // All validations passed - start the ride
+    setActionLoading(route.id);
+    try {
+      await apiPost("/api/rides/start", { route_id: route.id }, authHeader);
+      await loadRoutes(); // Refresh to get updated active ride status
+      showAlert(t("routes.rideStarted"), t("routes.rideStartedMessage"));
+    } catch (error: any) {
+      console.error("Start ride error:", error);
+      showAlert(t("common.error"), error?.message || t("common.genericError"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Handle Pause Ride
+  const handlePauseRide = async () => {
+    if (!activeRide) return;
+    setActionLoading("pause");
+    try {
+      await apiPost("/api/rides/pause", { ride_id: activeRide.ride_id }, authHeader);
+      await loadRoutes();
+    } catch (error: any) {
+      console.error("Pause ride error:", error);
+      showAlert(t("common.error"), error?.message || t("common.genericError"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Handle Resume Ride
+  const handleResumeRide = async () => {
+    if (!activeRide) return;
+    setActionLoading("resume");
+    try {
+      await apiPost("/api/rides/resume", { ride_id: activeRide.ride_id }, authHeader);
+      await loadRoutes();
+    } catch (error: any) {
+      console.error("Resume ride error:", error);
+      showAlert(t("common.error"), error?.message || t("common.genericError"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Handle End Ride
+  const handleEndRide = async () => {
+    if (!activeRide) return;
+    
+    showAlert(
+      t("routes.endRideConfirm"),
+      t("routes.endRideConfirmMessage"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.end"),
+          style: "destructive",
+          onPress: async () => {
+            setActionLoading("end");
+            try {
+              await apiPost("/api/rides/end", { ride_id: activeRide.ride_id }, authHeader);
+              await loadRoutes();
+              showAlert(t("routes.rideEnded"), t("routes.rideEndedMessage"));
+            } catch (error: any) {
+              console.error("End ride error:", error);
+              showAlert(t("common.error"), error?.message || t("common.genericError"));
+            } finally {
+              setActionLoading(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Handle Directions
+  const handleDirections = (route: RouteOut) => {
+    openDirectionsInGoogleMaps(route.polyline);
+  };
+
   // Get user location
   useEffect(() => {
     (async () => {
