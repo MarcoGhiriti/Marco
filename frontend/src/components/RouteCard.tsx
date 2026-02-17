@@ -146,8 +146,8 @@ export function RouteCard({
             </Text>
           </Pressable>
 
-          {/* Start/End Ride Button (only for creator) */}
-          {isCreator && item.is_joined && (
+          {/* Start/End Ride Button (only for creator and when showRideControls is true) */}
+          {showRideControls && isCreator && item.is_joined && (
             hasActiveRide ? (
               <>
                 <Pressable 
