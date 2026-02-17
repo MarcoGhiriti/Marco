@@ -294,7 +294,7 @@ export default function HomeScreen() {
       setRideProgress(progress);
       loadActiveRide();
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Failed to pause ride");
+      showAlert("Error", e instanceof Error ? e.message : "Failed to pause ride");
     }
   };
 
@@ -310,7 +310,7 @@ export default function HomeScreen() {
       setRideProgress(progress);
       loadActiveRide();
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Failed to resume ride");
+      showAlert("Error", e instanceof Error ? e.message : "Failed to resume ride");
     }
   };
 
@@ -338,12 +338,12 @@ export default function HomeScreen() {
 
     try {
       await apiPost("/api/rides/cancel", { session_id: activeRide.id }, authHeader);
-      Alert.alert("Cancelled", "Your ride has been cancelled.");
+      showAlert("Cancelled", "Your ride has been cancelled.");
       setShowRideModal(false);
       setActiveRide(null);
       load();
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Failed to cancel ride");
+      showAlert("Error", e instanceof Error ? e.message : "Failed to cancel ride");
     }
   };
 
@@ -356,9 +356,9 @@ export default function HomeScreen() {
         authHeader
       );
       setActiveRide(session);
-      Alert.alert("Ride Started! 🏍️", "Your ride has begun. Ride safe!");
+      showAlert("Ride Started!", "Your ride has begun. Ride safe!");
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Failed to start ride");
+      showAlert("Error", e instanceof Error ? e.message : "Failed to start ride");
     }
   };
 
@@ -372,19 +372,19 @@ export default function HomeScreen() {
       );
       setActiveRide(null);
       if (result.is_validated) {
-        Alert.alert(
-          "Ride Complete! 🎉",
+        showAlert(
+          "Ride Complete!",
           `Great ride! ${result.km_tracked.toFixed(1)} km has been added to your stats.`
         );
       } else {
-        Alert.alert(
+        showAlert(
           "Ride Ended",
           "Ride completed but km were not validated (ride was too short)."
         );
       }
       await loadRoutes();
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Failed to end ride");
+      showAlert("Error", e instanceof Error ? e.message : "Failed to end ride");
     }
   };
 
