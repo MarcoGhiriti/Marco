@@ -538,7 +538,27 @@ export default function HomeScreen() {
                       }
                       await loadRoutes();
                     } catch (e) {
-                      setError(e instanceof Error ? e.message : "Action failed");
+                      const errorMsg = e instanceof Error ? e.message : "Action failed";
+                      // Parse CC error messages for better UX
+                      if (errorMsg.includes("Minimum") && errorMsg.includes("cc")) {
+                        const minCc = errorMsg.match(/\d+/)?.[0] || "?";
+                        Alert.alert(
+                          t("routes.ccRequired"),
+                          t("routes.ccRequiredMessage", { minCc, userCc: me?.bike?.cc || "?" }),
+                          [{ text: t("common.ok") }]
+                        );
+                      } else if (errorMsg.includes("Set your bike CC")) {
+                        Alert.alert(
+                          t("routes.bikeNotConfigured"),
+                          t("routes.bikeNotConfiguredMessage"),
+                          [
+                            { text: t("common.cancel"), style: "cancel" },
+                            { text: t("profile.editProfile"), onPress: () => router.push("/profile/edit") }
+                          ]
+                        );
+                      } else {
+                        Alert.alert(t("common.error"), errorMsg);
+                      }
                     }
                   }}
                   onStartRide={() => handleStartRide(r.id)}
