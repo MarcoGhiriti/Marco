@@ -642,7 +642,7 @@ export default function ProfileScreen() {
 
           <View style={styles.premiumCard}>
             <Text style={styles.premiumTitle}>MotoGO Premium</Text>
-            <Text style={styles.premiumSub}>Premium features:</Text>
+            <Text style={styles.premiumSub}>{t("profile.premiumFeatures")}</Text>
             {[
               "Private routes",
               "Group-only rides",
@@ -657,7 +657,7 @@ export default function ProfileScreen() {
             ))}
 
             <Pressable disabled style={styles.subscribeBtnDisabled}>
-              <Text style={styles.subscribeBtnText}>Subscribe – Coming soon</Text>
+              <Text style={styles.subscribeBtnText}>{t("profile.subscribeSoon")}</Text>
             </Pressable>
           </View>
         </View>
@@ -715,25 +715,25 @@ export default function ProfileScreen() {
 
         {/* APP & LEGAL */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App & legal</Text>
-          <Row title="Terms & Conditions" leftIcon="document-text-outline" onPress={() => router.push("/profile/legal/terms")} />
-          <Row title="Privacy Policy" leftIcon="lock-closed-outline" onPress={() => router.push("/profile/legal/privacy")} />
-          <Row title="About MotoGO" leftIcon="information-circle-outline" onPress={() => router.push("/profile/legal/about")} />
-          <Row title="Credits & Investors" leftIcon="people-outline" onPress={() => router.push("/profile/legal/credits")} />
+          <Text style={styles.sectionTitle}>{t("profile.appAndLegal")}</Text>
+          <Row title={t("profile.terms")} leftIcon="document-text-outline" onPress={() => router.push("/profile/legal/terms")} />
+          <Row title={t("profile.privacyPolicy")} leftIcon="lock-closed-outline" onPress={() => router.push("/profile/legal/privacy")} />
+          <Row title={t("profile.aboutMotoGO")} leftIcon="information-circle-outline" onPress={() => router.push("/profile/legal/about")} />
+          <Row title={t("profile.credits")} leftIcon="people-outline" onPress={() => router.push("/profile/legal/credits")} />
         </View>
 
         {/* SUPPORT */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          <Row title="Help Center" leftIcon="help-circle-outline" onPress={() => {}} right={<Text style={styles.lockedText}>Coming soon</Text>} />
-          <Row title="Contact Support" leftIcon="mail-outline" onPress={() => {}} right={<Text style={styles.lockedText}>Coming soon</Text>} />
+          <Text style={styles.sectionTitle}>{t("profile.support")}</Text>
+          <Row title={t("profile.helpCenter")} leftIcon="help-circle-outline" onPress={() => {}} right={<Text style={styles.lockedText}>{t("common.comingSoon")}</Text>} />
+          <Row title={t("profile.contactSupport")} leftIcon="mail-outline" onPress={() => {}} right={<Text style={styles.lockedText}>{t("common.comingSoon")}</Text>} />
         </View>
 
         {/* ACCOUNT */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={styles.sectionTitle}>{t("profile.account")}</Text>
           <Row
-            title="Log out"
+            title={t("profile.logout")}
             leftIcon="log-out-outline"
             onPress={async () => {
               await logout();
