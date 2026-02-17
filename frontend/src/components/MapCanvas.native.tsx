@@ -70,16 +70,45 @@ type MapCanvasProps = {
 };
 
 const MAP_STYLE = [
-  { elementType: "geometry", stylers: [{ color: "#0b0f0e" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#7a8a86" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0b0f0e" }] },
+  // Base map - deep dark with subtle green tint
+  { elementType: "geometry", stylers: [{ color: "#0a0e0d" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#5a6b65" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#0a0e0d" }] },
+  
+  // Hide administrative boundaries for cleaner look
   { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ visibility: "on" }, { color: "#2a3a35" }] },
+  
+  // Points of interest - minimal
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#16221f" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#0f1613" }] },
+  
+  // Roads - the focus for motorcycle riders
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#1a2622" }] },
   { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#0f1815" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#1d2f2a" }] },
-  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#36f19a" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f1b18" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#4a5a55" }] },
+  
+  // Highways - prominent with accent glow
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#243830" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#36f19a", weight: 1.5 }] },
+  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#36f19a" }] },
+  
+  // Arterial roads - secondary accent
+  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#1e2d28" }] },
+  { featureType: "road.arterial", elementType: "geometry.stroke", stylers: [{ color: "#2a4a40" }] },
+  
+  // Local roads
+  { featureType: "road.local", elementType: "geometry", stylers: [{ color: "#161f1c" }] },
+  
+  // Water - deep blue-green
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0a1512" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#1a3530" }] },
+  
+  // Landscape - subtle terrain
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#0d1210" }] },
+  { featureType: "landscape.natural.terrain", elementType: "geometry", stylers: [{ color: "#0f1413" }] },
+  
+  // Transit - hidden
   { featureType: "transit", stylers: [{ visibility: "off" }] },
 ];
 
