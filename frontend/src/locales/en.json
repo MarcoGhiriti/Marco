@@ -221,7 +221,8 @@
     "driveSafe": "Your ride has begun. Drive safe!",
     "kmRecorded": "Congrats! Your kilometers have been recorded.",
     "start": "Start",
-    "end": "End"
+    "end": "End",
+    "maxLevel": "Maximum level reached!"
   },
   "friends": {
     "addFriend": "Add friend",
