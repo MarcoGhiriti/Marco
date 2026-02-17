@@ -303,6 +303,15 @@ const styles = StyleSheet.create({
   startRideBtn: {
     backgroundColor: Colors.success,
   },
+  directionsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: Colors.accent,
+  },
   rideBtnText: {
     color: "#FFF",
     fontSize: 13,

@@ -91,7 +91,7 @@ export default function RoutesScreen() {
           {/* Difficulty Badge */}
           <View style={[
             styles.difficultyBadge,
-            {item.difficulty === "easy" && styles.difficultyEasy,
+            item.difficulty === "easy" && styles.difficultyEasy,
             item.difficulty === "medium" && styles.difficultyMedium,
             item.difficulty === "hard" && styles.difficultyHard,
           ]}>
