@@ -381,6 +381,16 @@ export default function HomeScreen() {
             <Pressable onPress={() => router.push("/search/routes")} style={styles.iconBtn}>
               <Ionicons name="search-outline" size={20} color={Colors.text} />
             </Pressable>
+            {/* Chat/Messages Button with Unread Badge */}
+            <Pressable 
+              onPress={() => router.push("/(tabs)/community")} 
+              style={styles.iconBtn}
+            >
+              <Ionicons name="chatbubbles-outline" size={20} color={Colors.text} />
+              {hasUnread && (
+                <View style={styles.unreadDot} />
+              )}
+            </Pressable>
             <Pressable 
               onPress={() => router.push("/notifications")} 
               style={styles.iconBtn}
