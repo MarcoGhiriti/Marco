@@ -88,6 +88,7 @@ MotoGO is a React Native (Expo) motorcycle social app with FastAPI + MongoDB bac
 5. **Fixed Syntax Error** - Corrected StyleSheet array syntax in `routes.tsx` that was causing Metro bundling failure.
 6. **CC Error Messages** - Added friendly alert messages in Romanian when user can't join a route due to engine size requirements (cc). Two cases: minimum cc not met, or bike not configured.
 7. **Custom Map Style** - Enhanced interactive map with a unique dark theme focused on motorcycle riding: highlighted highways with accent glow, subtle terrain, cleaner labels.
+8. **Chat Badge for Unread Messages** - Added chat button with unread indicator (green dot) in the Home screen header. Badge appears when user has unread messages.
 
 ### Files Modified
 - `/app/frontend/src/lib/utils.ts` - `formatDuration()` and `openDirectionsInGoogleMaps()` functions
