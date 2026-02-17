@@ -113,8 +113,13 @@ MotoGO is a React Native (Expo) motorcycle social app with FastAPI + MongoDB bac
 
 2. **Alert Not Working on Web** - Created cross-platform `showAlert()` helper function in `home.tsx` that uses `window.alert()` on web and native `Alert.alert()` on mobile. This fixes the silent failure when trying to join routes with insufficient CC.
 
+3. **401 Unread Summary Error** - Fixed `unreadStore.ts` to silently catch 401 errors when fetching unread messages. The error no longer appears in the UI error state.
+
+4. **Home Routes Filter (100km)** - Changed radius filter from 500km to 100km for route discovery on home screen.
+
 ### Files Modified (This Update)
-- `/app/frontend/src/lib/api.ts` - Fixed error parsing in `apiPost` and `apiPut` functions
-- `/app/frontend/app/(tabs)/home.tsx` - Added `showAlert()` helper, replaced all `Alert.alert` calls with `showAlert`
+- `/app/frontend/src/lib/api.ts` - Fixed error parsing in `apiGet`, `apiPost`, `apiPut` functions
+- `/app/frontend/app/(tabs)/home.tsx` - Added `showAlert()` helper, replaced `Alert.alert` calls, changed radius to 100km
+- `/app/frontend/src/state/unreadStore.ts` - Added try-catch to silently handle auth errors
 - `/app/frontend/app/auth/login.tsx` - Added `data-testid="login-submit-btn"` for testing
 
