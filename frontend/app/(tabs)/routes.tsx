@@ -22,6 +22,7 @@ import { formatDuration } from "../../src/lib/utils";
 
 export default function RoutesScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { accessToken, me } = useAuthStore();
   
   const [routes, setRoutes] = useState<RouteOut[]>([]);
@@ -113,9 +114,7 @@ export default function RoutesScreen() {
             <View style={styles.routeMetaItem}>
               <Ionicons name="time-outline" size={14} color={Colors.muted} />
               <Text style={styles.routeMetaText}>
-                {item.estimated_duration_min 
-                  ? `${Math.round(item.estimated_duration_min / 60)}h ${item.estimated_duration_min % 60}m`
-                  : "?"}
+                {formatDuration(item.estimated_duration_min || item.duration_min)}
               </Text>
             </View>
           </View>
