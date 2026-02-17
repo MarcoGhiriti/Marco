@@ -233,12 +233,12 @@ export default function RoutesScreen() {
             <View style={styles.emptyState}>
               <Ionicons name="trail-sign-outline" size={64} color={Colors.muted} />
               <Text style={styles.emptyTitle}>
-                {activeTab === "my" ? "No routes yet" : "No routes found"}
+                {activeTab === "my" ? t("routes.noRoutesFound") : t("routes.noRoutesFound")}
               </Text>
               <Text style={styles.emptyText}>
                 {activeTab === "my" 
-                  ? "Create your first route and share it with the community!"
-                  : "Try adjusting your search or check back later."}
+                  ? t("routes.startNewAdventure")
+                  : t("common.noResults")}
               </Text>
               {activeTab === "my" && (
                 <Pressable
@@ -246,7 +246,7 @@ export default function RoutesScreen() {
                   onPress={() => router.push("/create/route")}
                 >
                   <Ionicons name="add" size={20} color={Colors.bg} />
-                  <Text style={styles.createFirstBtnText}>Create Route</Text>
+                  <Text style={styles.createFirstBtnText}>{t("routes.createRoute")}</Text>
                 </Pressable>
               )}
             </View>
