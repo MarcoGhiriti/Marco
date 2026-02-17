@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Get backend URL from frontend .env
-BACKEND_URL = "https://duration-format.preview.emergentagent.com/api"
+BACKEND_URL = "https://profile-sync-14.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_EMAIL = "user1@example.com"
