@@ -19,15 +19,21 @@ export const useUnreadStore = create<UnreadState>((set, get) => ({
   lastUpdatedAt: null,
 
   refresh: async (accessToken: string) => {
-    const data = await apiGet<UnreadSummaryOut>("/api/messages/unread-summary", {
-      Authorization: `Bearer ${accessToken}`,
-    });
-    set({
-      hasUnread: data.has_unread,
-      dmUserIds: data.dm_user_ids,
-      groupIds: data.group_ids,
-      lastUpdatedAt: Date.now(),
-    });
+    try {
+      const data = await apiGet<UnreadSummaryOut>("/api/messages/unread-summary", {
+        Authorization: `Bearer ${accessToken}`,
+      });
+      set({
+        hasUnread: data.has_unread,
+        dmUserIds: data.dm_user_ids,
+        groupIds: data.group_ids,
+        lastUpdatedAt: Date.now(),
+      });
+    } catch (e) {
+      // Silently ignore auth errors (401/403) - user might have invalid/expired token
+      // Don't throw error to UI, just leave unread state unchanged
+      console.log("Failed to fetch unread summary:", e instanceof Error ? e.message : e);
+    }
   },
 
   clearThread: (thread) => {

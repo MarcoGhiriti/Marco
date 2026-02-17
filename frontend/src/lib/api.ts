@@ -23,7 +23,16 @@ export async function apiGet<T>(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`GET ${path} failed: ${res.status} ${text}`);
+    let errorMessage = `GET ${path} failed: ${res.status} ${text}`;
+    try {
+      const json = JSON.parse(text);
+      if (json.detail) {
+        errorMessage = json.detail;
+      }
+    } catch {
+      // Not JSON or no detail field - use generic error
+    }
+    throw new Error(errorMessage);
   }
   return (await res.json()) as T;
 }
