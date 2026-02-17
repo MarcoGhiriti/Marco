@@ -57,6 +57,25 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { hasUnread, refresh: refreshUnread } = useUnreadStore();
   
+  // Cross-platform alert helper (Alert.alert doesn't work on web)
+  const showAlert = (title: string, message: string, buttons?: Array<{ text: string; style?: string; onPress?: () => void }>) => {
+    if (Platform.OS === "web") {
+      if (buttons && buttons.length > 1) {
+        // For confirmation dialogs with multiple buttons
+        const confirmed = window.confirm(`${title}\n\n${message}`);
+        if (confirmed && buttons[1]?.onPress) {
+          buttons[1].onPress();
+        } else if (!confirmed && buttons[0]?.onPress) {
+          buttons[0].onPress();
+        }
+      } else {
+        window.alert(`${title}\n\n${message}`);
+      }
+    } else {
+      Alert.alert(title, message, buttons as any);
+    }
+  };
+  
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [events, setEvents] = useState<EventOut[]>([]);
   const [stories, setStories] = useState<StoryOwner[]>([]);
