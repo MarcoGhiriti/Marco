@@ -578,13 +578,13 @@ export default function HomeScreen() {
                       // Parse CC error messages for better UX
                       if (errorMsg.includes("Minimum") && errorMsg.includes("cc")) {
                         const minCc = errorMsg.match(/\d+/)?.[0] || "?";
-                        Alert.alert(
+                        showAlert(
                           t("routes.ccRequired"),
                           t("routes.ccRequiredMessage", { minCc, userCc: me?.bike?.cc || "?" }),
                           [{ text: t("common.ok") }]
                         );
                       } else if (errorMsg.includes("Set your bike CC")) {
-                        Alert.alert(
+                        showAlert(
                           t("routes.bikeNotConfigured"),
                           t("routes.bikeNotConfiguredMessage"),
                           [
@@ -593,7 +593,7 @@ export default function HomeScreen() {
                           ]
                         );
                       } else {
-                        Alert.alert(t("common.error"), errorMsg);
+                        showAlert(t("common.error"), errorMsg);
                       }
                     }
                   }}
