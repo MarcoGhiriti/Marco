@@ -1,148 +1,154 @@
 <analysis>**original_problem_statement:**
-The user's initial high-level goals were to add marketplace features, overhaul the map screen, and implement a notification/messaging system.
+The user's initial goals were to add marketplace features, overhaul the map screen, and implement a notification/messaging system. The project has evolved to include:
+-   **Map V2 Features**: Interactive filters, Directions button, clickable event markers, and a user location indicator.
+-   **Universal User Profile**: Clickable user avatars/names leading to a consistent profile screen with relationship-based action buttons.
+-   **Privacy Settings**: Toggles on the edit profile screen to control data visibility.
+-   **Internationalization (i18n)**: Support for English and Romanian.
+-   **UI/UX Fixes**: Reducing padding on the marketplace screen.
+-   **Backend Performance**: Optimizing the database for 10,000 active users by adding indexes.
+-   **Backend Refactoring**: Breaking down the monolithic .
 
-The project has since evolved through several user feedback cycles. Key work has involved:
-1.  **Reverting a complex notification system** in favor of a simpler one.
-2.  **Fixing critical bugs**, including a navigation issue, broken static mini-maps, and a  error.
-3.  **Implementing Map V2 features:** adding interactive filters, a Directions button to markers, clickable event markers, and a user location indicator.
-4.  **Building a Universal User Profile system:** making user avatars/names clickable throughout the app to navigate to a consistent profile screen that displays action buttons (Add Friend, Message, Remove Friend) based on the relationship status between the current user and the profile owner.
-5.  **Implementing Privacy Settings** controllable from the user's edit profile screen.
-
-The most recent user directive was to proceed with the remaining planned tasks.
+The most recent user requests are:
+1.  Convert route durations over 60 minutes into an hours and minutes format (e.g., 1h 30m).
+2.  Add a Directions button for the route creator that opens Google Maps.
+3.  Fix a bug where a deleted route remains visible on the user's profile until a manual refresh, causing an error on click.
+4.  Complete the translation of the entire application into Romanian.
 
 **User's preferred language**: Romanian (română). The next agent MUST respond in Romanian.
 
 **what currently exists?**
-The application is in a stable and functional state. The agent has successfully fixed all recently reported bugs and implemented several major feature sets requested by the user.
-
--   **Bug Fixes**: The critical issue of missing  images has been resolved by implementing a proper backend image proxy. The  error related to the search input has also been fixed.
--   **Map V2**: The interactive map now includes Directions buttons for gas/service stations, clickable event markers with details, and a marker for the user's current location.
--   **Universal User Profile**: User profiles are now accessible from the friends list, marketplace, notifications, and group chats. The profile screen dynamically shows action buttons (e.g., Add Friend, Remove Friend, Message) based on the backend-driven relationship status. A  endpoint has been added.
--   **Privacy**: The Edit Profile screen now includes working toggles to control the visibility of the user's location, stats, and activity.
--   **Internationalization (i18n)**: The foundational setup for translations is in progress. The required libraries have been installed, and the configuration files have been created.
+The application is mostly functional. The agent has successfully implemented major features like Map V2, Universal User Profiles, and Privacy Settings. In the current session, the agent has:
+-   **Fixed Marketplace UI**: Reduced padding on the marketplace screen as requested.
+-   **Started Backend Optimization**: Created a  file to centralize DB logic and added a startup event to create necessary MongoDB indexes for better performance. The  monolith still exists but has been cleaned up slightly.
+-   **Started i18n Implementation**: Added  configuration, created translation files for English and Romanian, and implemented a language switcher component on the user's profile settings page.
+-   **Started a new batch of features**: Began work on the four most recent user requests (duration formatting, directions button, delete bug fix, full translation).
 
 **Last working item**:
--   Last item agent was working: Implementing Internationalization (i18n) for the application. The agent installed , , and  and created the necessary configuration files () and translation resources (, ).
+-   Last item agent was working: Implementing a batch of four user requests simultaneously:
+    1.  **Duration Formatting**: Created a  utility.
+    2.  **Directions Button**: Started modifying .
+    3.  **Route Deletion Bug**: Started modifying  to add a  hook.
+    4.  **Full Translation**: Updated locale files with new keys.
+    The work is spread across multiple files and is not finished. The application may be in an unstable state.
 -   Status: **IN PROGRESS**
 -   Agent Testing Done: N
--   Which testing method agent to use?: **frontend testing agent**. The agent should test the implementation by first adding a language switcher, translating a few components, and then verifying that the language changes correctly across the app.
+-   Which testing method agent to use?: **frontend testing agent**. Test all four items: verify correct duration format on routes, check the new Directions button functionality, confirm the route deletion bug is fixed (the list updates instantly), and spot-check multiple screens to ensure full translation.
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
-There are no pending issues or bugs. All items reported by the user in the last session have been resolved.
+  - Issue 1:  Profile route deletion bug (P0)
+
+  Issues Detail:
+  - Issue 1: 
+     - Description: When a user deletes a route from their profile, the item is not removed from the list immediately, causing a crash if clicked again. It only disappears after a manual screen refresh.
+     - Attempted fixes: The agent started adding a  hook to  to refetch the user's routes whenever the screen is focused. This implementation is not complete.
+     - Next debug checklist: 
+        1. Complete the implementation of  in .
+        2. Ensure the effect correctly triggers a refetch of the routes list.
+        3. Test the deletion flow to confirm the list updates instantly without a manual refresh.
+     - Why fix this issue and what will be achieved with the fix?: To resolve a poor user experience and prevent the application from crashing.
+     - Status:  IN PROGRESS
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix?: frontend
+     - Blocked on other issue: No
 
 **In progress Task List**:
-  - Task 1:  **Complete Internationalization (i18n) Implementation (P0)**
+  - Task 1:  Complete Internationalization (i18n) (P0)
+  - Task 2:  Convert route duration format (P1)
+  - Task 3:  Add Directions button for route creator (P1)
 
  Task Detail:
-  - Task 1:
-     - **Where to resume:** The configuration files in  are ready. The next step is to import and initialize the i18n service in the app's root entry point, which is likely .
-     - **Plan:**
-       1.  Initialize  in .
-       2.  Create a language switcher component (e.g., two buttons for EN / RO).
-       3.  Add the language switcher to a suitable settings page, like .
-       4.  Refactor text in a few key components (e.g., login screen, home screen tabs) to use the  hook as a proof-of-concept.
-     - **What will be achieved with this?** The application will be ready for full translation, supporting both English and Romanian, and allowing the user to switch languages.
-     - **Status:**  IN PROGRESS
+  - Task 1: 
+     - **Where to resume**: The locale files () have been updated with many new keys. The agent needs to systematically go through all remaining UI components and pages (e.g., , , , etc.) and replace hardcoded text with the  function from .
+     - **What will be achieved with this?**: A fully bilingual application, supporting English and Romanian.
+     - **Status:** IN PROGRESS
      - **Should Test frontend/backend/both after fix?:** frontend
-     - **Blocked on something:** No.
+     - **Blocked on something:** No
+
+  - Task 2:
+     - **Where to resume**: The agent created  with a  function. This function needs to be integrated into  and any other component that displays route duration.
+     - **What will be achieved with this?**: Route durations will be displayed in a more user-friendly format (e.g., 1h 30m instead of 90 min).
+     - **Status:** IN PROGRESS
+     - **Should Test frontend/backend/both after fix?:** frontend
+     - **Blocked on something:** No
+
+  - Task 3:
+     - **Where to resume**: The agent was modifying . The logic must be completed to:
+        1. Conditionally render a Directions button only if the current user is the route's creator.
+        2. Implement the  handler to open Google Maps with the route's destination.
+     - **What will be achieved with this?**: A new feature for route creators as requested by the user.
+     - **Status:** IN PROGRESS
+     - **Should Test frontend/backend/both after fix?:** frontend
+     - **Blocked on something:** No
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-    - **P1: Backend Refactor:** The main  file has become a monolith containing all API endpoints. This task involves breaking it down into smaller, domain-specific router files (e.g., , , ) using FastAPI's .
+    - **P1: Complete Backend Refactor:** The initial refactoring moved DB logic into . The next critical step is to break down the monolithic  file by creating a  directory and moving endpoint logic into domain-specific files (e.g., , , ) using FastAPI's .
 - **Future Tasks**:
-    - **BLOCKED: Forgot Password Flow:** This is awaiting a user-provided API key for an email service. Do not work on this until the user provides the key.
+    - **BLOCKED: Forgot Password Flow:** This is awaiting a user-provided API key for an email service. Do not work on this.
 
 **Completed work in this session**
-- **Critical Bug Fix:** Fixed missing mini-map images by changing the backend endpoint  from a 302 redirect to a true proxy that fetches and serves the image bytes directly.
-- **Critical Bug Fix:** Resolved the VirtualizedList should not be nested inside plain ScrollView error by refactoring .
-- **Feature Implementation (Universal User Profile):**
-  - Enhanced backend endpoint  to return a .
-  - Created a universal  screen displaying conditional action buttons.
-  - Implemented the Remove Friend feature, including the  endpoint.
-  - Made user avatars and usernames tappable across the app (Friends List, Marketplace, Notifications, Group Members) to navigate to their profiles.
-- **Feature Implementation (Map V2):**
-  - Added Directions button to map markers for gas/service stations.
-  - Implemented clickable event markers with custom callouts showing Details and Directions buttons.
-  - Added a marker to show the user's current location on the map.
-- **Feature Implementation (Privacy):**
-  - Fixed the navigation to the Edit Profile screen and implemented working privacy toggles for , , and  visibility.
+- **Backend Optimization**: Created database indexes via a startup event in FastAPI to handle load for up to 10k users. Centralized DB connection, models, and helper functions into a new  file.
+- **UI Fix (Marketplace)**: Reduced padding on the marketplace screen for a more compact layout in .
+- **i18n Foundation**: Implemented a language switcher on the profile screen and configured the project to support translation files.
+- **Testing**: Successfully ran the testing agent with a **100% pass rate** *before* starting the latest batch of 4 user requests.
 
 **Code Architecture**
-
+useFocusEffect
 
 **Key Technical Concepts**
--   **Backend Image Proxy:** Using  in a FastAPI endpoint to securely fetch an image from an external API (Google Maps) and return its raw bytes (). This is crucial for compatibility with React Native image components which often struggle with 302 redirects.
--   **Conditional UI based on Relationship Status:** A key pattern where the backend provides a simple status string (e.g., 'friends', 'not_friends', 'request_sent'), and the frontend uses it in a switch-case or mapping object to render the correct set of action buttons on a user's profile.
--   **Internationalization with :** The process of setting up  with  to detect the device language and provide translation resources for a multi-language application.
+-   **Backend Optimization**: Using a FastAPI startup event () to run  for MongoDB performance.
+-   **Frontend State Bug Fix**: Using the  hook from  to refetch data and keep the UI in sync when a screen becomes active.
+-   **Internationalization (i18n)**: Storing translations in  files and using  hooks () to render text. Programmatically changing language via .
 
 **key DB schema**
--   **users**: Contains a nested  object with boolean fields: , , . This schema is managed by the Pydantic model .
-
-**changes in tech stack**
--   **Backend**: Added  dependency for the image proxy.
--   **Frontend**: Added , , and  for internationalization.
+-   No schema changes were made. Database indexes were added to existing collections on fields like , , and geo-locations for performance optimization.
 
 **All files of reference**
--   : The primary file for the current i18n task.
--   : The app entry point where i18n needs to be initialized.
--   : The target for the upcoming backend refactoring task.
--   : The universal profile screen that was recently built.
--   : Contains the recently added map interaction logic.
+-    (Route deletion bug fix, language switcher)
+-    (Duration format, Directions button)
+-    (New helper for duration formatting)
+-    (Translation files)
+-    (Target for future refactoring)
+-    (New centralized DB logic file)
+-    (UI padding fix)
 
 **Areas that need refactoring**:
--    is a monolithic file that urgently needs to be broken down into multiple  files based on functionality (e.g., users, auth, marketplace). This is the next priority task after i18n.
-
-**key api endpoints**
--   ****: **MODIFIED**. Now a true proxy that returns  with image bytes, not a .
--   ****: **MODIFIED**. Now includes a  field in the response.
--   ****: **NEW**. Endpoint for unfriending a user.
--   ****: **MODIFIED**. Now accepts and updates the  settings object.
+-   : This is still a monolith containing all API endpoints. It urgently needs to be broken down into multiple  files organized by domain (e.g., users, map, marketplace) and placed in a new  directory.
 
 **Critical Info for New Agent**
--   **Language is Romanian.** You must continue all communication in Romanian.
--   Your immediate task is **Phase 2 of Internationalization (i18n)**. The setup is done; you need to integrate it into the app, add a language switcher, and start translating components.
--   The next major task is to **refactor the backend  file**.
--   **All user-reported bugs have been fixed.** Do not reinvestigate issues related to mini-maps, profile links, or privacy settings unless the user reports a new problem.
--   The **Forgot Password** feature remains blocked and should not be worked on.
+-   **Language is Romanian.** All communication must be in Romanian.
+-   Your immediate priority is to finish the four **IN PROGRESS** tasks (duration format, directions button, route deletion bug, full translation). The implementation was left incomplete, so you must carefully review the modified files and complete the work.
+-   After completing the current tasks, you must run the testing agent to verify all changes.
+-   The next major task after this is to complete the backend refactoring by splitting  into smaller router files.
 
 **documents and test reports created in this job**
--   /app/test_reports/iteration_1.json
--   /app/test_reports/iteration_2.json
--   /app/test_reports/iteration_3.json
+-   /app/test_reports/iteration_4.json (From the last successful test run)
 
 **Last 10 User Messages and any pending HUMAN messages**
-- : User confirmed to continue with the remaining tasks (i18n and backend refactor). **(CURRENT TASK)**
-- : User reported multiple issues: privacy settings error, non-clickable profiles, and missing unfriend button. **(RESOLVED)**
-- : User provided a screenshot of the privacy settings error. **(RESOLVED)**
-- : User clarified they *don't* want clickable creators on route/event details but *do* want them in other specified areas and requested fixes for maps and privacy. **(RESOLVED)**
-- : User confirmed requirements for the map Directions button and other fixes. **(RESOLVED)**
-- : User provided a detailed feature request for the Universal User Profile system. **(RESOLVED)**
-- : User asked for the next plan. **(ADDRESSED)**
-- : Agent internal monologue.
-- : User provided initial clarifications on bug reports. **(RESOLVED)**
-- : User's original rejection of the complex notification screen from the previous session. **(RESOLVED)**
+-   : User requested 4 new features/fixes: route duration conversion, Directions button for route creator, fix for route deletion bug, and complete app translation. **(IN PROGRESS)**
+-   : User confirmed a previous plan and requested marketplace padding reduction and backend optimization for 10k users. **(COMPLETED)**
 
 **Project Health Check:**
--   **Broken**: No. The app is stable.
--   **Incomplete**: Yes. The i18n feature is in progress, and the backend needs refactoring.
--   **Mocked**: Forgot Password flow is blocked and non-functional.
+-   **Broken**: Yes. A known bug exists where deleting a route crashes the app on the next click. The app may also be unstable due to the multiple in-flight changes.
+-   **Incomplete**: Yes. The four most recent user requests are mid-implementation. The backend refactoring is also only partially done.
+-   **Mocked**: The Forgot Password flow is blocked and non-functional.
 
 **3rd Party Integrations**
 -   **OpenAI GPT-4o**: For AI license verification (uses ).
--   **Google Maps Platform**: User-provided API key is used for interactive maps and the backend static map proxy.
+-   **Google Maps Platform**: For interactive maps and static map images.
 -   **Socket.IO**: For real-time functionality.
 -   **react-native-maps-clustering**: For clustering map markers.
 
 **Testing status**
--   Testing agent used after significant changes: **YES**. The last run passed with 100% on the frontend and 89% on the backend (one test was skipped due to complexity).
+-   Testing agent used after significant changes: **YES**. A test was run after the backend optimization and UI padding fix, which passed.
 -   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: None.
--   Known regressions: None.
+-   Test files created: None
+-   Known regressions: The route deletion bug is a known regression/issue.
 
 **Credentials to test flow:**
 -   **User 1 (Verified License):**  / 
 -   **User 2 (Unverified License):**  / 
 
 **What agent forgot to execute**
-- The agent has been diligent and has corrected course based on user feedback. It proactively identified the need for backend refactoring, which is now a planned task. No major omissions are outstanding.</analysis>
+- The agent did not forget any tasks but left the implementation of four user requests in an unfinished state across multiple files. The next agent must carefully pick up this work and complete it.</analysis>
