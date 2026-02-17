@@ -1,121 +1,142 @@
 <analysis>**original_problem_statement:**
-The user's overall project goals include enhancing a social-mapping application with marketplace features, a V2 map screen, universal user profiles, privacy settings, and a notification system. The project also requires backend optimization and refactoring.
+The user's project is a social-mapping application for motorcyclists.
 
-The current, most recent user requests are:
-1.  **Format Route Duration**: Convert route durations over 60 minutes into an hours and minutes format (e.g., 90 min becomes 1h 30m).
-2.  **Add Directions Button**: For the user who created a route, add a Directions button that opens the destination in Google Maps.
-3.  **Fix Deletion Bug**: Resolve a bug where deleting a route from a user's profile does not update the UI immediately, causing a crash if the stale item is clicked again.
-4.  **Complete Translations**: Translate all remaining hardcoded text in the application into Romanian.
+The current work revolves around several user requests:
+1.  **(Message 141 - HIGHEST PRIORITY)** Implement a detailed control panel on the **My Routes** page.
+    *   The panel must include Start, End, Pause, and Directions buttons.
+    *   The End, Pause, and Directions buttons should only become visible *after* a route has been started.
+    *   Add restrictions before starting a route:
+        *   A minimum of 3 participants are required. If not met, display the error: Dacă vrei ture singur sau de 2 persoane, cumpără abonamentul pentru rute private (If you want single or 2-person rides, buy the private routes subscription).
+        *   The user must be within a 3km radius of the route's starting point.
+2.  **(Message 176 - from previous session)** Refactor the UI to separate route discovery from route management.
+    *   On the **Home screen**, filter routes/events to a **100km radius**. (COMPLETED)
+    *   Route cards on the **Home screen** should only have Join / Leave actions. (COMPLETED)
+    *   The Ride in Progress popup should be updated to include Directions and End Route buttons. (PENDING)
+3.  **(Message 5, 103, 125 - from this session)** Fix critical bugs reported by the user.
+    *   Fix a bug where a Minimum CC required error on joining a route crashed the entire home feed. (COMPLETED)
+    *   Fix a bug where a 401 Invalid token error for unread messages was displayed on the UI. (COMPLETED)
 
 **User's preferred language**: Romanian (română). The next agent MUST respond in Romanian.
 
 **what currently exists?**
-The agent has begun implementing the four active user requests. After an extensive exploration of the file system to understand the correct project structure, the agent performed numerous  operations across several files. Major modifications have been made to  (adding  and many i18n keys),  (i18n), and  (directions button logic and i18n). The application is currently in a partially modified, unstable state, as the implementation of these features is not yet complete.
+The agent successfully fixed two critical bugs reported by the user during this session.
+1.  **Feed Crash Bug**: Corrected error parsing in  to properly handle backend error messages () and prevent them from crashing the UI.
+2.  **401 Error Bug**: Implemented silent error handling in  and fixed an incorrect parameter being passed in  to prevent authentication errors from being displayed to the user.
+
+As part of the bug fixes, the agent also implemented a cross-platform alert helper in  to ensure feedback is visible on the web. It also updated the home screen to filter routes by the requested 100km radius. The agent has now started working on the complex My Routes feature request.
 
 **Last working item**:
--   Last item agent was working: The agent was in the process of finishing the  component changes. It had just added a new translation key () to the locale files and was about to add the  style and translate the remaining labels in .
+-   Last item agent was working: Began implementing the new, detailed requirements for the My Routes page control panel (as per user message 141). The agent has identified the target file  and started planning the logic for the conditional UI and start-restrictions.
 -   Status: **IN PROGRESS**
 -   Agent Testing Done: N
--   Which testing method agent to use?: **frontend testing agent**. After completing the implementation of all four tasks, the agent should test them thoroughly:
-    1.  Verify the route deletion bug is fixed on the profile screen.
-    2.  Check that the Directions button appears only for the route creator and opens Google Maps correctly.
-    3.  Confirm route durations are displayed in the Xh Ym format.
-    4.  Review multiple screens (, , , , etc.) to check for complete Romanian translation and find any remaining hardcoded English text.
+-   Which testing method agent to use?: **frontend testing agent**. This is a complex feature with new state management, conditional UI, location services, and API calls. The test must verify:
+    1.  The control panel with the Start button is visible on route cards in My Routes.
+    2.  The End, Pause, and Directions buttons are initially hidden.
+    3.  The Start button is disabled and shows the correct upsell message if there are fewer than 3 participants.
+    4.  The Start button is disabled with an error if the user is more than 3km from the start point (this will require mocking the user's location).
+    5.  After a successful Start action, the End, Pause, and Directions buttons become visible, and the Start button is hidden or disabled.
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Profile route deletion bug (P0)
+-   Issue 1: Implement My Routes Control Panel & Logic (P0)
+-   Issue 2: Update Ride in Progress Popup (P1)
 
-  Issues Detail:
-  - Issue 1: 
-     - Description: When a user deletes a route from their profile, the UI list is not updated instantly. Clicking the now-stale route item causes the app to crash.
-     - Attempted fixes: The agent has added the  hook from  to . The code to refetch the user's routes when the screen gains focus has been written.
-     - Next debug checklist: 
-        1. Review the  implementation in  to ensure it's correct and has all necessary dependencies.
-        2. Test the deletion flow to confirm the route list updates immediately without a manual refresh.
-     - Why fix this issue and what will be achieved with the fix?: To eliminate a critical bug that crashes the app and provides a poor user experience.
-     - Status:  **IN PROGRESS**
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix?: frontend
+-   Issues Detail:
+    -   **Issue 1:**
+        -   **Description**: As per user message 141, add a full control panel (Start/End/Pause/Directions) to the My Routes page. Implement conditional visibility for buttons (End/Pause/Directions only appear after Start). Add pre-start validation for minimum 3 participants and user proximity (3km) to the start point, with specific error messages.
+        -   **Attempted fixes**: The agent has identified  as the file to modify.
+        -   **Next debug checklist**:
+            1.  Modify  to include state for managing the active ride status.
+            2.  Implement the UI for the control panel, conditionally rendering buttons based on the ride state.
+            3.  Create the  handler: check , get the user's location, calculate the distance to the start point, and show errors or call the start API endpoint accordingly.
+            4.  Implement , , and  handlers.
+            5.  Update  to support the Pause button if needed, as this was a new requirement.
+        -   **Status**: IN PROGRESS
+        -   **Is recurring issue?**: N
+        -   **Should Test frontend/backend/both after fix?**: frontend
+
+    -   **Issue 2:**
+        -   **Description**: Part of the original UI refactor request. The Ride in Progress popup needs Directions and End Route buttons.
+        -   **Attempted fixes**: None. This task was superseded by the more recent user requests and bug fixes.
+        -   **Next debug checklist**:
+            1.  Modify .
+            2.  Add the Directions and End Route buttons.
+            3.  Implement the  logic for the new buttons.
+        -   **Status**: NOT STARTED
+        -   **Is recurring issue?**: N
+        -   **Should Test frontend/backend/both after fix?**: frontend
 
 **In progress Task List**:
-  - Task 1:  Complete Internationalization (i18n) (P0)
-  - Task 2:  Add Directions button for route creator (P1)
-  - Task 3:  Convert route duration format (P1)
-
- Task Detail:
-  - Task 1: 
-     - **Where to resume**: The agent has translated a significant portion of  and , and started on . The next step is to finish  and then systematically review all other components and pages (e.g., , , , ) to replace any remaining hardcoded English text with . The locale files  have been updated multiple times.
-     - **What will be achieved with this?**: A fully bilingual application, supporting both English and Romanian.
-     - **Status:** IN PROGRESS
-     - **Should Test frontend/backend/both after fix?:** frontend
-     - **Blocked on something:** No
-
-  - Task 2: 
-     - **Where to resume**: The agent has already modified  to use React Native's  API for opening Google Maps. The agent just added a translation key for the button and was about to add the corresponding styles. The conditional logic (showing the button only for the route owner) needs to be verified.
-     - **What will be achieved with this?**: A new feature for route creators as requested.
-     - **Status:** IN PROGRESS
-     - **Should Test frontend/backend/both after fix?:** frontend
-     - **Blocked on something:** No
-
-  - Task 3:
-     - **Where to resume**: The  utility function already exists in  and is already being used in . This task is mostly complete, but requires verification during testing to ensure it works as expected for all cases (e.g., < 60 min, > 60 min, exactly 60 min).
-     - **What will be achieved with this?**: Route durations will be displayed in a user-friendly hours and minutes format.
-     - **Status:** IN PROGRESS
-     - **Should Test frontend/backend/both after fix?:** frontend
-     - **Blocked on something:** No
+*   None beyond the issues listed above.
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks**:
-    - **P1: Complete Backend Refactor:** The top priority after fixing the current frontend tasks. This involves breaking down the monolithic  by creating a  directory and moving endpoint logic into domain-specific files (e.g., , , ) using FastAPI's .
-- **Future Tasks**:
-    - **BLOCKED: Forgot Password Flow:** Awaiting a user-provided API key for an email service. Do not work on this.
+*   **Upcoming Tasks**:
+    *   **P1: Complete Backend Refactor:** This remains a high-priority task. The monolithic  needs to be broken down into domain-specific  files within a  directory.
+*   **Future Tasks**:
+    *   **BLOCKED: Forgot Password Flow:** This is blocked pending a user-provided API key for an email service. Do not work on this.
 
 **Completed work in this session**
-- No tasks were fully completed. Progress was made on the four active user requests, but all are still in an in-progress state.
+-   **Bug Fix (Feed Crash)**: Corrected error parsing in  to prevent backend errors from crashing the home feed.
+-   **Bug Fix (401 Error)**: Added silent error handling to the  and fixed a parameter bug in  to stop authentication errors from appearing on the UI.
+-   **Cross-Platform Alert**: Implemented a  helper in  to provide visual feedback on the web platform.
+-   **Home Screen Radius Filter**: Updated the route fetching in  to use the user-requested 100km radius.
+
+**Earlier issues found/mentioned but not fixed**
+-   None. The agent successfully addressed all bugs reported by the user in this session.
+
+**Known issue recurrence from previous fork**
+-   None.
 
 **Code Architecture**
-
+refreshUnreadshowAlertshowRideControlsapiGetapiPost
 
 **Key Technical Concepts**
--   **Frontend State Sync**: Using  from  to refetch data and ensure UI consistency when a screen becomes active.
--   **Internationalization (i18n)**: Using  and the  hook to dynamically render text based on the selected language.
--   **External Linking**: Using the  API from React Native to open external applications like Google Maps.
-
-**key DB schema**
--   No changes made to the database schema in this session.
+-   **Robust API Error Handling**: Refactored API service functions () to correctly parse JSON error details from the backend, preventing raw error strings from leaking into the UI state.
+-   **Silent Error Catching**: Implemented  blocks in global stores () to gracefully handle expected API errors (like 401 on an invalid token) without disrupting the user experience.
+-   **Cross-Platform UI**: Addressed a web-specific UI issue by creating a platform-aware helper function ( using ) to ensure consistent behavior across native and web.
 
 **All files of reference**
--   **Modified:**
-    -    (Route deletion bug fix, i18n)
-    -    (Directions button, i18n)
-    -    (i18n)
-    -    (New translation keys)
-    -    (New translation keys)
--   **Key Files for Future Work:**
-    -    (Target for refactoring)
-    -   Remaining frontend pages/components that need translation (, , etc.)
+-   **Recently Modified:**
+    -   
+    -   
+    -   
+-   **Key Files for Next Steps:**
+    -   
+    -   
+    -   
+    -   
 
 **Areas that need refactoring**:
--   : This remains a high-priority refactoring task. The monolithic file should be split into multiple  files within a  directory.
+-   : This remains the highest priority architectural refactoring task.
+
+**key api endpoints**
+-   
+-   
+-   **Endpoints likely needed for the next task:**
+    -   
+    -   
+    -   
 
 **Critical Info for New Agent**
--   **Language is Romanian.** You must continue all communication in Romanian.
--   Your immediate priority is to finish the four **IN PROGRESS** frontend tasks. The code is mid-implementation.
--   **Resume point:** Start by adding the  style to  and translating its remaining labels.
--   After completing the implementation, run the **frontend testing agent** to verify all four changes work correctly and to catch regressions.
--   Once the current work is complete and tested, the next major task is the backend refactoring of .
+-   **Limba de lucru este româna.** (The working language is Romanian). You must continue all communication in Romanian.
+-   Your immediate priority is to implement the **My Routes control panel** as detailed in user message 141. This is a complex feature with conditional UI and multiple validation rules.
+-   The user has clarified that the full control panel must include a **Pause button**, which was not in the original spec.
+-   The user is testing on **Expo Go (iOS)**. Be aware that the Expo dev error overlay can sometimes show errors even if they are correctly handled by a  block in the code, which caused confusion in this session.
 
 **documents and test reports created in this job**
--   None. The most recent relevant report is .
+-    (was updated)
+-    (was generated, findings were addressed)
 
-**Last 10 User Messages and any pending HUMAN messages** 
--    (Yes, continue): User approved the initial plan to work on the four requested features. (COMPLETED)
+**Last 10 User Messages and any pending HUMAN messages**
+-   **(141)** User provided a detailed image and new requirements for the My Routes page: a full control panel (Start/End/Pause/Directions), conditional button visibility, and pre-start restrictions (min 3 participants, user within 3km). **Status: IN PROGRESS**
+-   **(125)** User reported still seeing the 401 error on the UI. **Status: RESOLVED**
+-   **(102)** User reported the 401  error and asked the agent to fix it and continue. **Status: RESOLVED**
+-   **(5)** User clarified the full control panel must include Pause and reported a critical bug where the feed crashed on a join error. **Status: RESOLVED**
 
 **Project Health Check:**
--   **Broken**: Yes. The route deletion bug persists, and the application is in an unstable state due to numerous, uncompleted code modifications.
--   **Incomplete**: Yes. The four most recent user requests are mid-implementation. The backend refactoring is also pending.
--   **Mocked**: The Forgot Password feature remains blocked.
+-   **Broken**: No. The application is running, and major bugs have been fixed.
+-   **Incomplete**: Yes. The My Routes feature and the Ride in Progress popup update are both incomplete. The major backend refactor is also pending.
+-   **Mocked**: The Forgot Password feature is still blocked.
 
 **3rd Party Integrations**
 -   OpenAI GPT-4o
@@ -124,14 +145,13 @@ The agent has begun implementing the four active user requests. After an extensi
 -   react-native-maps-clustering
 
 **Testing status**
--   Testing agent used after significant changes: NO (Not in this session)
+-   Testing agent used after significant changes: YES. It was used to diagnose the feed crash bug and identified a subsequent web-only alert issue.
 -   Troubleshoot agent used after agent stuck in loop: NO
 -   Test files created: None
--   Known regressions: The route deletion bug is the primary known issue.
+-   Known regressions: None.
 
 **Credentials to test flow:**
 -   **User 1 (Verified):**  / 
--   **User 2 (Unverified):**  / 
 
 **What agent forgot to execute**
--   The agent did not forget any tasks but has left the implementation of four features in an unfinished state. The next agent needs to pick up exactly where the last one left off and see the changes through to completion and testing.</analysis>
+-   The agent has not yet implemented the changes to the  (adding Directions and End Route buttons). This task, from the previous session, has been deprioritized in favor of the newer, more detailed user requests and is listed as a pending issue.</analysis>

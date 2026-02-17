@@ -5,7 +5,7 @@ import os
 import requests
 import pytest
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://riders-hub-10.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://rider-control.preview.emergentagent.com")
 
 class TestRouteJoin:
     """Test route join/leave functionality including CC restrictions"""

@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Get backend URL from frontend .env
-BACKEND_URL = "https://riders-hub-10.preview.emergentagent.com/api"
+BACKEND_URL = "https://rider-control.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_EMAIL = "user1@example.com"
