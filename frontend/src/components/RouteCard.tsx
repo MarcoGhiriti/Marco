@@ -11,6 +11,7 @@ interface RouteCardProps {
   item: RouteOut;
   currentUserId?: string;
   activeRideRouteId?: string | null;
+  showRideControls?: boolean; // Show Finish/Directions buttons (default: true)
   onPress?: () => void;
   onToggleJoin: () => void;
   onStartRide?: () => void;
@@ -21,6 +22,7 @@ export function RouteCard({
   item, 
   currentUserId,
   activeRideRouteId,
+  showRideControls = true,
   onPress,
   onToggleJoin, 
   onStartRide,
