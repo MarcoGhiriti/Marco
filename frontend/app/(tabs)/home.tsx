@@ -223,8 +223,10 @@ export default function HomeScreen() {
     setError(null);
     try {
       await Promise.all([loadRoutes(), loadEvents(), loadStories(), loadActiveRide(), loadActiveRideForHome(), loadLicenseStatus(), loadUnreadNotifCount()]);
-      // Refresh unread messages count
-      refreshUnread(authHeader);
+      // Refresh unread messages count (pass accessToken, not the header object)
+      if (accessToken) {
+        refreshUnread(accessToken);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       setError(msg);
