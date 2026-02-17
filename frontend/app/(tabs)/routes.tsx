@@ -149,8 +149,8 @@ export default function RoutesScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.h1}>Routes</Text>
-          <Text style={styles.sub}>Discover amazing rides</Text>
+          <Text style={styles.h1}>{t("routes.title")}</Text>
+          <Text style={styles.sub}>{t("routes.subtitle")}</Text>
         </View>
         <Pressable
           style={styles.createBtn}
@@ -167,7 +167,7 @@ export default function RoutesScreen() {
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search routes..."
+            placeholder={t("routes.searchRoutes")}
             placeholderTextColor={Colors.muted}
             style={styles.searchInput}
           />
@@ -191,7 +191,7 @@ export default function RoutesScreen() {
             color={activeTab === "explore" ? Colors.bg : Colors.muted} 
           />
           <Text style={[styles.tabText, activeTab === "explore" && styles.tabTextActive]}>
-            Explore
+            {t("routes.explore")}
           </Text>
         </Pressable>
         <Pressable
@@ -204,7 +204,7 @@ export default function RoutesScreen() {
             color={activeTab === "my" ? Colors.bg : Colors.muted} 
           />
           <Text style={[styles.tabText, activeTab === "my" && styles.tabTextActive]}>
-            My Routes ({myRoutes.length})
+            {t("routes.myRoutes")} ({myRoutes.length})
           </Text>
         </Pressable>
       </View>
@@ -213,7 +213,7 @@ export default function RoutesScreen() {
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={Colors.accent} size="large" />
-          <Text style={styles.loadingText}>Loading routes...</Text>
+          <Text style={styles.loadingText}>{t("common.loading")}</Text>
         </View>
       ) : (
         <FlatList
