@@ -125,7 +125,19 @@
     "ccRequired": "Cilindree necesara",
     "ccRequiredMessage": "Aceasta ruta necesita minim {{minCc}}cc. Motocicleta ta are {{userCc}}cc.",
     "bikeNotConfigured": "Motocicleta neconfigurată",
-    "bikeNotConfiguredMessage": "Pentru a te inscrie la aceasta ruta, trebuie sa iti configurezi motocicleta. Adauga cilindreea motorului in profilul tau."
+    "bikeNotConfiguredMessage": "Pentru a te inscrie la aceasta ruta, trebuie sa iti configurezi motocicleta. Adauga cilindreea motorului in profilul tau.",
+    "cannotStart": "Nu se poate porni",
+    "noStartPoint": "Punctul de start nu este disponibil",
+    "locationRequired": "Este necesara locatia pentru a porni cursa",
+    "tooFarFromStart": "Esti prea departe de punctul de start",
+    "rideStarted": "Cursa a inceput!",
+    "rideStartedMessage": "Drum bun! Ai grija pe drum.",
+    "rideEnded": "Cursa terminata",
+    "rideEndedMessage": "Felicitari! Kilometrii au fost inregistrati.",
+    "endRideConfirm": "Termina cursa?",
+    "endRideConfirmMessage": "Esti sigur ca vrei sa termini aceasta cursa?",
+    "controlPanel": "Panou control",
+    "minParticipantsRequired": "Minim {{count}} participanti necesari"
   },
   "events": {
     "title": "Evenimente",
