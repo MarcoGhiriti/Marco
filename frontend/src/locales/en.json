@@ -125,7 +125,19 @@
     "ccRequired": "Engine Size Required",
     "ccRequiredMessage": "This route requires a minimum of {{minCc}}cc. Your bike has {{userCc}}cc.",
     "bikeNotConfigured": "Bike Not Configured",
-    "bikeNotConfiguredMessage": "To join this route, you need to set up your bike details first. Add your motorcycle's engine size in your profile."
+    "bikeNotConfiguredMessage": "To join this route, you need to set up your bike details first. Add your motorcycle's engine size in your profile.",
+    "cannotStart": "Cannot Start",
+    "noStartPoint": "Start point is not available",
+    "locationRequired": "Location is required to start the ride",
+    "tooFarFromStart": "You are too far from the start point",
+    "rideStarted": "Ride Started!",
+    "rideStartedMessage": "Have a safe ride!",
+    "rideEnded": "Ride Ended",
+    "rideEndedMessage": "Congratulations! Your kilometers have been recorded.",
+    "endRideConfirm": "End ride?",
+    "endRideConfirmMessage": "Are you sure you want to end this ride?",
+    "controlPanel": "Control Panel",
+    "minParticipantsRequired": "Minimum {{count}} participants required"
   },
   "events": {
     "title": "Events",
