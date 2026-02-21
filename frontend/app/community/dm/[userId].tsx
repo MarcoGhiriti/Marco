@@ -109,6 +109,10 @@ export default function DmChatScreen() {
   }, [loadHistory]);
 
   useEffect(() => {
+    markThreadRead();
+  }, [markThreadRead]);
+
+  useEffect(() => {
     if (!accessToken || !otherUserId) return;
 
     const s = getSocket(accessToken);
