@@ -22,6 +22,7 @@ import { Colors } from "../../../src/theme/colors";
 import { apiGet, apiPost, apiPut } from "../../../src/lib/api";
 import { getSocket } from "../../../src/lib/realtime";
 import { useAuthStore } from "../../../src/state/authStore";
+import { useUnreadStore } from "../../../src/state/unreadStore";
 import type { MessageOut } from "../../../src/types/community";
 
 type GroupMember = {
