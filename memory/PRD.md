@@ -27,6 +27,16 @@ Social-mapping application for motorcyclists with features for route planning, l
 ## What's Been Implemented
 
 ### Latest Updates (Feb 21, 2026)
+- **Friend Popup on Map (NEW):**
+  - Click on friend marker shows callout with: photo + username, active ride status, distance from you, message button
+  - Backend: Updated `/api/friends/locations` to include `active_ride` and `distance_km` fields
+  - Backend: Added `/api/friends/{friend_id}/detail` endpoint
+  - Frontend: Added `onFriendPress` handler to open DM with friend
+- **Backend Refactoring (IN PROGRESS):**
+  - Created `/app/backend/routers/` directory structure
+  - Extracted authentication endpoints to `/app/backend/routers/auth.py`
+  - Extracted friends endpoints to `/app/backend/routers/friends.py`
+  - Extracted location endpoints to `/app/backend/routers/location.py`
 - **Map UI - Responsive Layout:**
   - "Report Police" and "Recenter" buttons now in a flexbox container (responsive for all screen sizes including 9:16)
   - Silent loading indicator (small spinner near filter chips instead of blocking overlay)
