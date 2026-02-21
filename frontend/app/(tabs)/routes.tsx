@@ -211,15 +211,14 @@ export default function RoutesScreen() {
     return R * c;
   };
 
-  // Get start point from polyline
-  const getStartPoint = (polyline: string): { lat: number; lng: number } | null => {
+  // Get start point from polyline (polyline is already decoded as number[][])
+  const getStartPoint = (polyline: number[][] | undefined): { lat: number; lng: number } | null => {
     try {
-      const points = decodePolyline(polyline);
-      if (points && points.length > 0) {
-        return { lat: points[0].latitude, lng: points[0].longitude };
+      if (polyline && polyline.length > 0) {
+        return { lat: polyline[0][0], lng: polyline[0][1] };
       }
     } catch (e) {
-      console.log("Polyline decode error:", e);
+      console.log("Polyline error:", e);
     }
     return null;
   };
