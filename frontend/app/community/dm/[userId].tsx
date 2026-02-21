@@ -262,6 +262,7 @@ export default function DmChatScreen() {
             onPress={onSend} 
             style={[styles.sendBtn, !text.trim() && styles.sendBtnDisabled]}
             disabled={!text.trim()}
+            data-testid="dm-send-button"
           >
             <Ionicons name="send" size={18} color={text.trim() ? Colors.bg : Colors.muted} />
           </Pressable>
