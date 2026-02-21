@@ -403,9 +403,12 @@ export default function MapScreen() {
           showEvents={showEvents}
           showGas={showGas}
           showService={showService}
+          showFriends={showFriends}
+          friendMarkers={friendLocations}
           onToggleEvents={() => setShowEvents((prev) => !prev)}
           onToggleGas={() => setShowGas((prev) => !prev)}
           onToggleService={() => setShowService((prev) => !prev)}
+          onToggleFriends={() => setShowFriends((prev) => !prev)}
           onReportPolice={handleReportPolice}
           onVotePolice={handleVotePolice}
           isFetching={isFetching}
