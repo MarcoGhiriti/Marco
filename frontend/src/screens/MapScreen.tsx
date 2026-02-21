@@ -398,11 +398,10 @@ export default function MapScreen() {
           onEventPress={(eventId) => router.push(`/event/${eventId}`)}
         />
 
-        {showLocationPill && (
-          <Animated.View style={[styles.locationPill, { opacity: pillOpacity }]} data-testid="location-sharing-pill">
-            <Ionicons name="radio" size={12} color={Colors.accent} />
-            <Text style={styles.locationPillText}>Live sharing ON</Text>
-          </Animated.View>
+        {sharingLocation && (
+          <View style={styles.locationBadge} data-testid="location-sharing-badge">
+            <View style={styles.locationBadgeDot} />
+          </View>
         )}
       </View>
 
