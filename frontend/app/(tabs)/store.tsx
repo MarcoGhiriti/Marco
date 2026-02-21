@@ -299,7 +299,7 @@ export default function LeaderboardScreen() {
           })}
         </ScrollView>
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
+        <ScrollView contentContainerStyle={[styles.list, { paddingBottom: tabBarHeight + 20 }]}>
           <View style={[styles.currentLevelCard, { borderColor: getLevelColor(myLevel.level) }]}>
             <View style={[styles.currentLevelIcon, { backgroundColor: `${getLevelColor(myLevel.level)}20` }]}>
               <Ionicons name={myLevel.icon as any} size={32} color={getLevelColor(myLevel.level)} />
