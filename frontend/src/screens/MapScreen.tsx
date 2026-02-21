@@ -449,6 +449,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  headerBtnActive: {
+    backgroundColor: Colors.accent + "20",
+    borderColor: Colors.accent,
+  },
+  createBtn: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  locationPill: {
+    position: "absolute",
+    top: 95,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: Colors.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    zIndex: 100,
+  },
+  locationPillText: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -486,4 +514,63 @@ const styles = StyleSheet.create({
   },
   modalCancelText: { color: Colors.text, fontSize: 13, fontFamily: "Inter_700Bold" },
   modalConfirmText: { color: Colors.bg, fontSize: 13, fontFamily: "Inter_700Bold" },
+  
+  // Bottom Sheet styles
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  bottomSheet: {
+    backgroundColor: Colors.bg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 12,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: Colors.border,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    color: Colors.text,
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 16,
+  },
+  sheetOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  sheetOptionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.accent + "15",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+  sheetOptionText: {
+    flex: 1,
+  },
+  sheetOptionTitle: {
+    color: Colors.text,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+  },
+  sheetOptionSub: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 2,
+  },
 });
