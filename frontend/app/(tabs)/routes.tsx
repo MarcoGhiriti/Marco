@@ -266,11 +266,29 @@ export default function RoutesScreen() {
 
   const renderRoute = ({ item }: { item: RouteOut }) => {
     const isOwner = item.created_by === me?.id;
+    const isInMyRoutesTab = activeTab === "my";
+    const hasActiveRideOnThisRoute = activeRide?.route_id === item.id;
+    const isRidePaused = hasActiveRideOnThisRoute && activeRide?.status === "paused";
+    const isRideActive = hasActiveRideOnThisRoute && activeRide?.status === "active";
+    const canStartRide = isOwner && isInMyRoutesTab && !activeRide;
+    const participantsCount = item.participants_count || 0;
+    const hasEnoughParticipants = participantsCount >= MIN_PARTICIPANTS_TO_START;
+    
+    // Calculate distance to start point
+    let distanceToStart: number | null = null;
+    if (userLocation && item.polyline) {
+      const startPoint = getStartPoint(item.polyline);
+      if (startPoint) {
+        distanceToStart = calculateDistance(userLocation.lat, userLocation.lng, startPoint.lat, startPoint.lng);
+      }
+    }
+    const isWithinStartRange = distanceToStart !== null && distanceToStart <= MAX_DISTANCE_TO_START_KM;
     
     return (
       <Pressable
         style={styles.routeCard}
         onPress={() => router.push(`/route/${item.id}`)}
+        data-testid={`route-card-${item.id}`}
       >
         {/* Route Mini Map */}
         <View style={styles.routeMapContainer}>
@@ -287,6 +305,16 @@ export default function RoutesScreen() {
               {item.difficulty === "easy" ? t("routes.easy") : item.difficulty === "medium" ? t("routes.medium") : t("routes.hard")}
             </Text>
           </View>
+          
+          {/* Active Ride Badge */}
+          {hasActiveRideOnThisRoute && (
+            <View style={[styles.activeRideBadge, isRidePaused && styles.pausedRideBadge]}>
+              <Ionicons name={isRidePaused ? "pause" : "play"} size={12} color="#FFF" />
+              <Text style={styles.activeRideBadgeText}>
+                {isRidePaused ? t("common.paused") : t("common.active")}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.routeInfo}>
@@ -317,7 +345,7 @@ export default function RoutesScreen() {
             <View style={styles.routeStats}>
               <View style={styles.statItem}>
                 <Ionicons name="people-outline" size={14} color={Colors.accent} />
-                <Text style={styles.statText}>{item.participants?.length || 0}</Text>
+                <Text style={styles.statText}>{participantsCount}</Text>
               </View>
             </View>
             
@@ -327,6 +355,119 @@ export default function RoutesScreen() {
               </View>
             )}
           </View>
+          
+          {/* Control Panel - Only in "My Routes" tab for route owners */}
+          {isInMyRoutesTab && isOwner && (
+            <View style={styles.controlPanel} data-testid={`control-panel-${item.id}`}>
+              <Text style={styles.controlPanelTitle}>{t("routes.controlPanel")}</Text>
+              
+              <View style={styles.controlButtonsRow}>
+                {/* Start Button - visible when no active ride */}
+                {!hasActiveRideOnThisRoute && (
+                  <Pressable
+                    style={[
+                      styles.controlBtn,
+                      styles.startBtn,
+                      (!hasEnoughParticipants || !isWithinStartRange) && styles.controlBtnDisabled,
+                    ]}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleStartRide(item);
+                    }}
+                    disabled={actionLoading === item.id || !!activeRide}
+                    data-testid={`start-btn-${item.id}`}
+                  >
+                    {actionLoading === item.id ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="play" size={16} color="#FFF" />
+                        <Text style={styles.controlBtnText}>{t("common.start")}</Text>
+                      </>
+                    )}
+                  </Pressable>
+                )}
+                
+                {/* Pause/Resume Button - visible only when this route has active ride */}
+                {hasActiveRideOnThisRoute && (
+                  <Pressable
+                    style={[styles.controlBtn, isRidePaused ? styles.resumeBtn : styles.pauseBtn]}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      isRidePaused ? handleResumeRide() : handlePauseRide();
+                    }}
+                    disabled={actionLoading === "pause" || actionLoading === "resume"}
+                    data-testid={`pause-resume-btn-${item.id}`}
+                  >
+                    {(actionLoading === "pause" || actionLoading === "resume") ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <>
+                        <Ionicons name={isRidePaused ? "play" : "pause"} size={16} color="#FFF" />
+                        <Text style={styles.controlBtnText}>
+                          {isRidePaused ? t("common.resume") : t("common.pause")}
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                )}
+                
+                {/* End Button - visible only when this route has active ride */}
+                {hasActiveRideOnThisRoute && (
+                  <Pressable
+                    style={[styles.controlBtn, styles.endBtn]}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleEndRide();
+                    }}
+                    disabled={actionLoading === "end"}
+                    data-testid={`end-btn-${item.id}`}
+                  >
+                    {actionLoading === "end" ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="flag" size={16} color="#FFF" />
+                        <Text style={styles.controlBtnText}>{t("common.end")}</Text>
+                      </>
+                    )}
+                  </Pressable>
+                )}
+                
+                {/* Directions Button - visible only when this route has active ride */}
+                {hasActiveRideOnThisRoute && (
+                  <Pressable
+                    style={[styles.controlBtn, styles.directionsBtn]}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleDirections(item);
+                    }}
+                    data-testid={`directions-btn-${item.id}`}
+                  >
+                    <Ionicons name="navigate" size={16} color="#FFF" />
+                    <Text style={styles.controlBtnText}>{t("routes.directions")}</Text>
+                  </Pressable>
+                )}
+              </View>
+              
+              {/* Warning messages when Start is disabled */}
+              {!hasActiveRideOnThisRoute && !hasEnoughParticipants && (
+                <Text style={styles.controlWarning}>
+                  {t("routes.minParticipantsRequired", { count: MIN_PARTICIPANTS_TO_START })} ({participantsCount}/{MIN_PARTICIPANTS_TO_START})
+                </Text>
+              )}
+              {!hasActiveRideOnThisRoute && hasEnoughParticipants && !isWithinStartRange && distanceToStart !== null && (
+                <Text style={styles.controlWarning}>
+                  {t("routes.tooFarFromStart")} ({distanceToStart.toFixed(1)} km)
+                </Text>
+              )}
+              {!hasActiveRideOnThisRoute && hasEnoughParticipants && distanceToStart === null && (
+                <Text style={styles.controlWarning}>
+                  {t("routes.locationRequired")}
+                </Text>
+              )}
+            </View>
+          )}
         </View>
       </Pressable>
     );
