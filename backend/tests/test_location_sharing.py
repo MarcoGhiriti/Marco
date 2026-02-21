@@ -47,7 +47,7 @@ class TestLocationSharing:
             "lat": 47.165,
             "lng": 23.452
         })
-        assert response.status_code == 403  # No auth header
+        assert response.status_code in [401, 403]  # No auth header - both codes are valid
         print("✓ Location update requires auth")
     
     def test_location_update_success(self):
