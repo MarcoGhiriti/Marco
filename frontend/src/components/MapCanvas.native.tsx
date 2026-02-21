@@ -262,7 +262,7 @@ export default function MapCanvas({
                       <Text style={styles.placeCalloutName} numberOfLines={1} data-testid={`event-callout-title-${event.id}`}>{event.title}</Text>
                     </View>
                     {event.location_name && (
-                      <Text style={styles.eventLocationText} numberOfLines={1}>{event.location_name}</Text>
+                      <Text style={styles.eventLocationText} numberOfLines={1} data-testid={`event-callout-location-${event.id}`}>{event.location_name}</Text>
                     )}
                     <View style={{ flexDirection: "row", gap: 6 }}>
                       <Pressable style={styles.directionsBtn} onPress={() => onEventPress?.(event.id)}>
