@@ -45,6 +45,10 @@ Social-mapping application for motorcyclists with features for route planning, l
   - Map: recenter button lifted above tab bar; loading indicator now a static green dot
   - Friend popup: distance text set to neon green; DM navigation route fixed (`/community/dm/:userId`)
   - Map styling adjusted for clearer streets on dark theme
+- **Friend Callout Interactions (Feb 21, 2026):**
+  - Callout shown on both iOS/Android; marker tap no longer auto-navigates
+  - Profile tap routes to `/profile/:id`, chat button routes to `/community/dm/:id`
+  - iOS uses `CalloutSubview` for reliable taps; Android uses `Pressable` fallback
 - **Ride Banner Enhancement:**
   - Added "Directions" button (navigate icon) to active ride banner
   - Added "End Route" button (stop icon, red) for ride creators
