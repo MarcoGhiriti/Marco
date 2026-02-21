@@ -29,6 +29,7 @@ export default function RoutesScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { accessToken, me } = useAuthStore();
+  const tabBarHeight = useBottomTabBarHeight();
   
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [myRoutes, setMyRoutes] = useState<RouteOut[]>([]);
