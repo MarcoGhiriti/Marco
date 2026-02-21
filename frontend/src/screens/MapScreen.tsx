@@ -90,6 +90,14 @@ export default function MapScreen() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [creatingReport, setCreatingReport] = useState(false);
+  
+  // Create menu state
+  const [createMenuVisible, setCreateMenuVisible] = useState(false);
+  
+  // Friends location sharing state
+  const [sharingLocation, setSharingLocation] = useState(false);
+  const [showLocationPill, setShowLocationPill] = useState(false);
+  const pillOpacity = useRef(new Animated.Value(0)).current;
 
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
