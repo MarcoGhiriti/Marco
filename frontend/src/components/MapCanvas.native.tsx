@@ -418,9 +418,7 @@ export default function MapCanvas({
       <View style={styles.filtersRow}>
         {/* Subtle loading indicator - no blocking overlay */}
         {isFetching && (
-          <View style={styles.loadingDot}>
-            <ActivityIndicator color={Colors.accent} size="small" />
-          </View>
+          <View style={styles.loadingDot} data-testid="map-loading-dot" />
         )}
         <Pressable
           style={[styles.filterChip, showEvents && styles.filterChipActive]}
