@@ -48,6 +48,7 @@ export default function GroupChatScreen() {
   const gid = String(groupId ?? "");
 
   const { accessToken, me } = useAuthStore();
+  const { clearThread } = useUnreadStore();
 
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<MessageOut[]>([]);
