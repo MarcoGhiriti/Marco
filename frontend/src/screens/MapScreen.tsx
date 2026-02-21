@@ -253,23 +253,73 @@ export default function MapScreen() {
     }
   };
 
+  // Toggle location sharing
+  const toggleLocationSharing = async () => {
+    const newState = !sharingLocation;
+    setSharingLocation(newState);
+    
+    if (newState) {
+      // Show pill notification
+      setShowLocationPill(true);
+      Animated.sequence([
+        Animated.timing(pillOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.delay(2000),
+        Animated.timing(pillOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+      ]).start(() => setShowLocationPill(false));
+      
+      // Request location permission if needed
+      await requestLocation();
+    }
+  };
+
+  // Handle Create menu item selection
+  const handleCreateSelect = (type: "route" | "meetup") => {
+    setCreateMenuVisible(false);
+    if (type === "route") {
+      router.push("/create/route");
+    } else {
+      router.push("/create/event");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.header}>
           <View>
             <Text style={styles.h1}>Live Map</Text>
-            <Text style={styles.sub}>Event markers & police reports</Text>
+            <Text style={styles.sub}>Friends & events nearby</Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable style={styles.headerBtn} onPress={() => router.push("/create/route")}>
-              <Ionicons name="trail-sign" size={18} color={Colors.text} />
+            {/* Friends Location Toggle */}
+            <Pressable 
+              style={[styles.headerBtn, sharingLocation && styles.headerBtnActive]} 
+              onPress={toggleLocationSharing}
+            >
+              <Ionicons 
+                name={sharingLocation ? "location" : "location-outline"} 
+                size={20} 
+                color={sharingLocation ? Colors.accent : Colors.text} 
+              />
             </Pressable>
-            <Pressable style={styles.headerBtn} onPress={() => router.push("/create/event")}>
-              <Ionicons name="calendar" size={18} color={Colors.text} />
+            
+            {/* Create Button */}
+            <Pressable 
+              style={[styles.headerBtn, styles.createBtn]} 
+              onPress={() => setCreateMenuVisible(true)}
+            >
+              <Ionicons name="add" size={22} color={Colors.bg} />
             </Pressable>
           </View>
         </View>
+        
+        {/* Location Sharing Pill */}
+        {showLocationPill && (
+          <Animated.View style={[styles.locationPill, { opacity: pillOpacity }]}>
+            <Ionicons name="radio" size={14} color={Colors.accent} />
+            <Text style={styles.locationPillText}>Sharing live location</Text>
+          </Animated.View>
+        )}
 
         <MapCanvas
           mapRef={mapRef}
