@@ -281,7 +281,7 @@ function SecondHandTab() {
           renderItem={renderListing}
           numColumns={2}
           columnWrapperStyle={styles.listingRow}
-          contentContainerStyle={styles.listingsContainer}
+          contentContainerStyle={[styles.listingsContainer, { paddingBottom: tabBarHeight + 16 }]}
           showsVerticalScrollIndicator={false}
         />
       )}
