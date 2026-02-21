@@ -36,6 +36,7 @@ function ChatsTab() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
   const { dmUserIds } = useUnreadStore();
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [q, setQ] = useState("");
   const [results, setResults] = useState<UserSearchOut[]>([]);

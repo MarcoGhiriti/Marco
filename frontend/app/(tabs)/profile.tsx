@@ -109,6 +109,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { accessToken, me, logout, refreshMe } = useAuthStore();
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -252,7 +253,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 20 }]}>
         <View style={styles.header}>
           <Text style={styles.h1}>{t("profile.title")}</Text>
           <Text style={styles.sub}>{t("profile.subtitle")}</Text>
@@ -743,7 +744,6 @@ export default function ProfileScreen() {
           />
         </View>
 
-        <View style={{ height: 24 }} />
       </ScrollView>
 
       {/* LICENSE UPLOAD MODAL */}
