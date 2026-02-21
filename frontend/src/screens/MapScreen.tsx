@@ -230,19 +230,31 @@ export default function MapScreen() {
   const handleConfirmReport = async () => {
     if (!authHeader) return;
     const center = { lat: region.latitude, lng: region.longitude };
-    setCreatingReport(true);
+    
+    // Optimistic UI: Add report immediately with temp ID
+    const tempId = `temp-${Date.now()}`;
+    const optimisticReport: PoliceReport = {
+      id: tempId,
+      lat: center.lat,
+      lng: center.lng,
+      upvotes: 0,
+      downvotes: 0,
+    };
+    setPoliceReports((prev) => [optimisticReport, ...prev]);
+    setReportModalVisible(false);
+    
     try {
       const created = await apiPost<PoliceReport>(
         "/api/map/police-reports",
         { lat: center.lat, lng: center.lng },
         authHeader
       );
-      setPoliceReports((prev) => [created, ...prev]);
+      // Replace temp report with real one
+      setPoliceReports((prev) => prev.map((r) => (r.id === tempId ? created : r)));
     } catch (error) {
+      // Rollback on error
+      setPoliceReports((prev) => prev.filter((r) => r.id !== tempId));
       Alert.alert("Error", "Unable to add report.");
-    } finally {
-      setCreatingReport(false);
-      setReportModalVisible(false);
     }
   };
 
@@ -255,14 +267,31 @@ export default function MapScreen() {
       Alert.alert("Too far", "You need to be close to the report to vote.");
       return;
     }
+    
+    // Optimistic UI: Update vote count immediately
+    const previousReports = [...policeReports];
+    setPoliceReports((prev) =>
+      prev.map((r) => {
+        if (r.id !== reportId) return r;
+        return {
+          ...r,
+          upvotes: vote === "up" ? r.upvotes + 1 : r.upvotes,
+          downvotes: vote === "down" ? r.downvotes + 1 : r.downvotes,
+        };
+      })
+    );
+    
     try {
       const updated = await apiPost<PoliceReport>(
         `/api/map/police-reports/${reportId}/vote`,
         { vote, lat: location.lat, lng: location.lng },
         authHeader
       );
+      // Sync with server response
       setPoliceReports((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     } catch (error) {
+      // Rollback on error
+      setPoliceReports(previousReports);
       Alert.alert("Error", "Unable to submit vote.");
     }
   };
