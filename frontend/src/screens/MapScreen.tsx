@@ -284,8 +284,61 @@ export default function MapScreen() {
       
       // Request location permission if needed
       await requestLocation();
+
+      // Start sending location updates every 15s
+      const sendUpdate = async () => {
+        try {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          await apiPost("/api/location/update", { lat: loc.coords.latitude, lng: loc.coords.longitude }, accessToken || "");
+        } catch {}
+      };
+      sendUpdate();
+      locationSharingIntervalRef.current = setInterval(sendUpdate, 15000);
+    } else {
+      // Stop sending location updates
+      if (locationSharingIntervalRef.current) {
+        clearInterval(locationSharingIntervalRef.current);
+        locationSharingIntervalRef.current = null;
+      }
     }
   };
+
+  // Fetch friends' locations
+  const fetchFriendsLocations = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const data = await apiGet("/api/friends/locations", accessToken);
+      if (Array.isArray(data)) setFriendLocations(data);
+    } catch {}
+  }, [accessToken]);
+
+  // Start/stop friends polling based on showFriends toggle
+  useEffect(() => {
+    if (showFriends) {
+      fetchFriendsLocations();
+      friendsIntervalRef.current = setInterval(fetchFriendsLocations, 20000);
+    } else {
+      setFriendLocations([]);
+      if (friendsIntervalRef.current) {
+        clearInterval(friendsIntervalRef.current);
+        friendsIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (friendsIntervalRef.current) {
+        clearInterval(friendsIntervalRef.current);
+        friendsIntervalRef.current = null;
+      }
+    };
+  }, [showFriends, fetchFriendsLocations]);
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (locationSharingIntervalRef.current) clearInterval(locationSharingIntervalRef.current);
+      if (friendsIntervalRef.current) clearInterval(friendsIntervalRef.current);
+    };
+  }, []);
 
   // Handle Create menu item selection
   const handleCreateSelect = (type: "route" | "meetup") => {
