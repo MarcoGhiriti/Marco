@@ -814,4 +814,83 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_700Bold",
   },
+  
+  // Active Ride Badge
+  activeRideBadge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: Colors.success,
+  },
+  pausedRideBadge: {
+    backgroundColor: "#FFC107",
+  },
+  activeRideBadgeText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+  },
+  
+  // Control Panel
+  controlPanel: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  controlPanelTitle: {
+    color: Colors.muted,
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
+  controlButtonsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  controlBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  controlBtnDisabled: {
+    opacity: 0.5,
+  },
+  controlBtnText: {
+    color: "#FFF",
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+  startBtn: {
+    backgroundColor: Colors.success,
+  },
+  pauseBtn: {
+    backgroundColor: "#FFC107",
+  },
+  resumeBtn: {
+    backgroundColor: Colors.success,
+  },
+  endBtn: {
+    backgroundColor: Colors.danger,
+  },
+  directionsBtn: {
+    backgroundColor: Colors.accent,
+  },
+  controlWarning: {
+    color: Colors.danger,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 8,
+  },
 });
