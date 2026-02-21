@@ -16,6 +16,7 @@ MotoGO is a React Native (Expo) motorcycle social app with FastAPI + MongoDB bac
 - Badge/level system
 - User profiles with privacy settings
 - AI license verification (GPT-4o via Emergent LLM key)
+- **Route Control Panel** with Start/End/Pause/Directions buttons
 
 ## User Personas
 - Romanian motorcycle riders
@@ -59,6 +60,12 @@ MotoGO is a React Native (Expo) motorcycle social app with FastAPI + MongoDB bac
 - i18n (English + Romanian) with language switcher
 - Backend optimization: database.py module, MongoDB indexes, connection pooling (maxPoolSize=100)
 - Marketplace padding optimization
+- **Control Panel for "My Routes"** (21 Feb 2025):
+  - Start/End/Pause/Directions buttons
+  - Conditional visibility: End/Pause/Directions only after ride started
+  - Pre-start validations: min 3 participants, max 3km from start point
+  - Active/Paused ride badge on route card
+  - Fixed infinite loading bug on Routes page
 
 ## 3rd Party Integrations
 - OpenAI GPT-4o (via Emergent LLM key) - AI license verification
@@ -69,6 +76,7 @@ MotoGO is a React Native (Expo) motorcycle social app with FastAPI + MongoDB bac
 ## Prioritized Backlog
 ### P0 (Critical) - NONE
 ### P1 (Important)
+- Update "Ride in Progress" popup with Directions/End buttons
 - Further backend refactoring: Split server.py into separate APIRouter files
 ### P2 (Nice to have)
 - Forgot Password flow (BLOCKED - needs email service API key)
