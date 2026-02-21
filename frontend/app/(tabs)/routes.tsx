@@ -124,7 +124,7 @@ export default function RoutesScreen() {
     if (!activeRide) return;
     setActionLoading("pause");
     try {
-      await apiPost("/api/rides/pause", { ride_id: activeRide.ride_id }, authHeader);
+      await apiPost("/api/rides/pause", { session_id: activeRide.ride_id }, authHeader);
       await loadRoutes();
     } catch (error: any) {
       console.error("Pause ride error:", error);
