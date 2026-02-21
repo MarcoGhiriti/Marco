@@ -464,9 +464,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#4A90D9",
     borderColor: "#4A90D9",
   },
+  filterChipActiveFriends: {
+    backgroundColor: "#9B59B6",
+    borderColor: "#9B59B6",
+  },
   searchButton: {
     position: "absolute",
-    top: 16,
+    bottom: 32,
     alignSelf: "center",
   },
   searchPressable: {
