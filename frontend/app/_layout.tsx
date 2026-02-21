@@ -99,3 +99,10 @@ export default function RootLayout() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  appRoot: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+  },
+});
