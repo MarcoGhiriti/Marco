@@ -340,12 +340,17 @@ export default function MapScreen() {
   const fetchFriendsLocations = useCallback(async () => {
     if (!authHeader) return;
     try {
-      const data = await apiGet("/api/friends/locations", authHeader);
+      // Build URL with user location if available
+      let url = "/api/friends/locations";
+      if (userLocation) {
+        url += `?my_lat=${userLocation.lat}&my_lng=${userLocation.lng}`;
+      }
+      const data = await apiGet(url, authHeader);
       if (Array.isArray(data)) setFriendLocations(data);
     } catch (err) {
       console.log("Failed to fetch friends locations", err);
     }
-  }, [authHeader]);
+  }, [authHeader, userLocation]);
 
   // Start/stop friends polling based on showFriends toggle
   useEffect(() => {
