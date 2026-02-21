@@ -445,40 +445,59 @@ export default function HomeScreen() {
 
         {/* Active Ride Banner (creator or participant view) */}
         {activeRideForHome && (
-          <Pressable
-            onPress={() => {
-              // If you are the creator, keep existing modal behavior
-              if (activeRide) {
-                handleOpenRideModal();
-                return;
-              }
-              // Participant: open route details (view-only)
-              router.push(`/route/${activeRideForHome.route_id}`);
-            }}
+          <View
             style={[
               styles.activeRideBanner,
               activeRideForHome.status === "paused" && styles.pausedRideBanner,
             ]}
           >
-            <View style={styles.activeRideIcon}>
-              <Ionicons
-                name={activeRideForHome.status === "paused" ? "pause" : "speedometer"}
-                size={20}
-                color={Colors.bg}
-              />
+            <Pressable 
+              style={styles.activeRideContent}
+              onPress={() => {
+                if (activeRide) {
+                  handleOpenRideModal();
+                  return;
+                }
+                router.push(`/route/${activeRideForHome.route_id}`);
+              }}
+            >
+              <View style={styles.activeRideIcon}>
+                <Ionicons
+                  name={activeRideForHome.status === "paused" ? "pause" : "speedometer"}
+                  size={20}
+                  color={Colors.bg}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.activeRideTitle}>
+                  {activeRideForHome.status === "paused" ? "Ride Paused" : "Ride in Progress"}
+                </Text>
+                <Text style={styles.activeRideSub}>
+                  {activeRide
+                    ? `Tap to ${activeRideForHome.status === "paused" ? "resume" : "view progress"}`
+                    : "Tap to view route"}
+                </Text>
+              </View>
+            </Pressable>
+            <View style={styles.activeRideActions}>
+              <Pressable 
+                style={styles.activeRideActionBtn}
+                onPress={() => router.push(`/route/${activeRideForHome.route_id}`)}
+                data-testid="ride-directions-btn"
+              >
+                <Ionicons name="navigate" size={16} color={Colors.bg} />
+              </Pressable>
+              {activeRide && (
+                <Pressable 
+                  style={[styles.activeRideActionBtn, styles.activeRideEndBtn]}
+                  onPress={handleEndRide}
+                  data-testid="ride-end-btn"
+                >
+                  <Ionicons name="stop" size={16} color={Colors.bg} />
+                </Pressable>
+              )}
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.activeRideTitle}>
-                {activeRideForHome.status === "paused" ? "Ride Paused" : "Ride in Progress"}
-              </Text>
-              <Text style={styles.activeRideSub}>
-                {activeRide
-                  ? `Tap to ${activeRideForHome.status === "paused" ? "resume" : "view progress"}`
-                  : "Tap to view route"}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.bg} />
-          </Pressable>
+          </View>
         )}
 
         <ScrollView
