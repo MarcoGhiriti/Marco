@@ -1787,6 +1787,55 @@ async def friends_remove(payload: FriendAccept, current_user: dict = Depends(get
     return {"ok": True}
 
 
+class LocationUpdate(BaseModel):
+    lat: float = Field(..., ge=-90, le=90)
+    lng: float = Field(..., ge=-180, le=180)
+
+
+@api_router.post("/location/update")
+async def location_update(payload: LocationUpdate, current_user: dict = Depends(get_current_user)):
+    """Update the current user's live location."""
+    uid = current_user["id"]
+    await db.users.update_one(
+        {"_id": _as_object_id(uid)},
+        {"$set": {
+            "last_location": {"lat": payload.lat, "lng": payload.lng, "updated_at": datetime.utcnow()},
+        }},
+    )
+    return {"ok": True}
+
+
+@api_router.get("/friends/locations")
+async def friends_locations(current_user: dict = Depends(get_current_user)):
+    """Return locations of friends who have shared their location recently (last 30 min)."""
+    friend_ids = current_user.get("friends") or []
+    if not friend_ids:
+        return []
+
+    oids = [_as_object_id(fid) for fid in friend_ids]
+    cutoff = datetime.utcnow() - timedelta(minutes=30)
+    cursor = db.users.find(
+        {
+            "_id": {"$in": oids},
+            "last_location.updated_at": {"$gte": cutoff},
+        },
+        {"username": 1, "profile_photo_base64": 1, "last_location": 1},
+    )
+    docs = await cursor.to_list(length=200)
+    results = []
+    for d in docs:
+        loc = d.get("last_location", {})
+        results.append({
+            "id": oid_str(d.get("_id")),
+            "username": d.get("username", ""),
+            "profile_photo_base64": d.get("profile_photo_base64"),
+            "lat": loc.get("lat"),
+            "lng": loc.get("lng"),
+            "updated_at": loc.get("updated_at", "").isoformat() if hasattr(loc.get("updated_at", ""), "isoformat") else str(loc.get("updated_at", "")),
+        })
+    return results
+
+
 class InboxConversation(BaseModel):
     kind: Literal["dm", "group"]
     # DM fields
