@@ -1,59 +1,68 @@
 <analysis>**original_problem_statement:**
-The user's project is a social-mapping application for motorcyclists.
+The user's project is a social-mapping application for motorcyclists. The initial goal for this session was to continue the phased redesign of the Live Map screen, starting with Phase 2: displaying friends' avatars on the map.
 
-The work in this session was driven by several user requests:
-1.  **(Initial Priority)** Implement a detailed control panel on the My Routes page with Start, End, Pause, and Directions buttons, including pre-start validation for participant count and user proximity.
-2.  **(New Bug - Message 135)** Fix a bug where an  error was displayed on the registration screen for invalid passwords.
-3.  **(New Bug - Message 135)** Fix a bug preventing a user from being re-added as a friend after being deleted.
-4.  **(New Bug - Message 199)** Fix an  error when ending a route.
-5.  **(New Feature - Message 199)** Implement a significant redesign of the Live Map screen, broken into multiple phases:
-    *   **Phase 1 (Completed):** Add a + button to create routes/meetups and a Friends location ON/OFF toggle.
-    *   **Phase 2:** Display friends on the map with avatars and online status.
-    *   **Phase 3:** Implement silent map refresh without a loading overlay.
-    *   **Phase 4:** Improve the Report Police UI with optimistic updates.
-    *   **Phase 5:** Implement other UI changes like filters and a Search this area button.
-6.  **(New Requirement - Message 199)** All user-facing error messages must be in English.
+However, the user provided new, superseding requirements for the map UI:
+1.  Add a Friends filter button next to the other map filters (Events, Gas, Service) with an ON/OFF toggle.
+2.  Move the Search this area button and the Live location sharing notification to the bottom-middle of the screen to avoid overlapping with header buttons.
 
-**User's preferred language**: Romanian (română). The next agent MUST respond in Romanian for all conversational interactions, but per user request, technical elements like error messages in the UI must be in English.
+After implementing these changes, the user provided another round of critical UI feedback based on a screenshot:
+1.  The Sharing live location pill is too large and obstructs the view. It should be a temporary toast or shrink into a small indicator badge.
+2.  The Search this area button, now at the bottom, is partially hidden by the main tab bar. It should be moved back to the top, under the filters.
+3.  The Report Police and Recenter buttons in the bottom-right are too close together and need more spacing.
+
+**User's preferred language**: Romanian (română). The next agent MUST respond in Romanian for all conversational interactions, but per user request, technical elements like UI text and error messages must be in English.
 
 **what currently exists?**
-The agent successfully implemented the My Routes control panel, complete with conditional logic and pre-start validation. It then pivoted to address several user-reported bugs, fixing the  error on registration, correcting the payload for friend requests, and improving the error handling for ending a route. Finally, the agent began a major refactor of the map screen, completing Phase 1 by adding the new Create and Location Sharing buttons to the UI. Error message language was also standardized to English per the user's latest request.
+The agent has successfully implemented the backend logic for real-time location updates. This includes two new endpoints in :  for users to send their coordinates, and  to fetch the locations of a user's friends.
+
+On the frontend, the agent integrated this functionality into the map screen. A new Friends filter chip was added, and logic was implemented in  to periodically fetch and display friends' markers on the map when the filter is active. Logic was also added to send the user's own location updates when location sharing is enabled.
+
+However, the UI layout changes requested by the user were implemented in a way that created new visual problems, which the user immediately pointed out. The agent was in the process of fixing these new layout issues when the session ended.
 
 **Last working item**:
--   Last item agent was working: Implementing Phase 1 of the new map features: adding a + button (for creating routes/meetups) and a Location Sharing ON/OFF button to the header of the .
--   Status: **FINISHED**
--   Agent Testing Done: Y (Verified via screenshot that the new buttons are visible on the map screen).
--   Which testing method agent to use?: **frontend testing agent**. The next phase involves adding friends' markers to the map, which requires testing state changes, API calls, and map component rendering.
--   User Testing Done: N
+-   Last item agent was working: Addressing three specific UI layout bugs on the map screen based on user feedback from a screenshot (Message #102). The agent was starting to modify the styling of the Sharing live location pill in  to make it less intrusive.
+-   Status: IN PROGRESS
+-   Agent Testing Done: Y (The previous feature implementation passed the testing agent, but the subsequent UI/UX is flawed, as reported by the user).
+-   Which testing method agent to use? **screenshot tool**. These are purely visual layout and styling issues. A screenshot is the most direct way to verify the fixes.
+-   User Testing Done: Y (User provided clear feedback on the current state).
 
 **All Pending/In progress Issue list**:
--   Issue 1: object object error on End Route (P0)
--   Issue 2: Unable to re-add a friend after deletion (P1)
--   Issue 3: Update Ride in Progress Popup (P2)
+-   Issue 1: Fix Map Screen UI Layout Issues (P0)
+-   Issue 2: object object error on End Route (P1)
+-   Issue 3: Unable to re-add a friend after deletion (P2)
+-   Issue 4: Update Ride in Progress Popup (P3)
 
 Issues Detail:
--   **Issue 1:**
-    -   **Description**: User reported an  error when ending a route. The agent identified a payload mismatch ( vs ) and an unhandled Pydantic validation error for missing .
-    -   **Attempted fixes**: Corrected the payload in  in . Improved the error parsing in  to better handle Pydantic validation error arrays.
-    -   **Next debug checklist**: The fix has been implemented but not visually confirmed by the user or a targeted test. The next agent should work with the user to reproduce the End Route action and confirm the error message is now a clear, English string.
-    -   **Status**: **USER VERIFICATION PENDING**
-    -   **Is recurring issue?**: Y
+-   **Issue 1: Fix Map Screen UI Layout Issues (P0)**
+    -   **Description**: Based on user feedback (message #102), three UI elements are poorly positioned:
+        1.  The Sharing live location pill is too large and covers other UI elements.
+        2.  The Search this area button is obscured by the bottom tab bar.
+        3.  The Report Police and Recenter buttons are too close together.
+    -   **Attempted fixes**: The agent started modifying the styles for the  in .
+    -   **Next debug checklist**:
+        1.  In , implement logic to show the Sharing live location pill for 2 seconds and then hide it or transform it into a small indicator.
+        2.  In , move the Search this area button from the bottom of the screen to a position directly below the filter chips at the top.
+        3.  In , adjust the styles for the Report Police and Recenter buttons to increase the margin between them.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?**: frontend
 
--   **Issue 2:**
-    -   **Description**: User reported being unable to add a friend back after removing them.
-    -   **Attempted fixes**: The agent found a payload mismatch in . The frontend was sending  while the backend expected . The payload was corrected.
-    -   **Next debug checklist**: The fix has not been tested. The agent needs to perform the full flow: delete a friend, then immediately try to send a new friend request to that same user to verify the fix.
-    -   **Status**: **TESTING PENDING**
-    -   **Is recurring issue?**: N
+-   **Issue 2: object object error on End Route (P1)**
+    -   **Description**: User reported an  error when ending a route. Fixes were implemented but not yet verified by the user.
+    -   **Status**: USER VERIFICATION PENDING
+    -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?**: frontend
 
--   **Issue 3:**
-    -   **Description**: The Ride in Progress popup is missing Directions and End Route buttons. This is a carry-over task from a previous session.
-    -   **Attempted fixes**: None.
-    -   **Next debug checklist**: Modify  to add the buttons and their corresponding  handlers.
+-   **Issue 3: Unable to re-add a friend after deletion (P2)**
+    -   **Description**: A payload mismatch preventing re-adding a friend was fixed, but the end-to-end flow has not been tested.
+    -   **Status**: TESTING PENDING
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?**: frontend
+
+-   **Issue 4: Update Ride in Progress Popup (P3)**
+    -   **Description**: The Ride in Progress popup is missing Directions and End Route buttons.
     -   **Status**: NOT STARTED
-    -   **Is recurring issue?**: N
+    -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?**: frontend
 
 **In progress Task List**:
@@ -61,313 +70,54 @@ Issues Detail:
 
 **Upcoming and Future Tasks**
 *   **Upcoming Tasks**:
-    *   **P0: Map Features - Phase 2 (Friends on Map):**
-        *   Implement logic in  to fetch friends' locations.
-        *   Display friends on the map using markers with their avatar/initials.
-        *   Style markers differently based on online status (
-wtmp begins Tue Feb 17 09:03:00 2026 vs. ), as per user specs (opacity, grey dot).
-    *   **P1: Map Features - Phase 3 (Silent Loading):**
-        *   Refactor data fetching on the map in  to remove the loading overlay.
-        *   Implement silent, incremental updates for map markers.
-        *   Cache the last set of markers locally to show on initial load before the first silent refresh.
-    *   **P2: Backend Refactor:** Break down the monolithic  into domain-specific  files in a  directory.
+    *   **P0: Map Features - Phase 3 (Silent Loading):** Refactor data fetching on the map in  to remove the loading overlay and implement silent, incremental updates.
+    *   **P1: Backend Refactor:** Break down the monolithic  into domain-specific  files in a  directory.
 *   **Future Tasks**:
-    *   **Map Features - Phase 4 (Police Reports):** Refactor the Report Police feature to use an optimistic UI (marker appears instantly, API call runs in the background).
-    *   **Map Features - Phase 5 (UI Polish):** Implement remaining UI elements like filter chips (Police/Events), a Search this area button, and a recenter button.
+    *   **Map Features - Phase 4 (Police Reports):** Refactor the Report Police feature to use an optimistic UI.
+    *   **Map Features - Phase 5 (UI Polish):** Implement remaining UI elements like a recenter button.
     *   **BLOCKED: Forgot Password Flow:** Blocked pending an email service API key.
 
 **Completed work in this session**
--   **Feature: My Routes Control Panel:** Implemented the full control panel with Start/Pause/End/Directions buttons and pre-start validation logic in .
--   **Feature: Map Features - Phase 1:** Added Create (+) and Location Sharing buttons to the map header in .
--   **Bug Fix (Registration Error):** Fixed  error on registration by improving Pydantic error array parsing in .
--   **Bug Fix (Add Friend):** Corrected the API request payload for sending friend requests in .
--   **Bug Fix (End Route):** Corrected the API request payload for ending a ride in .
--   **Requirement: English Errors:** Changed error message translations from Romanian to English in .
+-   **Backend Feature: Location Sharing & Fetching:** Added  and  endpoints to .
+-   **Frontend Feature: Display Friends on Map:**
+    -   Implemented logic in  to use the new endpoints for showing friends' locations and sharing the user's own location.
+    -   Added a Friends filter chip to .
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Robust API Error Parsing**: Significantly improved the  function in  to handle complex, nested Pydantic validation error arrays from the backend and transform them into user-friendly strings.
--   **Feature Phasing**: Breaking down a large user request (map redesign) into smaller, manageable, and independently verifiable phases.
--   **Environment Resilience**: The agent successfully worked around a highly unstable ngrok tunnel by using linters (, ) for code verification and pivoting to backend-only testing () when the frontend was unavailable.
--   **State Management for Dynamic UI**: Used React state () in  and  to manage complex conditional UI for the route control panel and the new map buttons/modals.
+-   **Real-time Polling**: Used  within a  hook in  to periodically send the user's location and fetch friends' locations, with proper cleanup to prevent memory leaks.
+-   **User-Driven UI Iteration**: The agent's work was heavily guided by iterative user feedback, demonstrating the need to pivot quickly based on visual confirmation of UI changes.
 
 **All files of reference**
+-    (Primary file for current UI fixes)
+-    (Primary file for current UI fixes)
+-    (Contains new backend logic)
 -   
 -   
--   
--   
--   
--   
--   
--   
-
-**Areas that need refactoring**:
--    remains a high-priority architectural refactoring task to improve scalability and maintainability.
 
 **key api endpoints**
--    (Debugged)
--    (Fixed)
--    (Fixed payload)
--   
--   
--   
+-    (Newly added)
+-    (Newly added)
 
 **Critical Info for New Agent**
--   **Limba:** Continue all conversational interactions in **Romanian**. However, all UI error messages must be in **English**.
--   **Next Priority:** The immediate focus should be on implementing **Phase 2 of the map features (displaying friends on the map)**. Refer to user message #199 for detailed requirements.
--   **Environment Instability:** The 
-  Usage: expo [command] [options]
-
-  Options:
-  
-    -V, --version                     output the version number
-    --non-interactive                 Fail, if an interactive prompt would be required to continue.
-    -h, --help                        output usage information
-  
-  Commands:
-
-    init [name]                       Create a new Expo project
-    start [path]                      Start a local dev server for the app
-    start:web [path]                  Start a Webpack dev server for the web app
-    export [path]                     Export the static files of the app for hosting it on a web server
-    install [packages...]             Install a module or other package to a project
-    run:android [path]                Run the Android app binary locally
-    run:ios [path]                    Run the iOS app binary locally
-    send [path]                       Share the project's URL to an email address
-
-    login                             Login to an Expo account
-    logout                            Logout of an Expo account
-    register                          Sign up for a new Expo account
-    whoami                            Return the currently authenticated account
-
-    client:install:ios                Install Expo Go for iOS on the simulator
-    client:install:android            Install Expo Go for Android on a connected device or emulator
-
-    config [path]                     Show the project config
-    doctor [path]                     Diagnose issues with the project
-    upgrade [sdk-version]             Upgrade the project packages and config for the given SDK version
-
-    customize:web [path]              Eject the default web files for customization
-    prebuild [path]                   Create native iOS and Android project files before building natively.
-                                      Learn more: https://docs.expo.dev/workflow/customizing/
-
-    build:web [path]                  Build the web app for production
-
-    credentials:manager [path]        Superseded by eas credentials in eas-cli
-
-    url [path]                        Log a URL for opening the project in Expo Go
-    url:ipa [path]                    Log the download URL for the standalone iOS binary
-    url:apk [path]                    Log the download URL for the standalone Android binary
-
-    webhooks [path]                   List all webhooks for a project
-    webhooks:add [path]               Add a webhook to a project
-    webhooks:remove [path]            Delete a webhook
-    webhooks:update [path]            Update an existing webhook
-
-    build:ios [path]                  Superseded by eas build in eas-cli
-    build:android [path]              Superseded by eas build in eas-cli
-    build:status [path]               Superseded by eas build:list in eas-cli
-    eject [path]                      Superseded by expo prebuild
-    fetch:ios:certs [path]            Superseded by eas credentials in eas-cli
-    fetch:android:keystore [path]     Superseded by eas credentials in eas-cli
-    fetch:android:hashes [path]       Superseded by eas credentials in eas-cli
-    fetch:android:upload-cert [path]  Superseded by eas credentials in eas-cli
-    publish [path]                    Superseded by eas update in eas-cli
-    publish:set [path]                Superseded by eas update:republish in eas-cli
-    publish:rollback [path]           Superseded by eas update:republish in eas-cli
-    publish:history [path]            Superseded by eas update:list in eas-cli
-    publish:details [path]            Superseded by eas update:view in eas-cli
-    push:android:upload [path]        Superseded by eas credentials in eas-cli
-    push:android:show [path]          Superseded by eas credentials in eas-cli
-    push:android:clear [path]         Superseded by eas credentials in eas-cli
-    upload:android [path]             Superseded by eas submit in eas-cli
-    upload:ios [path]                 Superseded by eas submit in eas-cli
-    client:ios [path]                 Superseded by Expo Dev Clients
-
-[12:49:34]   Run a command with --help for more info 💡
-[12:49:34]     $ expo start --help
-[12:49:34] /  tunnel for the frontend preview is very unreliable. Expect to restart it (expo: ERROR (not running)
-expo: started). Use yarn run v1.22.22
-$ expo lint
-env: load .env
-env: export EXPO_TUNNEL_SUBDOMAIN EXPO_PACKAGER_HOSTNAME EXPO_PACKAGER_PROXY_URL EXPO_PUBLIC_BACKEND_URL EXPO_USE_FAST_RESOLVER METRO_CACHE_ROOT EXPO_PUBLIC_GOOGLE_MAPS_KEY
-$ /app/frontend/node_modules/.bin/eslint /app/frontend/src /app/frontend/app --fix=false --cache=true --cache-location=/app/frontend/.expo/cache/eslint/
-
-/app/frontend/app/(tabs)/_layout.tsx
-  109:6  warning  React Hook useEffect has missing dependencies: 'glowOpacity', 'glowScale', 'indicatorOpacity', 'scaleAnim', and 'translateYAnim'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
-
-/app/frontend/app/(tabs)/events.tsx
-  44:24  warning  'me' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/frontend/app/(tabs)/home.tsx
-   61:64  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead                                                                             @typescript-eslint/array-type
-  237:6   warning  React Hook useCallback has missing dependencies: 'accessToken' and 'refreshUnread'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
-  551:53  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                         react/no-unescaped-entities
-
-/app/frontend/app/(tabs)/profile.tsx
-   21:27  warning  'apiDelete' is defined but never used                                                                      @typescript-eslint/no-unused-vars
-  169:8   warning  React Hook useCallback has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-/app/frontend/app/(tabs)/routes.tsx
-   14:3   warning  'Linking' is defined but never used                                    @typescript-eslint/no-unused-vars
-   23:25  warning  'RideSessionOut' is defined but never used                             @typescript-eslint/no-unused-vars
-   53:64  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead            @typescript-eslint/array-type
-  283:11  warning  'isRideActive' is assigned a value but never used                      @typescript-eslint/no-unused-vars
-  284:11  warning  'canStartRide' is assigned a value but never used                      @typescript-eslint/no-unused-vars
-  408:23  warning  Expected an assignment or function call and instead saw an expression  no-unused-expressions
-
-/app/frontend/app/(tabs)/shop.tsx
-   22:27  warning  'apiDelete' is defined but never used                            @typescript-eslint/no-unused-vars
-   97:45  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
-  107:24  warning  'me' is assigned a value but never used                          @typescript-eslint/no-unused-vars
-
-/app/frontend/app/(tabs)/store.tsx
-  77:9  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/frontend/app/_layout.tsx
-  69:30  warning  The ref value 'notificationListener.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'notificationListener.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
-
-/app/frontend/app/auth/forgot-password.tsx
-   4:3   warning  'Alert' is defined but never used                                @typescript-eslint/no-unused-vars
-  37:14  warning  'e' is defined but never used                                    @typescript-eslint/no-unused-vars
-  87:46  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
-
-/app/frontend/app/community/dm/[userId].tsx
-   87:6  warning  React Hook useCallback has a missing dependency: 'scrollToBottom'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  117:6  warning  React Hook useEffect has a missing dependency: 'scrollToBottom'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
-
-/app/frontend/app/community/group/[groupId].tsx
-  107:6  warning  React Hook useCallback has a missing dependency: 'scrollToBottom'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  162:6  warning  React Hook useEffect has a missing dependency: 'scrollToBottom'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
-
-/app/frontend/app/create/event.tsx
-  15:8   warning  'Svg' is defined but never used     @typescript-eslint/no-unused-vars
-  15:15  warning  'Circle' is defined but never used  @typescript-eslint/no-unused-vars
-  15:23  warning  'Rect' is defined but never used    @typescript-eslint/no-unused-vars
-
-/app/frontend/app/create/route.tsx
-    1:36  warning  'useCallback' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
-   15:8   warning  'Svg' is defined but never used                                                                                                @typescript-eslint/no-unused-vars
-   15:15  warning  'Circle' is defined but never used                                                                                             @typescript-eslint/no-unused-vars
-  227:6   warning  React Hook useEffect has missing dependencies: 'fetchRoute' and 'headers'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
-  636:50  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                react/no-unescaped-entities
-
-/app/frontend/app/event/[id].tsx
-   20:8   warning  'Svg' is defined but never used                                                                               @typescript-eslint/no-unused-vars
-   20:15  warning  'Circle' is defined but never used                                                                            @typescript-eslint/no-unused-vars
-   20:23  warning  'Rect' is defined but never used                                                                              @typescript-eslint/no-unused-vars
-   83:18  warning  'e' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
-  115:6   warning  React Hook useEffect has a missing dependency: 'loadEvent'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  149:14  warning  'error' is defined but never used                                                                             @typescript-eslint/no-unused-vars
-
-/app/frontend/app/marketplace/[listingId].tsx
-  106:20  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/frontend/app/marketplace/my-listings.tsx
-  76:20  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/frontend/app/profile/[id].tsx
-  44:24  warning  'me' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/frontend/app/profile/edit.tsx
-  36:15  warning  'setBio' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  73:14  warning  'e' is defined but never used                @typescript-eslint/no-unused-vars
-
-/app/frontend/app/route/[id].tsx
-  19:8   warning  'Svg' is defined but never used                                                                               @typescript-eslint/no-unused-vars
-  19:15  warning  'Circle' is defined but never used                                                                            @typescript-eslint/no-unused-vars
-  56:6   warning  React Hook useEffect has a missing dependency: 'loadRoute'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  84:14  warning  'error' is defined but never used                                                                             @typescript-eslint/no-unused-vars
-
-/app/frontend/app/search/routes.tsx
-  40:22  warning  'setOnlyPublic' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/frontend/src/components/Animated.tsx
-    2:37  warning  'StyleSheet' is defined but never used                                                                                                        @typescript-eslint/no-unused-vars
-    8:3   warning  'interpolate' is defined but never used                                                                                                       @typescript-eslint/no-unused-vars
-   67:6   warning  React Hook useEffect has missing dependencies: 'opacity' and 'translateY'. Either include them or remove the dependency array                 react-hooks/exhaustive-deps
-   93:6   warning  React Hook useEffect has missing dependencies: 'opacity' and 'scale'. Either include them or remove the dependency array                      react-hooks/exhaustive-deps
-  122:6   warning  React Hook useEffect has a missing dependency: 'scale'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
-  155:6   warning  React Hook useEffect has missing dependencies: 'opacity', 'translateX', and 'translateY'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
-
-/app/frontend/src/components/AnimatedSplash.tsx
-   96:6  warning  React Hook useEffect has missing dependencies: 'containerOpacity', 'logoRotate', 'logoScale', 'onFinish', 'pulseAnim', 'subtitleOpacity', 'textOpacity', and 'textTranslate'. Either include them or remove the dependency array. If 'onFinish' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
-  191:6  warning  React Hook useEffect has missing dependencies: 'dot1', 'dot2', and 'dot3'. Either include them or remove the dependency array                                                                                                                                                                                                                         react-hooks/exhaustive-deps
-
-/app/frontend/src/components/AnimatedTabBar.tsx
-   69:6   warning  React Hook useEffect has missing dependencies: 'glowOpacity', 'indicatorOpacity', 'scale', 'tabConfig.isCenter', and 'translateY'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
-  143:6   warning  React Hook useEffect has a missing dependency: 'indicatorPosition'. Either include it or remove the dependency array                                                                   react-hooks/exhaustive-deps
-  160:19  warning  'options' is assigned a value but never used                                                                                                                                           @typescript-eslint/no-unused-vars
-
-/app/frontend/src/components/PlaceSearchInput.tsx
-  62:6  warning  React Hook useEffect has a missing dependency: 'query'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-/app/frontend/src/components/RouteCard.tsx
-  64:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/frontend/src/components/StoryViewer.tsx
-   21:38  warning  'SCREEN_HEIGHT' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
-   58:5   warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead                                                       @typescript-eslint/array-type
-   87:6   warning  React Hook useCallback has a missing dependency: 'goNext'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
-   96:6   warning  React Hook useEffect has a missing dependency: 'startProgress'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  104:14  warning  'e' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
-  126:14  warning  'e' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
-  138:6   warning  React Hook useEffect has a missing dependency: 'currentStory'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
-
-/app/frontend/src/i18n/index.ts
-  18:1  warning  Caution: `i18n` also has a named export `use`. Check if you meant to write `import {use} from 'i18next'` instead                        import/no-named-as-default-member
-  28:5  warning  Caution: `i18n` also has a named export `changeLanguage`. Check if you meant to write `import {changeLanguage} from 'i18next'` instead  import/no-named-as-default-member
-  34:3  warning  Caution: `i18n` also has a named export `changeLanguage`. Check if you meant to write `import {changeLanguage} from 'i18next'` instead  import/no-named-as-default-member
-
-/app/frontend/src/lib/i18n.ts
-  17:1  warning  Caution: `i18n` also has a named export `use`. Check if you meant to write `import {use} from 'i18next'` instead  import/no-named-as-default-member
-
-/app/frontend/src/lib/utils.ts
-  22:25  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-
-/app/frontend/src/screens/MapScreen.tsx
-  123:6   warning  React Hook useCallback has a missing dependency: 'isWeb'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  192:6   warning  React Hook useCallback has a missing dependency: 'isWeb'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  227:14  warning  'error' is defined but never used                                                                           @typescript-eslint/no-unused-vars
-  251:14  warning  'error' is defined but never used                                                                           @typescript-eslint/no-unused-vars
-
-✖ 78 problems (4 errors, 74 warnings)
-  0 errors and 3 warnings potentially fixable with the `--fix` option.
-
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. and yarn run v1.22.22
-$ /app/frontend/node_modules/.bin/tsc
-app/(tabs)/events.tsx(243,19): error TS2551: Property 'participants' does not exist on type 'RouteOut'. Did you mean 'participants_min'?
-app/route/[id].tsx(246,13): error TS2322: Type 'string | null | undefined' is not assignable to type 'string | undefined'.
-  Type 'null' is not assignable to type 'string | undefined'.
-app/route/[id].tsx(247,13): error TS2322: Type 'string | null | undefined' is not assignable to type 'string | undefined'.
-  Type 'null' is not assignable to type 'string | undefined'.
-src/components/MapCanvas.native.tsx(174,9): error TS2322: Type '{ children: (false | Element | Element[] | (Element | null)[] | null | undefined)[]; style: RegisteredStyle<AbsoluteFillStyle>; ... 8 more ...; spiralEnabled: true; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<MapView> & Readonly<ViewProps & { cacheEnabled?: boolean | undefined; ... 70 more ...; cameraZoomRange?: CameraZoomRange | undefined; } & MapClusteringProps>'.
-  Property 'clusterBorderColor' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<MapView> & Readonly<ViewProps & { cacheEnabled?: boolean | undefined; ... 70 more ...; cameraZoomRange?: CameraZoomRange | undefined; } & MapClusteringProps>'. Did you mean 'clusterColor'?
-src/screens/MapScreen.tsx(7,23): error TS2307: Cannot find module '../components/MapCanvas' or its corresponding type declarations.
-src/screens/MapScreen.tsx(345,26): error TS7006: Parameter 'eventId' implicitly has an 'any' type.
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. to check code for errors while the tunnel is down.
--   **User Verification:** Before moving to new features, confirm with the user that the End Route error is fixed.
+-   **Limba:** Continue all conversational interactions in **Romanian**. All UI text and error messages must be in **English**.
+-   **Immediate Priority:** The absolute top priority is to fix the three UI layout issues identified by the user in message #102. Do not proceed to other tasks until these visual bugs are resolved and confirmed via a screenshot.
+-   **User Feedback is Key:** The user provides very specific and actionable visual feedback. Always validate UI changes with a screenshot before considering a task complete.
 
 **documents and test reports created in this job**
--    (updated)
--   
+-    (Note: This report is from before the user reported the latest UI issues).
 
 **Last 10 User Messages and any pending HUMAN messages**
--   **(199)** User provided a large, detailed list of new features and bug fixes for the map screen, and requested error messages be in English. **Status: Phase 1 Implemented, other phases are pending.**
--   **(197)** User confirms the registration error fix is working perfectly. **Status: RESOLVED.**
--   **(191)** User notes the  error is still present, leading the agent to debug caching issues. **Status: RESOLVED.**
--   **(184)** User clarifies that registration error should be a toast and easy to understand. **Status: RESOLVED.**
--   **(135)** User reported two new bugs (friend re-add, registration error) just as the agent was about to finish the previous task. **Status: RESOLVED.**
--   **(127)** Agent shows a screenshot of the working My Routes control panel. **Status: RESOLVED.**
--   **(122)** Agent shows a screenshot of the routes page loading correctly after a bug fix. **Status: RESOLVED.**
--   **(40)** User asks for a status update. **Status: ADDRESSED.**
+-   **(102)** User sent a screenshot with detailed feedback on 3 critical UI layout issues with the new map features. **Status: IN PROGRESS.**
+-   **(98)** Agent stated that all tests passed and it was finalizing its work. **Status: Superseded by user feedback.**
+-   **(26)** Agent confirmed understanding of the user's new requirements for the map. **Status: Implemented, but with UI flaws.**
+-   **(9)** User provided a completely new set of requirements for the map screen, redirecting the agent's work for the session. **Status: Implemented, but with UI flaws.**
 
 **Project Health Check:**
--   **Broken**: No. The application is running.
--   **Incomplete**: Yes. There is a large backlog of user-requested map features to be implemented, plus a few pending bug verifications and older tasks.
+-   **Broken**: No. The application runs, but the map screen has significant UX/UI issues.
+-   **Incomplete**: Yes. The map redesign is still in progress, and older issues remain in the backlog.
 -   **Mocked**: The Forgot Password feature remains blocked.
 
 **3rd Party Integrations**
@@ -377,14 +127,13 @@ info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this comm
 -   react-native-maps-clustering
 
 **Testing status**
--   Testing agent used after significant changes: YES, it found and fixed an infinite loading bug.
+-   Testing agent used after significant changes: YES. It reported 100% success on the feature logic. However, it did not catch the subsequent UI/UX layout issues that the user identified.
 -   Troubleshoot agent used after agent stuck in loop: NO
 -   Test files created: None
--   Known regressions: None.
+-   Known regressions: The UI for the map screen has regressed in terms of layout and usability due to the recent changes.
 
 **Credentials to test flow:**
 -   User 1 (Verified):  / 
 
 **What agent forgot to execute**
--   The task to update the  has been pending for multiple sessions and was deprioritized again in favor of the user's newer, more urgent requests. It remains in the backlog.
--   The agent fixed the payload for the add friend bug but did not perform a full test cycle (delete then re-add) to confirm the fix. This is pending verification.</analysis>
+-   The agent did not visually verify the UI changes with a screenshot before running the testing agent and attempting to finish. This led to the user having to report obvious layout flaws.</analysis>
