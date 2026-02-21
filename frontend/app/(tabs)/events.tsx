@@ -146,7 +146,7 @@ function MyEventsTab() {
         data={events}
         keyExtractor={(item) => item.id}
         renderItem={renderEvent}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 16 }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={loadEvents} tintColor={Colors.accent} />
         }
@@ -271,7 +271,7 @@ function MyRoutesTab() {
         data={routes}
         keyExtractor={(item) => item.id}
         renderItem={renderRoute}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 16 }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={loadRoutes} tintColor={Colors.accent} />
         }
