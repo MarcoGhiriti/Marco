@@ -507,7 +507,7 @@ export default function HomeScreen() {
         )}
 
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingBottom: tabBarHeight + 16 }]}
           refreshControl={
             <RefreshControl
               tintColor={Colors.accent}
