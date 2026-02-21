@@ -73,7 +73,7 @@ export default function UserProfileScreen() {
     if (!headers || !user) return;
     setActionLoading(true);
     try {
-      await apiPost("/api/friends/request", { username: user.username }, headers);
+      await apiPost("/api/friends/request", { to_username: user.username }, headers);
       setUser(prev => prev ? { ...prev, relationship: "request_sent" } : prev);
     } catch (e) {
       Alert.alert("Eroare", e instanceof Error ? e.message : "Nu s-a putut trimite cererea");
