@@ -63,28 +63,26 @@ export async function apiPost<T>(
             const field = err.loc?.[err.loc.length - 1] || "field";
             const msg = err.msg || "";
             
-            // Translate common validation errors to Romanian
+            // Make validation errors user-friendly
             if (msg.includes("at least 8 characters")) {
-              return field === "password" 
-                ? "Parola trebuie să aibă minim 8 caractere"
-                : `${field} trebuie să aibă minim 8 caractere`;
+              return "Password must be at least 8 characters";
             }
             if (msg.includes("at least 3 characters")) {
               return field === "username"
-                ? "Username-ul trebuie să aibă minim 3 caractere"
-                : `${field} trebuie să aibă minim 3 caractere`;
+                ? "Username must be at least 3 characters"
+                : `${field} must be at least 3 characters`;
             }
             if (msg.includes("valid email")) {
-              return "Adresa de email nu este validă";
+              return "Please enter a valid email address";
             }
             if (msg.includes("already") || msg.includes("exists")) {
               return field === "email" 
-                ? "Acest email este deja folosit"
+                ? "This email is already registered"
                 : field === "username"
-                ? "Acest username este deja folosit"
+                ? "This username is already taken"
                 : msg;
             }
-            return msg || `${field} invalid`;
+            return msg || `Invalid ${field}`;
           });
           errorMessage = messages.join(". ");
         } else {
