@@ -558,10 +558,12 @@ const styles = StyleSheet.create({
   searchText: { color: Colors.text, fontSize: 12, fontFamily: "Inter_700Bold" },
   fabContainer: {
     position: "absolute",
-    bottom: 16,
+    bottom: FAB_BOTTOM,
     right: 16,
     gap: 10,
     alignItems: "flex-end",
+    zIndex: 20,
+    elevation: 10,
   },
   recenterBtn: {
     width: 40,
