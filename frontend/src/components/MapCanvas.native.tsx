@@ -265,7 +265,7 @@ export default function MapCanvas({
                       <Text style={styles.eventLocationText} numberOfLines={1} data-testid={`event-callout-location-${event.id}`}>{event.location_name}</Text>
                     )}
                     <View style={{ flexDirection: "row", gap: 6 }}>
-                      <Pressable style={styles.directionsBtn} onPress={() => onEventPress?.(event.id)}>
+                      <Pressable style={styles.directionsBtn} onPress={() => onEventPress?.(event.id)} data-testid={`event-callout-details-${event.id}`}>
                         <Ionicons name="eye" size={14} color={Colors.bg} />
                         <Text style={styles.directionsBtnText}>Detalii</Text>
                       </Pressable>
