@@ -108,6 +108,12 @@ export default function MapScreen() {
   const [showLocationPill, setShowLocationPill] = useState(false);
   const pillOpacity = useRef(new Animated.Value(0)).current;
 
+  // Friends on map state
+  const [showFriends, setShowFriends] = useState(false);
+  const [friendLocations, setFriendLocations] = useState<FriendLocation[]>([]);
+  const friendsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const locationSharingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
