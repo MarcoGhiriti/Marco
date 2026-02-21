@@ -223,7 +223,10 @@ export default function RoutesScreen() {
     return null;
   };
   const loadRoutes = useCallback(async () => {
-    if (!authHeader) return;
+    if (!authHeader) {
+      setLoading(false);
+      return;
+    }
     try {
       const [allRoutes, userRoutes, activeRideData] = await Promise.all([
         apiGet<RouteOut[]>("/api/routes", authHeader),
