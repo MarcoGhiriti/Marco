@@ -290,7 +290,7 @@ export default function MapCanvas({
               pinColor="#FFB020"
             >
               <Callout tooltip onPress={() => openDirections(place.lat, place.lng, place.name)}>
-                <View style={styles.placeCallout}>
+                <View style={styles.placeCallout} data-testid={`place-callout-${place.id}`}>
                   <View style={styles.placeCalloutHeader}>
                     <Ionicons name="flame" size={14} color="#FFB020" />
                     <Text style={styles.placeCalloutName} numberOfLines={1}>{place.name}</Text>
@@ -314,7 +314,7 @@ export default function MapCanvas({
               pinColor="#4A90D9"
             >
               <Callout tooltip onPress={() => openDirections(place.lat, place.lng, place.name)}>
-                <View style={styles.placeCallout}>
+                <View style={styles.placeCallout} data-testid={`place-callout-${place.id}`}>
                   <View style={styles.placeCalloutHeader}>
                     <Ionicons name="build" size={14} color="#4A90D9" />
                     <Text style={styles.placeCalloutName} numberOfLines={1}>{place.name}</Text>
