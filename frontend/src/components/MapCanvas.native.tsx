@@ -409,6 +409,7 @@ export default function MapCanvas({
                   <Pressable
                     style={[styles.voteBtn, styles.voteDown]}
                     onPress={() => onVotePolice(report.id, "down", report.lat, report.lng)}
+                    data-testid={`police-vote-down-${report.id}`}
                   >
                     <Ionicons name="thumbs-down" size={14} color={Colors.bg} />
                     <Text style={styles.voteText}>{report.downvotes}</Text>
