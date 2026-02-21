@@ -4414,8 +4414,14 @@ async def get_static_map_image(
         raise HTTPException(status_code=504, detail="Map image request timed out")
 
 
-# Include router
+# Import routers
+from routers import friends as friends_router
+from routers import location as location_router
+
+# Include routers
 fastapi_app.include_router(api_router)
+fastapi_app.include_router(friends_router.router, prefix="/api")
+fastapi_app.include_router(location_router.router, prefix="/api")
 
 fastapi_app.add_middleware(
     CORSMiddleware,
