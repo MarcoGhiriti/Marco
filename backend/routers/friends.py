@@ -318,8 +318,6 @@ async def get_friend_detail(
     current_user: dict = Depends(get_current_user)
 ):
     """Get detailed info about a specific friend for popup."""
-    uid = current_user["id"]
-    
     # Check if they are friends
     if friend_id not in (current_user.get("friends") or []):
         raise HTTPException(status_code=403, detail="Not friends")
