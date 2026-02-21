@@ -250,7 +250,7 @@ function ChatsTab() {
             </View>
           )}
         </View>
-      </Pressable>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
