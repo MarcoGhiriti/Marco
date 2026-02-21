@@ -242,7 +242,7 @@ export default function LeaderboardScreen() {
           data={leaderboard}
           keyExtractor={(item) => item.user_id}
           renderItem={renderLeaderboardItem}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: tabBarHeight + 20 }]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -261,7 +261,7 @@ export default function LeaderboardScreen() {
           }
         />
       ) : activeTab === "badges" ? (
-        <ScrollView contentContainerStyle={styles.list}>
+        <ScrollView contentContainerStyle={[styles.list, { paddingBottom: tabBarHeight + 20 }]}>
           <Text style={styles.sectionTitle}>All Badges ({myBadges.length}/{ALL_BADGES.length} earned)</Text>
           {ALL_BADGES.map((badge) => {
             const earned = earnedBadgeIds.includes(badge.id);
