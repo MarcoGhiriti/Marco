@@ -15,9 +15,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Colors } from "../../../src/theme/colors";
-import { apiGet } from "../../../src/lib/api";
+import { apiGet, apiPost } from "../../../src/lib/api";
 import { getSocket } from "../../../src/lib/realtime";
 import { useAuthStore } from "../../../src/state/authStore";
+import { useUnreadStore } from "../../../src/state/unreadStore";
 import type { MessageOut } from "../../../src/types/community";
 
 export default function DmChatScreen() {
