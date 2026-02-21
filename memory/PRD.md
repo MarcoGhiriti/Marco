@@ -26,7 +26,13 @@ Social-mapping application for motorcyclists with features for route planning, l
 
 ## What's Been Implemented
 
-### Latest Updates (Feb 21, 2026)
+### Latest Updates (Feb 21, 2026) - Dynamic Layout Fix
+- **Global Dynamic Layout for Android (NEW - Feb 21, 2026):**
+  - Problem: On Android 9:19 screens, edit/delete buttons for events/routes were cut off by the absolute tab bar (70px) or bottom bars.
+  - Fix: Used `useBottomTabBarHeight()` from `@react-navigation/bottom-tabs` in all tab screens to dynamically calculate the correct `paddingBottom` for FlatList/ScrollView content.
+  - Fixed screens: `routes.tsx`, `events.tsx`, `home.tsx`, `shop.tsx` (all tab screens)
+  - Fixed detail screens: `event/[id].tsx`, `route/[id].tsx` - used `useSafeAreaInsets().bottom` for bottomBar padding + increased spacer to 200px.
+  - This is a universal fix that adapts to any Android device, gesture bar size, and screen ratio.
 - **Friend Popup on Map (NEW):**
   - Click on friend marker shows callout with: photo + username, active ride status, distance from you, message button
   - Backend: Updated `/api/friends/locations` to include `active_ride` and `distance_km` fields
