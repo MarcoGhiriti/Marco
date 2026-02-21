@@ -333,6 +333,7 @@ export default function MapCanvas({
               coordinate={{ latitude: friend.lat, longitude: friend.lng }}
               anchor={{ x: 0.5, y: 0.5 }}
               tracksViewChanges={false}
+              cluster={false}
             >
               <FriendMarkerView friend={friend} />
               <Callout tooltip onPress={() => onFriendPress?.(friend.id)}>
