@@ -139,7 +139,7 @@ export default function RoutesScreen() {
     if (!activeRide) return;
     setActionLoading("resume");
     try {
-      await apiPost("/api/rides/resume", { ride_id: activeRide.ride_id }, authHeader);
+      await apiPost("/api/rides/resume", { session_id: activeRide.ride_id }, authHeader);
       await loadRoutes();
     } catch (error: any) {
       console.error("Resume ride error:", error);
