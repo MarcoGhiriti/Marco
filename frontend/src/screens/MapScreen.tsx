@@ -380,14 +380,6 @@ export default function MapScreen() {
             </Pressable>
           </View>
         </View>
-        
-        {/* Location Sharing Pill */}
-        {showLocationPill && (
-          <Animated.View style={[styles.locationPill, { opacity: pillOpacity }]}>
-            <Ionicons name="radio" size={14} color={Colors.accent} />
-            <Text style={styles.locationPillText}>Sharing live location</Text>
-          </Animated.View>
-        )}
 
         <MapCanvas
           mapRef={mapRef}
