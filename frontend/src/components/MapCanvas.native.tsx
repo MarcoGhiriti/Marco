@@ -408,14 +408,16 @@ export default function MapCanvas({
         </Pressable>
       </Animated.View>
 
-      <Pressable style={styles.recenterBtn} onPress={onRecenter} data-testid="recenter-btn">
-        <Ionicons name="locate" size={18} color={Colors.text} />
-      </Pressable>
-
-      <Pressable style={styles.reportFab} onPress={onReportPolice} data-testid="report-police-btn">
-        <Ionicons name="shield" size={20} color={Colors.bg} />
-        <Text style={styles.reportFabText}>Report Police</Text>
-      </Pressable>
+      {/* Floating action buttons - responsive positioned */}
+      <View style={styles.fabContainer}>
+        <Pressable style={styles.reportFab} onPress={onReportPolice} data-testid="report-police-btn">
+          <Ionicons name="shield" size={18} color={Colors.bg} />
+          <Text style={styles.reportFabText}>Report Police</Text>
+        </Pressable>
+        <Pressable style={styles.recenterBtn} onPress={onRecenter} data-testid="recenter-btn">
+          <Ionicons name="locate" size={18} color={Colors.text} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -482,10 +484,14 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   searchText: { color: Colors.text, fontSize: 12, fontFamily: "Inter_700Bold" },
-  recenterBtn: {
+  fabContainer: {
     position: "absolute",
-    bottom: 24,
+    bottom: 16,
     right: 16,
+    gap: 10,
+    alignItems: "flex-end",
+  },
+  recenterBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -496,18 +502,15 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   reportFab: {
-    position: "absolute",
-    bottom: 80,
-    right: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     backgroundColor: Colors.accent,
     borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  reportFabText: { color: Colors.bg, fontSize: 12, fontFamily: "Inter_700Bold" },
+  reportFabText: { color: Colors.bg, fontSize: 11, fontFamily: "Inter_700Bold" },
   calloutCard: {
     backgroundColor: Colors.card,
     borderRadius: 14,
