@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { Platform, StatusBar as RNStatusBar, StyleSheet, View } from "react-native";
 import "../src/lib/i18n";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
