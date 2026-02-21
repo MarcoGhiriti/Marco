@@ -43,6 +43,7 @@ const formatDate = (dateStr: string) => {
 function MyEventsTab() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
+  const tabBarHeight = useBottomTabBarHeight();
   const [events, setEvents] = useState<EventOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -174,6 +175,7 @@ function MyEventsTab() {
 function MyRoutesTab() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
+  const tabBarHeight = useBottomTabBarHeight();
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
