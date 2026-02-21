@@ -164,12 +164,21 @@ export default function RoutesScreen() {
           onPress: async () => {
             setActionLoading("end");
             try {
-              await apiPost("/api/rides/end", { ride_id: activeRide.ride_id }, authHeader);
+              // Get current location for end_location
+              let endLocation = [0, 0];
+              if (userLocation) {
+                endLocation = [userLocation.lat, userLocation.lng];
+              }
+              await apiPost("/api/rides/end", { 
+                session_id: activeRide.ride_id, 
+                end_location: endLocation 
+              }, authHeader);
               await loadRoutes();
               showAlert(t("routes.rideEnded"), t("routes.rideEndedMessage"));
             } catch (error: any) {
               console.error("End ride error:", error);
-              showAlert(t("common.error"), error?.message || t("common.genericError"));
+              const errMsg = error instanceof Error ? error.message : "Could not end ride";
+              showAlert(t("common.error"), errMsg);
             } finally {
               setActionLoading(null);
             }
