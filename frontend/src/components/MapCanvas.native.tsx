@@ -52,6 +52,12 @@ type FriendMarker = {
   lat: number;
   lng: number;
   updated_at: string;
+  active_ride?: {
+    route_id: string;
+    route_title: string;
+    started_at: string;
+  } | null;
+  distance_km?: number | null;
 };
 
 type MapCanvasProps = {
