@@ -899,6 +899,27 @@ const styles = StyleSheet.create({
   },
   activeRideTitle: { color: "#FFF", fontSize: 14, fontWeight: "700" },
   activeRideSub: { color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "600" },
+  activeRideContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  activeRideActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  activeRideActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  activeRideEndBtn: {
+    backgroundColor: "#FF3B30",
+  },
   
   // License required banner
   licenseRequiredBanner: {
