@@ -17,9 +17,12 @@ type MapCanvasProps = {
   showEvents: boolean;
   showGas: boolean;
   showService: boolean;
+  showFriends: boolean;
+  friendMarkers: any[];
   onToggleEvents: () => void;
   onToggleGas: () => void;
   onToggleService: () => void;
+  onToggleFriends: () => void;
   onReportPolice: () => void;
   onVotePolice: (reportId: string, vote: "up" | "down", lat: number, lng: number) => void;
   isFetching: boolean;
