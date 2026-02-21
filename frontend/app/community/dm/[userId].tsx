@@ -27,6 +27,7 @@ export default function DmChatScreen() {
   const otherUserId = String(userId ?? "");
 
   const { accessToken, me } = useAuthStore();
+  const { clearThread } = useUnreadStore();
 
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<MessageOut[]>([]);
