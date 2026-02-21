@@ -39,6 +39,15 @@ type PoliceReport = {
   downvotes: number;
 };
 
+type FriendLocation = {
+  id: string;
+  username: string;
+  profile_photo_base64?: string | null;
+  lat: number;
+  lng: number;
+  updated_at: string;
+};
+
 const DEFAULT_REGION: MapRegion = {
   latitude: 44.4268,
   longitude: 26.1025,
