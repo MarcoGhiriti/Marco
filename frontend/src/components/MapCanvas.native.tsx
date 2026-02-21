@@ -341,7 +341,7 @@ export default function MapCanvas({
               <FriendMarkerView friend={friend} />
               {Platform.OS === "ios" && (
                 <Callout tooltip onPress={() => onFriendPress?.(friend.id)}>
-                  <View style={styles.friendCalloutCard}>
+                  <View style={styles.friendCalloutCard} data-testid={`friend-callout-card-${friend.id}`}>
                     <View style={styles.friendCalloutHeader}>
                       {friend.profile_photo_base64 ? (
                         <Image
