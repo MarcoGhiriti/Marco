@@ -433,6 +433,79 @@ export default function MapCanvas({
           <Ionicons name="locate" size={18} color={Colors.text} />
         </Pressable>
       </View>
+
+      {/* Friend popup overlay - state driven, no Callout bugs */}
+      {selectedFriend && (
+        <Pressable
+          style={styles.friendOverlayBackdrop}
+          onPress={() => setSelectedFriend(null)}
+        >
+          <Pressable
+            style={styles.friendPopupCard}
+            onPress={(e) => e.stopPropagation()}
+            data-testid={`friend-callout-card-${selectedFriend.id}`}
+          >
+            {/* Header: photo + info */}
+            <Pressable
+              style={styles.friendPopupHeader}
+              onPress={() => {
+                setSelectedFriend(null);
+                onFriendProfilePress?.(selectedFriend.id);
+              }}
+              data-testid={`friend-callout-profile-${selectedFriend.id}`}
+            >
+              {selectedFriend.profile_photo_base64 ? (
+                <Image
+                  source={{ uri: `data:image/jpeg;base64,${selectedFriend.profile_photo_base64}` }}
+                  style={styles.friendPopupPhoto}
+                />
+              ) : (
+                <View style={[styles.friendPopupPhoto, styles.friendPopupPhotoPlaceholder]}>
+                  <Ionicons name="person" size={24} color={Colors.text} />
+                </View>
+              )}
+              <View style={styles.friendPopupInfo}>
+                <Text style={styles.friendPopupName} data-testid={`friend-callout-name-${selectedFriend.id}`}>
+                  {selectedFriend.username}
+                </Text>
+                <Text style={styles.friendPopupHint}>Tap to view profile</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+            </Pressable>
+
+            {/* Active ride badge */}
+            {selectedFriend.active_ride && (
+              <View style={styles.friendPopupRideRow}>
+                <Ionicons name="navigate" size={12} color={Colors.accent} />
+                <Text style={styles.friendPopupRideText} numberOfLines={1} data-testid={`friend-callout-ride-${selectedFriend.id}`}>
+                  On route: {selectedFriend.active_ride.route_title}
+                </Text>
+              </View>
+            )}
+
+            {/* Footer: distance + chat button */}
+            <View style={styles.friendPopupFooter}>
+              <View style={styles.friendPopupDistanceBox}>
+                <Ionicons name="location" size={14} color={Colors.accent} />
+                <Text style={styles.friendPopupDistanceText} data-testid={`friend-callout-distance-${selectedFriend.id}`}>
+                  {selectedFriend.distance_km != null ? `${selectedFriend.distance_km} km` : "-- km"}
+                </Text>
+              </View>
+              <Pressable
+                style={styles.friendPopupChatBtn}
+                onPress={() => {
+                  setSelectedFriend(null);
+                  onFriendPress?.(selectedFriend.id);
+                }}
+                data-testid={`friend-callout-message-${selectedFriend.id}`}
+              >
+                <Ionicons name="chatbubble" size={14} color={Colors.bg} />
+                <Text style={styles.friendPopupChatText}>Message</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      )}
     </View>
   );
 }
