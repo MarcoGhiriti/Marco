@@ -10,7 +10,7 @@ import pytest
 import requests
 from datetime import datetime
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://layout-bug-fixes.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://ui-consistency-test.preview.emergentagent.com').rstrip('/')
 
 
 class TestLocationSharing:

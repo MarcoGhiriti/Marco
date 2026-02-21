@@ -9,7 +9,7 @@ import os
 import time
 from datetime import datetime
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://layout-bug-fixes.preview.emergentagent.com')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://ui-consistency-test.preview.emergentagent.com')
 
 # Test credentials
 TEST_USER_EMAIL = "user1@example.com"
