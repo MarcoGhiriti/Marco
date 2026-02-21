@@ -47,7 +47,13 @@ Social-mapping application for motorcyclists with features for route planning, l
   - Backend: Updated `/api/friends/locations` to include `active_ride` and `distance_km` fields
   - Backend: Added `/api/friends/{friend_id}/detail` endpoint
   - Frontend: Added `onFriendPress` handler to open DM with friend
-- **Backend Refactoring (IN PROGRESS):**
+### Responsive Layout App-Wide (Feb 21, 2026 - Session 3)
+- Applied `useBottomTabBarHeight` + dynamic `paddingBottom` to ALL 8 tab screens
+- Fixed `community.tsx`: ChatsTab & GroupsTab now use `ScrollView` with dynamic paddingBottom instead of unscrollable containers
+- Fixed `store.tsx` (Rankings): All 3 content areas (FlatList + 2 ScrollViews) now have dynamic paddingBottom
+- Cleaned unused `useSafeAreaInsets` imports from `notifications/index.tsx` and `profile/friends.tsx`
+- All stack screens (notifications, friends, DM, group, event, route) correctly use `SafeAreaView`
+- **Status**: COMPLETE - awaiting user device verification**
   - Created `/app/backend/routers/` directory structure
   - Extracted authentication endpoints to `/app/backend/routers/auth.py`
   - Extracted friends endpoints to `/app/backend/routers/friends.py`
