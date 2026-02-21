@@ -404,7 +404,7 @@ export default function MapCanvas({
                     data-testid={`police-vote-up-${report.id}`}
                   >
                     <Ionicons name="thumbs-up" size={14} color={Colors.bg} />
-                    <Text style={styles.voteText}>{report.upvotes}</Text>
+                    <Text style={styles.voteText} data-testid={`police-upvotes-${report.id}`}>{report.upvotes}</Text>
                   </Pressable>
                   <Pressable
                     style={[styles.voteBtn, styles.voteDown]}
