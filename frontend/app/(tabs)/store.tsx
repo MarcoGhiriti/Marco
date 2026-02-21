@@ -14,6 +14,7 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Colors } from "../../src/theme/colors";
 import { apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
