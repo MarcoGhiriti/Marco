@@ -293,7 +293,7 @@ export default function MapCanvas({
                 <View style={styles.placeCallout} data-testid={`place-callout-${place.id}`}>
                   <View style={styles.placeCalloutHeader}>
                     <Ionicons name="flame" size={14} color="#FFB020" />
-                    <Text style={styles.placeCalloutName} numberOfLines={1}>{place.name}</Text>
+                    <Text style={styles.placeCalloutName} numberOfLines={1} data-testid={`place-callout-name-${place.id}`}>{place.name}</Text>
                   </View>
                   <View style={styles.directionsBtn}>
                     <Ionicons name="navigate" size={14} color={Colors.bg} />
@@ -317,7 +317,7 @@ export default function MapCanvas({
                 <View style={styles.placeCallout} data-testid={`place-callout-${place.id}`}>
                   <View style={styles.placeCalloutHeader}>
                     <Ionicons name="build" size={14} color="#4A90D9" />
-                    <Text style={styles.placeCalloutName} numberOfLines={1}>{place.name}</Text>
+                    <Text style={styles.placeCalloutName} numberOfLines={1} data-testid={`place-callout-name-${place.id}`}>{place.name}</Text>
                   </View>
                   <View style={[styles.directionsBtn, { backgroundColor: "#4A90D9" }]}>
                     <Ionicons name="navigate" size={14} color={Colors.bg} />
