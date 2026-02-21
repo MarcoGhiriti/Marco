@@ -93,7 +93,9 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }} />
+      <View style={[styles.appRoot, { paddingTop: androidTopInset }]}>
+        <Stack screenOptions={{ headerShown: false }} />
+      </View>
     </>
   );
 }
