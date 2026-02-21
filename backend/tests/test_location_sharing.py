@@ -10,7 +10,7 @@ import pytest
 import requests
 from datetime import datetime
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://bike-buddy-tracker.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://map-ui-refresh-1.preview.emergentagent.com').rstrip('/')
 
 
 class TestLocationSharing:

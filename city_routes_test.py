@@ -24,7 +24,7 @@ import httpx
 class CityRoutesBackendTester:
     def __init__(self):
         # Use the production URL from frontend/.env
-        self.base_url = "https://bike-buddy-tracker.preview.emergentagent.com"
+        self.base_url = "https://map-ui-refresh-1.preview.emergentagent.com"
         self.api_url = f"{self.base_url}/api"
         
         # Test data storage
