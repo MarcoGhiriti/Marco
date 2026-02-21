@@ -437,6 +437,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(5,5,7,0.35)",
   },
+  loadingDot: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    marginRight: -5,
+    marginTop: -5,
+  },
   filtersRow: {
     position: "absolute",
     top: 16,
