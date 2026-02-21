@@ -89,43 +89,43 @@ type MapCanvasProps = {
 };
 
 const MAP_STYLE = [
-  // Base map - deep dark with subtle green tint
-  { elementType: "geometry", stylers: [{ color: "#0a0e0d" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#5a6b65" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0a0e0d" }] },
+  // Base map - slightly lighter for better road visibility
+  { elementType: "geometry", stylers: [{ color: "#0f1413" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#8c9a94" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#0f1413" }] },
   
   // Hide administrative boundaries for cleaner look
   { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ visibility: "on" }, { color: "#2a3a35" }] },
+  { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ visibility: "on" }, { color: "#2d3a36" }] },
   
   // Points of interest - minimal
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#0f1613" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#111b18" }] },
   
-  // Roads - the focus for motorcycle riders
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#1a2622" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#0f1815" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#4a5a55" }] },
+  // Roads - clearer contrast
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2b3431" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1f2623" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9aa7a0" }] },
   
   // Highways - prominent with accent glow
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#243830" }] },
-  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#36f19a", weight: 1.5 }] },
-  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#36f19a" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3b4a45" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#46f2ae" }, { weight: 1.2 }] },
+  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#46f2ae" }] },
   
   // Arterial roads - secondary accent
-  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#1e2d28" }] },
-  { featureType: "road.arterial", elementType: "geometry.stroke", stylers: [{ color: "#2a4a40" }] },
+  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#313c38" }] },
+  { featureType: "road.arterial", elementType: "geometry.stroke", stylers: [{ color: "#3f4a46" }] },
   
   // Local roads
-  { featureType: "road.local", elementType: "geometry", stylers: [{ color: "#161f1c" }] },
+  { featureType: "road.local", elementType: "geometry", stylers: [{ color: "#242c29" }] },
   
   // Water - deep blue-green
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0a1512" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#1a3530" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b1714" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#2c3e38" }] },
   
   // Landscape - subtle terrain
-  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#0d1210" }] },
-  { featureType: "landscape.natural.terrain", elementType: "geometry", stylers: [{ color: "#0f1413" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#101615" }] },
+  { featureType: "landscape.natural.terrain", elementType: "geometry", stylers: [{ color: "#121a18" }] },
   
   // Transit - hidden
   { featureType: "transit", stylers: [{ visibility: "off" }] },
