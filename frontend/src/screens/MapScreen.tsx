@@ -105,8 +105,6 @@ export default function MapScreen() {
   
   // Friends location sharing state
   const [sharingLocation, setSharingLocation] = useState(false);
-  const [showLocationPill, setShowLocationPill] = useState(false);
-  const pillOpacity = useRef(new Animated.Value(0)).current;
 
   // Friends on map state
   const [showFriends, setShowFriends] = useState(false);

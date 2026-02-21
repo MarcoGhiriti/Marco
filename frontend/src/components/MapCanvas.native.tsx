@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   },
   reportFab: {
     position: "absolute",
-    bottom: 88,
+    bottom: 80,
     right: 16,
     flexDirection: "row",
     alignItems: "center",
