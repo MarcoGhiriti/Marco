@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
