@@ -374,6 +374,49 @@ export default function MapScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Create Menu Bottom Sheet */}
+      <Modal
+        visible={createMenuVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCreateMenuVisible(false)}
+      >
+        <Pressable style={styles.sheetOverlay} onPress={() => setCreateMenuVisible(false)}>
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Create</Text>
+            
+            <Pressable 
+              style={styles.sheetOption} 
+              onPress={() => handleCreateSelect("route")}
+            >
+              <View style={styles.sheetOptionIcon}>
+                <Ionicons name="trail-sign" size={22} color={Colors.accent} />
+              </View>
+              <View style={styles.sheetOptionText}>
+                <Text style={styles.sheetOptionTitle}>Create Route</Text>
+                <Text style={styles.sheetOptionSub}>Plan a ride with start & finish points</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
+            </Pressable>
+            
+            <Pressable 
+              style={styles.sheetOption} 
+              onPress={() => handleCreateSelect("meetup")}
+            >
+              <View style={styles.sheetOptionIcon}>
+                <Ionicons name="people" size={22} color={Colors.accent} />
+              </View>
+              <View style={styles.sheetOptionText}>
+                <Text style={styles.sheetOptionTitle}>Create Meetup</Text>
+                <Text style={styles.sheetOptionSub}>Set a meeting point & time</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
