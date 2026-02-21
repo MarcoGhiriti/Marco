@@ -60,6 +60,7 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { hasUnread, refresh: refreshUnread } = useUnreadStore();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   
   // Cross-platform alert helper (Alert.alert doesn't work on web)
   const showAlert = (title: string, message: string, buttons?: Array<{ text: string; style?: string; onPress?: () => void }>) => {
