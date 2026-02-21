@@ -377,6 +377,7 @@ export default function MapCanvas({
                       <Pressable 
                         style={styles.friendMessageBtn}
                         onPress={() => onFriendPress?.(friend.id)}
+                        data-testid={`friend-callout-message-${friend.id}`}
                       >
                         <Ionicons name="chatbubble" size={14} color={Colors.bg} />
                       </Pressable>
