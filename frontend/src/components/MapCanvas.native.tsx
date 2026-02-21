@@ -401,6 +401,7 @@ export default function MapCanvas({
                   <Pressable
                     style={[styles.voteBtn, styles.voteUp]}
                     onPress={() => onVotePolice(report.id, "up", report.lat, report.lng)}
+                    data-testid={`police-vote-up-${report.id}`}
                   >
                     <Ionicons name="thumbs-up" size={14} color={Colors.bg} />
                     <Text style={styles.voteText}>{report.upvotes}</Text>
