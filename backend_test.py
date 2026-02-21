@@ -15,7 +15,7 @@ import httpx
 
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://badge-clear-group.preview.emergentagent.com/api"
+BACKEND_URL = "https://layout-bug-fixes.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_EMAIL = "user1@example.com"

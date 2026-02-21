@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 # Backend URL from frontend/.env
-BASE_URL = "https://badge-clear-group.preview.emergentagent.com/api"
+BASE_URL = "https://layout-bug-fixes.preview.emergentagent.com/api"
 
 # Test credentials from review request
 TEST_EMAIL = "user1@example.com"

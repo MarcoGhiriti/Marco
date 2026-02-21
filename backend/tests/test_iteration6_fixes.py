@@ -11,7 +11,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://badge-clear-group.preview.emergentagent.com")
+BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://layout-bug-fixes.preview.emergentagent.com")
 
 # Test credentials
 USER1_EMAIL = "user1@example.com"
