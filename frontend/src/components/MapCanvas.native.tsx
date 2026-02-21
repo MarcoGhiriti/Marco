@@ -395,8 +395,8 @@ export default function MapCanvas({
             pinColor="#FF3B30"
           >
             <Callout tooltip>
-              <View style={styles.calloutCard}>
-                <Text style={styles.calloutTitle}>Police report</Text>
+              <View style={styles.calloutCard} data-testid={`police-report-callout-${report.id}`}>
+                <Text style={styles.calloutTitle} data-testid={`police-report-title-${report.id}`}>Police report</Text>
                 <View style={styles.voteRow}>
                   <Pressable
                     style={[styles.voteBtn, styles.voteUp]}
