@@ -269,7 +269,7 @@ export default function MapCanvas({
                         <Ionicons name="eye" size={14} color={Colors.bg} />
                         <Text style={styles.directionsBtnText}>Detalii</Text>
                       </Pressable>
-                      <Pressable style={[styles.directionsBtn, { backgroundColor: "#4A90D9" }]} onPress={() => openDirections(lat, lng, event.title)}>
+                      <Pressable style={[styles.directionsBtn, { backgroundColor: "#4A90D9" }]} onPress={() => openDirections(lat, lng, event.title)} data-testid={`event-callout-directions-${event.id}`}>
                         <Ionicons name="navigate" size={14} color={Colors.bg} />
                         <Text style={styles.directionsBtnText}>Direcții</Text>
                       </Pressable>
