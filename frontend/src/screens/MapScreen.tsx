@@ -274,10 +274,10 @@ export default function MapScreen() {
     setSharingLocation(newState);
     
     if (newState) {
-      // Show pill notification
+      // Show toast-style pill for 2 seconds, then auto-hide
       setShowLocationPill(true);
       Animated.sequence([
-        Animated.timing(pillOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(pillOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
         Animated.delay(2000),
         Animated.timing(pillOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]).start(() => setShowLocationPill(false));
@@ -295,6 +295,9 @@ export default function MapScreen() {
       sendUpdate();
       locationSharingIntervalRef.current = setInterval(sendUpdate, 15000);
     } else {
+      // Hide pill immediately
+      setShowLocationPill(false);
+      pillOpacity.setValue(0);
       // Stop sending location updates
       if (locationSharingIntervalRef.current) {
         clearInterval(locationSharingIntervalRef.current);
