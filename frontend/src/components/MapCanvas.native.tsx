@@ -318,6 +318,18 @@ export default function MapCanvas({
             </Marker>
           ))}
 
+        {showFriends &&
+          friendMarkers.map((friend) => (
+            <Marker
+              key={`friend-${friend.id}`}
+              coordinate={{ latitude: friend.lat, longitude: friend.lng }}
+              anchor={{ x: 0.5, y: 0.5 }}
+              tracksViewChanges={false}
+            >
+              <FriendMarkerView friend={friend} />
+            </Marker>
+          ))}
+
         {policeReports.map((report) => (
           <Marker
             key={`police-${report.id}`}
