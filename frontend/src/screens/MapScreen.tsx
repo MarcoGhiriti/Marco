@@ -447,6 +447,7 @@ export default function MapScreen() {
           userLocation={userLocation}
           onEventPress={(eventId) => router.push(`/event/${eventId}`)}
           onFriendPress={(friendId) => router.push(`/community/dm/${friendId}`)}
+          onFriendProfilePress={(friendId) => router.push(`/profile/${friendId}`)}
         />
 
         {sharingLocation && showLiveMessage && (
