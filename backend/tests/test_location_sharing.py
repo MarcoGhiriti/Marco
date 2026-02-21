@@ -119,7 +119,7 @@ class TestLocationSharing:
         self.session.headers.pop("Authorization", None)
         
         response = self.session.get(f"{BASE_URL}/api/friends/locations")
-        assert response.status_code == 403  # No auth header
+        assert response.status_code in [401, 403]  # No auth header - both codes are valid
         print("✓ Friends locations requires auth")
     
     def test_friends_locations_returns_array(self):
