@@ -362,13 +362,13 @@ export default function MapCanvas({
         ))}
       </ClusteredMapView>
 
-      {isFetching && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator color={Colors.accent} size="large" />
-        </View>
-      )}
-
       <View style={styles.filtersRow}>
+        {/* Subtle loading indicator - no blocking overlay */}
+        {isFetching && (
+          <View style={styles.loadingDot}>
+            <ActivityIndicator color={Colors.accent} size="small" />
+          </View>
+        )}
         <Pressable
           style={[styles.filterChip, showEvents && styles.filterChipActive]}
           onPress={onToggleEvents}
