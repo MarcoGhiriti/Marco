@@ -140,7 +140,7 @@ export default function DmChatScreen() {
     return () => {
       s.off("dm:new", onDmNew);
     };
-  }, [accessToken, otherUserId]);
+  }, [accessToken, otherUserId, markThreadRead]);
 
   const onSend = useCallback(() => {
     if (!accessToken || !otherUserId) return;
