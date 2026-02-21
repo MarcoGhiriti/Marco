@@ -421,11 +421,11 @@ export default function RouteDetailScreen() {
           </View>
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 200 }} />
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
         <View style={styles.bottomActions}>
           <Pressable onPress={handleOpenInvite} style={styles.actionIconBtn}>
             <Ionicons name="person-add-outline" size={22} color={Colors.accent} />
