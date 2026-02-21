@@ -190,6 +190,7 @@ export default function MapCanvas({
   isFetching,
   userLocation,
   onEventPress,
+  onFriendPress,
 }: MapCanvasProps) {
   const searchAnim = useRef(new Animated.Value(showSearchArea ? 1 : 0)).current;
 
