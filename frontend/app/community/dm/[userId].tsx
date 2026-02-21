@@ -187,7 +187,7 @@ export default function DmChatScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerBtn}>
+          <Pressable onPress={() => router.back()} style={styles.headerBtn} data-testid="dm-back-button">
             <Ionicons name="chevron-back" size={20} color={Colors.text} />
           </Pressable>
           <View style={styles.headerInfo}>
@@ -199,10 +199,10 @@ export default function DmChatScreen() {
               )}
             </View>
             <View>
-              <Text style={styles.headerTitle} numberOfLines={1}>
+              <Text style={styles.headerTitle} numberOfLines={1} data-testid="dm-header-username">
                 {otherUser.username || "Loading..."}
               </Text>
-              <Text style={styles.headerSub}>Direct Message</Text>
+              <Text style={styles.headerSub} data-testid="dm-header-subtitle">Direct Message</Text>
             </View>
           </View>
         </View>
@@ -255,6 +255,7 @@ export default function DmChatScreen() {
               placeholderTextColor={Colors.muted}
               style={styles.input}
               multiline
+              data-testid="dm-message-input"
             />
           </View>
           <Pressable 
