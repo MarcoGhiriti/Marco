@@ -397,7 +397,12 @@ function GroupsTab() {
   };
 
   return (
-    <View style={styles.inner}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: tabBarHeight + 20 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       {/* Create Group Button */}
       <Pressable onPress={() => setShowCreateModal(true)} style={styles.createGroupBtn}>
         <View style={styles.createGroupIcon}>
