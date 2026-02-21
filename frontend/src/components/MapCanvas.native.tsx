@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import ClusteredMapView from "react-native-map-clustering";
-import { Callout, Marker } from "react-native-maps";
+import { Callout, CalloutSubview, Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../theme/colors";
 
@@ -86,6 +86,7 @@ type MapCanvasProps = {
   userLocation?: { lat: number; lng: number } | null;
   onEventPress?: (eventId: string) => void;
   onFriendPress?: (friendId: string) => void;
+  onFriendProfilePress?: (friendId: string) => void;
 };
 
 const MAP_STYLE = [
