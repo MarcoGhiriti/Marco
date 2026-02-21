@@ -106,3 +106,16 @@ Social-mapping application for motorcyclists with features for route planning, l
 ## Language
 - UI error messages: English
 - Conversational interactions: Romanian
+
+## Router Structure (Backend Refactoring)
+```
+/app/backend/routers/
+├── auth.py       # Register, login endpoints
+├── friends.py    # Friends CRUD, locations, requests
+└── location.py   # User location updates
+```
+
+## Key Files Reference
+- Frontend Map: `/app/frontend/src/screens/MapScreen.tsx`, `/app/frontend/src/components/MapCanvas.native.tsx`
+- Backend Main: `/app/backend/server.py`
+- Database: `/app/backend/database.py`
