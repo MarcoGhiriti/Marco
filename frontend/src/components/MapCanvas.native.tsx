@@ -372,20 +372,30 @@ export default function MapCanvas({
         <Pressable
           style={[styles.filterChip, showEvents && styles.filterChipActive]}
           onPress={onToggleEvents}
+          data-testid="filter-events"
         >
           <Ionicons name="calendar" size={18} color={showEvents ? Colors.bg : Colors.text} />
         </Pressable>
         <Pressable
           style={[styles.filterChip, showGas && styles.filterChipActiveGas]}
           onPress={onToggleGas}
+          data-testid="filter-gas"
         >
           <Ionicons name="flame" size={18} color={showGas ? Colors.bg : Colors.text} />
         </Pressable>
         <Pressable
           style={[styles.filterChip, showService && styles.filterChipActiveService]}
           onPress={onToggleService}
+          data-testid="filter-service"
         >
           <Ionicons name="build" size={18} color={showService ? Colors.bg : Colors.text} />
+        </Pressable>
+        <Pressable
+          style={[styles.filterChip, showFriends && styles.filterChipActiveFriends]}
+          onPress={onToggleFriends}
+          data-testid="filter-friends"
+        >
+          <Ionicons name="people" size={18} color={showFriends ? Colors.bg : Colors.text} />
         </Pressable>
       </View>
 
@@ -393,16 +403,16 @@ export default function MapCanvas({
         style={[styles.searchButton, searchStyle]}
         pointerEvents={showSearchArea ? "auto" : "none"}
       >
-        <Pressable onPress={onSearchArea} style={styles.searchPressable}>
+        <Pressable onPress={onSearchArea} style={styles.searchPressable} data-testid="search-this-area">
           <Text style={styles.searchText}>Search this area</Text>
         </Pressable>
       </Animated.View>
 
-      <Pressable style={styles.recenterBtn} onPress={onRecenter}>
+      <Pressable style={styles.recenterBtn} onPress={onRecenter} data-testid="recenter-btn">
         <Ionicons name="locate" size={18} color={Colors.text} />
       </Pressable>
 
-      <Pressable style={styles.reportFab} onPress={onReportPolice}>
+      <Pressable style={styles.reportFab} onPress={onReportPolice} data-testid="report-police-btn">
         <Ionicons name="shield" size={20} color={Colors.bg} />
         <Text style={styles.reportFabText}>Report Police</Text>
       </Pressable>
