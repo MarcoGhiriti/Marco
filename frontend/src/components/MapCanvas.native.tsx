@@ -85,6 +85,7 @@ type MapCanvasProps = {
   isFetching: boolean;
   userLocation?: { lat: number; lng: number } | null;
   onEventPress?: (eventId: string) => void;
+  onFriendPress?: (friendId: string) => void;
 };
 
 const MAP_STYLE = [
