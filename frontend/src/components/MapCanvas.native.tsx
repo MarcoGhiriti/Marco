@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { ActivityIndicator, Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import ClusteredMapView from "react-native-map-clustering";
 import { Callout, Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
