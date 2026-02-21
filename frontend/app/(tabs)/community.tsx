@@ -603,7 +603,7 @@ function GroupsTab() {
           })
         )}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
