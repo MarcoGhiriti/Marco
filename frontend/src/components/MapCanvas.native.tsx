@@ -197,6 +197,7 @@ export default function MapCanvas({
   onFriendProfilePress,
 }: MapCanvasProps) {
   const searchAnim = useRef(new Animated.Value(showSearchArea ? 1 : 0)).current;
+  const [selectedFriend, setSelectedFriend] = useState<FriendMarker | null>(null);
 
   useEffect(() => {
     Animated.timing(searchAnim, {
