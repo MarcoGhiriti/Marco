@@ -413,8 +413,8 @@ export default function MapScreen() {
 
         {showLocationPill && (
           <Animated.View style={[styles.locationPill, { opacity: pillOpacity }]} data-testid="location-sharing-pill">
-            <Ionicons name="radio" size={14} color={Colors.accent} />
-            <Text style={styles.locationPillText}>Sharing live location</Text>
+            <Ionicons name="radio" size={12} color={Colors.accent} />
+            <Text style={styles.locationPillText}>Live sharing ON</Text>
           </Animated.View>
         )}
       </View>
@@ -532,22 +532,22 @@ const styles = StyleSheet.create({
   },
   locationPill: {
     position: "absolute",
-    bottom: 72,
-    alignSelf: "center",
+    top: 54,
+    right: 16,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     backgroundColor: Colors.card,
-    borderRadius: 20,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.accent,
     zIndex: 100,
   },
   locationPillText: {
     color: Colors.accent,
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: "Inter_600SemiBold",
   },
   modalOverlay: {
