@@ -256,7 +256,7 @@ export default function MapCanvas({
                 pinColor={Colors.accent}
               >
                 <Callout tooltip onPress={() => onEventPress?.(event.id)}>
-                  <View style={styles.placeCallout}>
+                  <View style={styles.placeCallout} data-testid={`event-callout-${event.id}`}>
                     <View style={styles.placeCalloutHeader}>
                       <Ionicons name="calendar" size={14} color={Colors.accent} />
                       <Text style={styles.placeCalloutName} numberOfLines={1}>{event.title}</Text>
