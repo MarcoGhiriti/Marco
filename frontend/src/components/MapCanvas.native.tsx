@@ -259,7 +259,7 @@ export default function MapCanvas({
                   <View style={styles.placeCallout} data-testid={`event-callout-${event.id}`}>
                     <View style={styles.placeCalloutHeader}>
                       <Ionicons name="calendar" size={14} color={Colors.accent} />
-                      <Text style={styles.placeCalloutName} numberOfLines={1}>{event.title}</Text>
+                      <Text style={styles.placeCalloutName} numberOfLines={1} data-testid={`event-callout-title-${event.id}`}>{event.title}</Text>
                     </View>
                     {event.location_name && (
                       <Text style={styles.eventLocationText} numberOfLines={1}>{event.location_name}</Text>
