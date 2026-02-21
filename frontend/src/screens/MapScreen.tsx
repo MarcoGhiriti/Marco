@@ -105,6 +105,7 @@ export default function MapScreen() {
   
   // Friends location sharing state
   const [sharingLocation, setSharingLocation] = useState(false);
+  const [showLiveMessage, setShowLiveMessage] = useState(false);
 
   // Friends on map state
   const [showFriends, setShowFriends] = useState(false);
@@ -272,6 +273,10 @@ export default function MapScreen() {
     setSharingLocation(newState);
     
     if (newState) {
+      // Show live message for 2 seconds
+      setShowLiveMessage(true);
+      setTimeout(() => setShowLiveMessage(false), 2000);
+      
       // Request location permission if needed
       await requestLocation();
 
@@ -279,12 +284,15 @@ export default function MapScreen() {
       const sendUpdate = async () => {
         try {
           const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          await apiPost("/api/location/update", { lat: loc.coords.latitude, lng: loc.coords.longitude }, accessToken || "");
+          if (authHeader) {
+            await apiPost("/api/location/update", { lat: loc.coords.latitude, lng: loc.coords.longitude }, authHeader);
+          }
         } catch {}
       };
       sendUpdate();
       locationSharingIntervalRef.current = setInterval(sendUpdate, 15000);
     } else {
+      setShowLiveMessage(false);
       // Stop sending location updates
       if (locationSharingIntervalRef.current) {
         clearInterval(locationSharingIntervalRef.current);
@@ -295,12 +303,14 @@ export default function MapScreen() {
 
   // Fetch friends' locations
   const fetchFriendsLocations = useCallback(async () => {
-    if (!accessToken) return;
+    if (!authHeader) return;
     try {
-      const data = await apiGet("/api/friends/locations", accessToken);
+      const data = await apiGet("/api/friends/locations", authHeader);
       if (Array.isArray(data)) setFriendLocations(data);
-    } catch {}
-  }, [accessToken]);
+    } catch (err) {
+      console.log("Failed to fetch friends locations", err);
+    }
+  }, [authHeader]);
 
   // Start/stop friends polling based on showFriends toggle
   useEffect(() => {
