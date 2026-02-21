@@ -66,6 +66,9 @@ MotoGO is a React Native (Expo) motorcycle social app with FastAPI + MongoDB bac
   - Pre-start validations: min 3 participants, max 3km from start point
   - Active/Paused ride badge on route card
   - Fixed infinite loading bug on Routes page
+- **Bug Fixes** (21 Feb 2025):
+  - Fixed "object object" error on registration (Pydantic validation errors now show readable messages)
+  - Fixed friend request failing after removing a friend (wrong parameter name: username -> to_username)
 
 ## 3rd Party Integrations
 - OpenAI GPT-4o (via Emergent LLM key) - AI license verification
