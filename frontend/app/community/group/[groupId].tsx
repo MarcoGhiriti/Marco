@@ -132,10 +132,21 @@ export default function GroupChatScreen() {
     }
   }, [authHeader]);
 
+  const markGroupRead = useCallback(async () => {
+    if (!authHeader || !gid) return;
+    clearThread({ kind: "group", groupId: gid });
+    try {
+      await apiPost("/api/messages/mark-read", { thread_id: `group:${gid}` }, authHeader);
+    } catch (e) {
+      console.log("Failed to mark group read:", e instanceof Error ? e.message : e);
+    }
+  }, [authHeader, gid, clearThread]);
+
   useEffect(() => {
     loadHistory();
     loadGroupInfo();
-  }, [loadHistory, loadGroupInfo]);
+    markGroupRead();
+  }, [loadHistory, loadGroupInfo, markGroupRead]);
 
   useEffect(() => {
     if (!accessToken || !gid) return;
