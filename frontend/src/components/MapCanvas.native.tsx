@@ -228,7 +228,10 @@ export default function MapCanvas({
         style={StyleSheet.absoluteFill}
         ref={mapRef}
         region={region}
-        onPanDrag={onPanDrag}
+        onPanDrag={() => {
+          setSelectedFriend(null);
+          onPanDrag();
+        }}
         onRegionChangeComplete={onRegionChangeComplete}
         customMapStyle={MAP_STYLE}
         clusterColor={Colors.accent}
