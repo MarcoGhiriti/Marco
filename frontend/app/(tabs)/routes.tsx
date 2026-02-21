@@ -175,9 +175,9 @@ export default function RoutesScreen() {
               }, authHeader);
               await loadRoutes();
               showAlert(t("routes.rideEnded"), t("routes.rideEndedMessage"));
-            } catch (error: any) {
-              console.error("End ride error:", error);
-              const errMsg = error instanceof Error ? error.message : "Could not end ride";
+            } catch (error) {
+              const errMsg = error instanceof Error ? error.message : String(error);
+              console.log("End ride error message:", errMsg);
               showAlert(t("common.error"), errMsg);
             } finally {
               setActionLoading(null);
