@@ -15,7 +15,7 @@ import httpx
 
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://live-location-fix.preview.emergentagent.com/api"
+BACKEND_URL = "https://mobile-debug-sprint.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_EMAIL = "user1@example.com"
