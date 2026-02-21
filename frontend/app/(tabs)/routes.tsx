@@ -329,7 +329,7 @@ export default function RoutesScreen() {
             <View style={styles.routeMetaItem}>
               <Ionicons name="time-outline" size={14} color={Colors.muted} />
               <Text style={styles.routeMetaText}>
-                {formatDuration(item.estimated_duration_min || item.duration_min)}
+                {formatDuration(item.duration_min)}
               </Text>
             </View>
           </View>
