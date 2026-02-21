@@ -165,6 +165,8 @@ export default function GroupChatScreen() {
         return [...prev, payload as MessageOut];
       });
       scrollToBottom();
+      // Mark as read since user is actively viewing this chat
+      markGroupRead();
     };
 
     s.on("group:new", onGroupNew);
