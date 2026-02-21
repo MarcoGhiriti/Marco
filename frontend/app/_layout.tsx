@@ -18,6 +18,7 @@ import {
   addNotificationResponseReceivedListener,
 } from "../src/lib/notifications";
 import { AnimatedSplash } from "../src/components/AnimatedSplash";
+import { Colors } from "../src/theme/colors";
 
 SplashScreen.preventAutoHideAsync();
 
