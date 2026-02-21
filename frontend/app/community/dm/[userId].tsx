@@ -129,6 +129,10 @@ export default function DmChatScreen() {
         return [...prev, payload as MessageOut];
       });
       scrollToBottom();
+
+      if (payload.from_user_id === otherUserId) {
+        markThreadRead();
+      }
     };
 
     s.on("dm:new", onDmNew);
