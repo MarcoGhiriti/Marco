@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as ImagePicker from "expo-image-picker";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
@@ -105,6 +106,7 @@ function NewTab() {
 function SecondHandTab() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
+  const tabBarHeight = useBottomTabBarHeight();
   
   const [listings, setListings] = useState<ListingOut[]>([]);
   const [loading, setLoading] = useState(true);
