@@ -334,49 +334,52 @@ export default function MapCanvas({
               anchor={{ x: 0.5, y: 0.5 }}
               tracksViewChanges={false}
               cluster={false}
+              onPress={() => onFriendPress?.(friend.id)}
             >
               <FriendMarkerView friend={friend} />
-              <Callout tooltip onPress={() => onFriendPress?.(friend.id)}>
-                <View style={styles.friendCalloutCard}>
-                  <View style={styles.friendCalloutHeader}>
-                    {friend.profile_photo_base64 ? (
-                      <Image
-                        source={{ uri: `data:image/jpeg;base64,${friend.profile_photo_base64}` }}
-                        style={styles.friendCalloutPhoto}
-                      />
-                    ) : (
-                      <View style={[styles.friendCalloutPhoto, styles.friendCalloutPhotoPlaceholder]}>
-                        <Ionicons name="person" size={20} color={Colors.text} />
-                      </View>
-                    )}
-                    <View style={styles.friendCalloutInfo}>
-                      <Text style={styles.friendCalloutName}>{friend.username}</Text>
-                      {friend.active_ride && (
-                        <View style={styles.friendRideStatus}>
-                          <Ionicons name="navigate" size={10} color={Colors.accent} />
-                          <Text style={styles.friendRideText} numberOfLines={1}>
-                            On route: {friend.active_ride.route_title}
-                          </Text>
+              {Platform.OS === "ios" && (
+                <Callout tooltip onPress={() => onFriendPress?.(friend.id)}>
+                  <View style={styles.friendCalloutCard}>
+                    <View style={styles.friendCalloutHeader}>
+                      {friend.profile_photo_base64 ? (
+                        <Image
+                          source={{ uri: `data:image/jpeg;base64,${friend.profile_photo_base64}` }}
+                          style={styles.friendCalloutPhoto}
+                        />
+                      ) : (
+                        <View style={[styles.friendCalloutPhoto, styles.friendCalloutPhotoPlaceholder]}>
+                          <Ionicons name="person" size={20} color={Colors.text} />
                         </View>
                       )}
+                      <View style={styles.friendCalloutInfo}>
+                        <Text style={styles.friendCalloutName}>{friend.username}</Text>
+                        {friend.active_ride && (
+                          <View style={styles.friendRideStatus}>
+                            <Ionicons name="navigate" size={10} color={Colors.accent} />
+                            <Text style={styles.friendRideText} numberOfLines={1}>
+                              On route: {friend.active_ride.route_title}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                    <View style={styles.friendCalloutFooter}>
+                      <View style={styles.friendDistanceBox}>
+                        <Ionicons name="location" size={12} color={Colors.textSecondary} />
+                        <Text style={styles.friendDistanceText}>
+                          {friend.distance_km != null ? `${friend.distance_km} km` : "-- km"}
+                        </Text>
+                      </View>
+                      <Pressable 
+                        style={styles.friendMessageBtn}
+                        onPress={() => onFriendPress?.(friend.id)}
+                      >
+                        <Ionicons name="chatbubble" size={14} color={Colors.bg} />
+                      </Pressable>
                     </View>
                   </View>
-                  <View style={styles.friendCalloutFooter}>
-                    <View style={styles.friendDistanceBox}>
-                      <Ionicons name="location" size={12} color={Colors.textSecondary} />
-                      <Text style={styles.friendDistanceText}>
-                        {friend.distance_km != null ? `${friend.distance_km} km` : "-- km"}
-                      </Text>
-                    </View>
-                    <Pressable 
-                      style={styles.friendMessageBtn}
-                      onPress={() => onFriendPress?.(friend.id)}
-                    >
-                      <Ionicons name="chatbubble" size={14} color={Colors.bg} />
-                    </Pressable>
-                  </View>
-                </View>
-              </Callout>
+                </Callout>
+              )}
             </Marker>
           ))}
 
