@@ -415,7 +415,7 @@ export default function MapCanvas({
                     <Text style={styles.voteText} data-testid={`police-downvotes-${report.id}`}>{report.downvotes}</Text>
                   </Pressable>
                 </View>
-                <Text style={styles.calloutHint}>Still there?</Text>
+                <Text style={styles.calloutHint} data-testid={`police-callout-hint-${report.id}`}>Still there?</Text>
               </View>
             </Callout>
           </Marker>
