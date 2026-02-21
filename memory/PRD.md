@@ -40,6 +40,11 @@ Social-mapping application for motorcyclists with features for route planning, l
 - **Map UI - Responsive Layout:**
   - "Report Police" and "Recenter" buttons now in a flexbox container (responsive for all screen sizes including 9:16)
   - Silent loading indicator (small spinner near filter chips instead of blocking overlay)
+- **Android UI Bug Fixes (Feb 21, 2026):**
+  - Global status bar padding via root layout on Android (prevents overlap across all screens)
+  - Map: recenter button lifted above tab bar; loading indicator now a static green dot
+  - Friend popup: distance text set to neon green; DM navigation route fixed (`/community/dm/:userId`)
+  - Map styling adjusted for clearer streets on dark theme
 - **Ride Banner Enhancement:**
   - Added "Directions" button (navigate icon) to active ride banner
   - Added "End Route" button (stop icon, red) for ride creators
