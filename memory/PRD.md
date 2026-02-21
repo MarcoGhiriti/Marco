@@ -26,6 +26,12 @@ Social-mapping application for motorcyclists with features for route planning, l
 
 ## What's Been Implemented
 
+### Latest Updates (Feb 21, 2026)
+- **Map UI Fixes:**
+  - Location sharing indicator: changed from large pill to small permanent badge (green dot)
+  - Increased spacing between "Report Police" and "Recenter" buttons (bottom: 80 vs 24)
+  - "Search this area" button correctly positioned below filter chips
+
 ### Completed Features
 - User auth (register, login, JWT)
 - Friend system (request, accept, remove)
