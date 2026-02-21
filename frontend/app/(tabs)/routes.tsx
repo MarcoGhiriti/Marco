@@ -562,7 +562,7 @@ export default function RoutesScreen() {
           data={filteredRoutes}
           keyExtractor={(item) => item.id}
           renderItem={renderRoute}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 16 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
