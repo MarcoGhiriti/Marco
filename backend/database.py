@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 
 # --- Database ---
 mongo_url = os.environ["MONGO_URL"]
-db_name = os.environ.get("DB_NAME", "test_database")
+db_name = os.environ["DB_NAME"]
 client = AsyncIOMotorClient(mongo_url, maxPoolSize=100, minPoolSize=10, maxIdleTimeMS=30000)
 db = client[db_name]
 
