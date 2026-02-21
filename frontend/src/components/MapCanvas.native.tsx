@@ -354,7 +354,9 @@ export default function MapCanvas({
                         </View>
                       )}
                       <View style={styles.friendCalloutInfo}>
-                        <Text style={styles.friendCalloutName}>{friend.username}</Text>
+                        <Text style={styles.friendCalloutName} data-testid={`friend-callout-name-${friend.id}`}>
+                          {friend.username}
+                        </Text>
                         {friend.active_ride && (
                           <View style={styles.friendRideStatus}>
                             <Ionicons name="navigate" size={10} color={Colors.accent} />
