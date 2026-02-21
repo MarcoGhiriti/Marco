@@ -77,6 +77,7 @@ const LEVEL_TITLES = [
 export default function LeaderboardScreen() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [myBadges, setMyBadges] = useState<BadgeOut[]>([]);
