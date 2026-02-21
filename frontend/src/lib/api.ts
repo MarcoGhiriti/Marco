@@ -53,14 +53,24 @@ export async function apiPost<T>(
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     // Try to extract detail message from JSON error response
-    let errorMessage = `POST ${path} failed: ${res.status} ${text}`;
+    let errorMessage = `POST ${path} failed: ${res.status}`;
     try {
       const json = JSON.parse(text);
       if (json.detail) {
-        errorMessage = json.detail;
+        // Handle Pydantic validation errors (detail is array of objects)
+        if (Array.isArray(json.detail)) {
+          const messages = json.detail.map((err: any) => {
+            const field = err.loc?.[err.loc.length - 1] || "field";
+            return err.msg || `Invalid ${field}`;
+          });
+          errorMessage = messages.join(". ");
+        } else {
+          errorMessage = json.detail;
+        }
       }
     } catch {
       // Not JSON or no detail field - use generic error
+      if (text) errorMessage = text;
     }
     throw new Error(errorMessage);
   }
