@@ -131,6 +131,8 @@ const MAP_STYLE = [
   { featureType: "transit", stylers: [{ visibility: "off" }] },
 ];
 
+const FAB_BOTTOM = Platform.OS === "ios" ? 110 : 90;
+
 const FriendMarkerView = ({ friend }: { friend: FriendMarker }) => {
   const initial = (friend.username || "?")[0].toUpperCase();
   const now = new Date();
