@@ -61,10 +61,34 @@ export async function apiPost<T>(
         if (Array.isArray(json.detail)) {
           const messages = json.detail.map((err: any) => {
             const field = err.loc?.[err.loc.length - 1] || "field";
-            return err.msg || `Invalid ${field}`;
+            const msg = err.msg || "";
+            
+            // Translate common validation errors to Romanian
+            if (msg.includes("at least 8 characters")) {
+              return field === "password" 
+                ? "Parola trebuie să aibă minim 8 caractere"
+                : `${field} trebuie să aibă minim 8 caractere`;
+            }
+            if (msg.includes("at least 3 characters")) {
+              return field === "username"
+                ? "Username-ul trebuie să aibă minim 3 caractere"
+                : `${field} trebuie să aibă minim 3 caractere`;
+            }
+            if (msg.includes("valid email")) {
+              return "Adresa de email nu este validă";
+            }
+            if (msg.includes("already") || msg.includes("exists")) {
+              return field === "email" 
+                ? "Acest email este deja folosit"
+                : field === "username"
+                ? "Acest username este deja folosit"
+                : msg;
+            }
+            return msg || `${field} invalid`;
           });
           errorMessage = messages.join(". ");
         } else {
+          // Single string detail
           errorMessage = json.detail;
         }
       }
