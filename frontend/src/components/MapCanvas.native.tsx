@@ -365,7 +365,7 @@ export default function MapCanvas({
                     </View>
                     <View style={styles.friendCalloutFooter}>
                       <View style={styles.friendDistanceBox}>
-                        <Ionicons name="location" size={12} color={Colors.textSecondary} />
+                        <Ionicons name="location" size={12} color={Colors.accent} />
                         <Text style={styles.friendDistanceText}>
                           {friend.distance_km != null ? `${friend.distance_km} km` : "-- km"}
                         </Text>
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   friendDistanceText: {
-    color: Colors.textSecondary,
+    color: Colors.accent,
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
   },
