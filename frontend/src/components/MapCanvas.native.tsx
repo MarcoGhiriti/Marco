@@ -370,7 +370,7 @@ export default function MapCanvas({
                     <View style={styles.friendCalloutFooter}>
                       <View style={styles.friendDistanceBox}>
                         <Ionicons name="location" size={12} color={Colors.accent} />
-                        <Text style={styles.friendDistanceText}>
+                        <Text style={styles.friendDistanceText} data-testid={`friend-callout-distance-${friend.id}`}>
                           {friend.distance_km != null ? `${friend.distance_km} km` : "-- km"}
                         </Text>
                       </View>
