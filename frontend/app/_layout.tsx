@@ -88,6 +88,8 @@ export default function RootLayout() {
     return <AnimatedSplash onFinish={handleSplashFinish} />;
   }
 
+  const androidTopInset = Platform.OS === "android" ? (RNStatusBar.currentHeight ?? 0) : 0;
+
   return (
     <>
       <StatusBar style="light" />
