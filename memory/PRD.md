@@ -26,7 +26,16 @@ Social-mapping application for motorcyclists with features for route planning, l
 
 ## What's Been Implemented
 
-### Latest Updates (Feb 21, 2026) - Dynamic Layout Fix
+### Badge Mesaje Necitite Fix (Feb 21, 2026)
+- **Root cause**: `group/[groupId].tsx` nu chema niciodată `clearThread` sau `POST /api/messages/mark-read` → badge grupuri persistent
+- **Fix**: Adăugat `useUnreadStore` import + `markGroupRead` callback în `GroupChatScreen`:
+  - Apelat la mount (în `useEffect` cu `loadHistory/loadGroupInfo`)
+  - Apelat când un mesaj nou sosește via socket (user activ în chat)
+- **Confirmat via curl**: endpoint `POST /api/messages/mark-read` funcționează corect
+
+### Callout Hartă Fix (Feb 21, 2026)
+- Înlocuit sistemul `<Callout tooltip>` (buggy pe iOS+Android) cu overlay custom state-driven
+- Popup apare în josul hărții la tap pe marker, dismiss la tap în afară sau pan harta
 - **Global Dynamic Layout for Android (NEW - Feb 21, 2026):**
   - Problem: On Android 9:19 screens, edit/delete buttons for events/routes were cut off by the absolute tab bar (70px) or bottom bars.
   - Fix: Used `useBottomTabBarHeight()` from `@react-navigation/bottom-tabs` in all tab screens to dynamically calculate the correct `paddingBottom` for FlatList/ScrollView content.
