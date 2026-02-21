@@ -27,10 +27,14 @@ Social-mapping application for motorcyclists with features for route planning, l
 ## What's Been Implemented
 
 ### Latest Updates (Feb 21, 2026)
-- **Map UI Fixes:**
-  - Location sharing indicator: changed from large pill to small permanent badge (green dot)
-  - Increased spacing between "Report Police" and "Recenter" buttons (bottom: 80 vs 24)
-  - "Search this area" button correctly positioned below filter chips
+- **Map UI - Responsive Layout:**
+  - "Report Police" and "Recenter" buttons now in a flexbox container (responsive for all screen sizes including 9:16)
+  - Silent loading indicator (small spinner near filter chips instead of blocking overlay)
+- **Ride Banner Enhancement:**
+  - Added "Directions" button (navigate icon) to active ride banner
+  - Added "End Route" button (stop icon, red) for ride creators
+- **Friends API Fix:**
+  - Fixed `fetchFriendsLocations` to pass proper `authHeader` object
 
 ### Completed Features
 - User auth (register, login, JWT)
@@ -44,9 +48,9 @@ Social-mapping application for motorcyclists with features for route planning, l
   - Frontend: Friends filter chip (people icon) in filter row
   - Friend markers on map with initials + online status (live vs. last seen)
   - Location sharing sends updates every 15s, fetches friends every 20s
-  - "Search this area" button positioned below filter chips
-  - Location sharing indicator: small permanent badge (green dot) instead of large pill
-  - "Report Police" and "Recenter" buttons: increased spacing (bottom: 80 vs 24)
+- **Map Phase 3: Silent Loading** (Feb 21, 2026)
+  - Replaced blocking loading overlay with subtle spinner indicator
+  - Responsive button layout using Flexbox
 - Police reporting with community voting
 - Stories feature
 - Messaging system
@@ -63,18 +67,22 @@ Social-mapping application for motorcyclists with features for route planning, l
 - `POST /api/routes/{route_id}/start`, `POST /api/routes/active/finish`
 - `POST /api/routes/active/pause`, `POST /api/routes/active/resume`
 
+## Database Access
+- **Connection**: `mongodb://localhost:27017`
+- **Database**: `test_database`
+- **Collections**: users, routes, ride_sessions, friends, events, stories, messages, notifications, police_reports, marketplace_listings, groups, badges
+
 ## Prioritized Backlog
 
 ### P0
-- Map Phase 3: Silent refresh (no loading overlay, incremental updates, local cache)
+- (DONE) Map Phase 3: Silent refresh
 
 ### P1
 - Map Phase 4: Police Reports optimistic UI
-- Update "Ride in Progress" Popup (add Directions + End Route buttons)
+- Backend refactor: Split server.py into APIRouter modules
 
 ### P2
-- Map Phase 5: UI Polish (filter text labels, Search this area refinement, recenter button)
-- Backend refactor: Split server.py into APIRouter modules
+- Map Phase 5: UI Polish (filter text labels, recenter button refinement)
 
 ### Blocked
 - Forgot Password flow (needs email service API key)
