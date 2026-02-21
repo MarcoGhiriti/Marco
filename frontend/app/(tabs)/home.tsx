@@ -395,7 +395,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top }]}>
+    <View style={[styles.safe, { paddingTop: Platform.OS === "ios" ? insets.top : 0 }]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
       <View style={styles.container}>
         <View style={styles.header}>
