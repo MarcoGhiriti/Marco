@@ -412,7 +412,7 @@ export default function MapCanvas({
                     data-testid={`police-vote-down-${report.id}`}
                   >
                     <Ionicons name="thumbs-down" size={14} color={Colors.bg} />
-                    <Text style={styles.voteText}>{report.downvotes}</Text>
+                    <Text style={styles.voteText} data-testid={`police-downvotes-${report.id}`}>{report.downvotes}</Text>
                   </Pressable>
                 </View>
                 <Text style={styles.calloutHint}>Still there?</Text>
