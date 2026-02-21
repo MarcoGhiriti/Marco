@@ -90,6 +90,7 @@ Social-mapping application for motorcyclists with features for route planning, l
 ## Prioritized Backlog
 
 ### P0
+- (NEEDS VERIFICATION) Android UI fixes: global status bar padding, map recenter visibility, map style contrast, friend popup DM route + distance color, loading dot
 - (DONE) Map Phase 3: Silent refresh
 - (DONE) Map Phase 4: Police Reports optimistic UI
 
