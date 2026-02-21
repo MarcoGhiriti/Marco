@@ -89,7 +89,9 @@ Social-mapping application for motorcyclists with features for route planning, l
 - (DONE) Map Phase 4: Police Reports optimistic UI
 
 ### P1
-- Backend refactor: Split server.py into APIRouter modules (IN PROGRESS - structure created at `/app/backend/routers/`)
+- Backend refactor: Split server.py into APIRouter modules (IN PROGRESS)
+  - DONE: auth.py, friends.py, location.py
+  - TODO: routes.py, users.py, events.py, rides.py, map.py, messages.py
 
 ### P2
 - Map Phase 5: UI Polish (filter text labels, recenter button refinement)
