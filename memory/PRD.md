@@ -38,8 +38,9 @@ Social-mapping application for motorcyclists with features for route planning, l
   - Frontend: Friends filter chip (people icon) in filter row
   - Friend markers on map with initials + online status (live vs. last seen)
   - Location sharing sends updates every 15s, fetches friends every 20s
-  - "Search this area" button moved to bottom center
-  - Location sharing pill moved to bottom center
+  - "Search this area" button positioned below filter chips
+  - Location sharing indicator: small permanent badge (green dot) instead of large pill
+  - "Report Police" and "Recenter" buttons: increased spacing (bottom: 80 vs 24)
 - Police reporting with community voting
 - Stories feature
 - Messaging system
