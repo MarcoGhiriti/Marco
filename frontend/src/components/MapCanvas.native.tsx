@@ -194,6 +194,7 @@ export default function MapCanvas({
   userLocation,
   onEventPress,
   onFriendPress,
+  onFriendProfilePress,
 }: MapCanvasProps) {
   const searchAnim = useRef(new Animated.Value(showSearchArea ? 1 : 0)).current;
 
