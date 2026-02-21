@@ -259,6 +259,7 @@ function GroupsTab() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
   const { groupIds } = useUnreadStore();
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [groups, setGroups] = useState<GroupOut[]>([]);
 
