@@ -45,6 +45,15 @@ type PoliceReport = {
   downvotes: number;
 };
 
+type FriendMarker = {
+  id: string;
+  username: string;
+  profile_photo_base64?: string | null;
+  lat: number;
+  lng: number;
+  updated_at: string;
+};
+
 type MapCanvasProps = {
   mapRef: React.RefObject<any>;
   region: MapRegion;
@@ -59,9 +68,12 @@ type MapCanvasProps = {
   showEvents: boolean;
   showGas: boolean;
   showService: boolean;
+  showFriends: boolean;
+  friendMarkers: FriendMarker[];
   onToggleEvents: () => void;
   onToggleGas: () => void;
   onToggleService: () => void;
+  onToggleFriends: () => void;
   onReportPolice: () => void;
   onVotePolice: (reportId: string, vote: "up" | "down", lat: number, lng: number) => void;
   isFetching: boolean;
