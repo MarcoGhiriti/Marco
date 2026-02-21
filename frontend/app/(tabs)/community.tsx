@@ -11,7 +11,6 @@ import {
   Text,
   TextInput,
   View,
-  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
