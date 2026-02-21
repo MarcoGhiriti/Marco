@@ -46,6 +46,7 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const [event, setEvent] = useState<EventOut | null>(null);
   const [loading, setLoading] = useState(true);

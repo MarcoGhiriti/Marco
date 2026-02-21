@@ -29,6 +29,7 @@ export default function RouteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const [route, setRoute] = useState<RouteOut | null>(null);
   const [loading, setLoading] = useState(true);
