@@ -360,7 +360,7 @@ export default function MapCanvas({
                         {friend.active_ride && (
                           <View style={styles.friendRideStatus}>
                             <Ionicons name="navigate" size={10} color={Colors.accent} />
-                            <Text style={styles.friendRideText} numberOfLines={1}>
+                            <Text style={styles.friendRideText} numberOfLines={1} data-testid={`friend-callout-ride-${friend.id}`}>
                               On route: {friend.active_ride.route_title}
                             </Text>
                           </View>
