@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   },
   locationPill: {
     position: "absolute",
-    top: 95,
+    bottom: 72,
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
