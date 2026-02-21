@@ -82,6 +82,12 @@ export async function apiPost<T>(
                 ? "This username is already taken"
                 : msg;
             }
+            if (msg.includes("Field required") || err.type === "missing") {
+              return `${field} is required`;
+            }
+            if (msg.includes("List should have") || err.type === "too_short") {
+              return `Invalid ${field}`;
+            }
             return msg || `Invalid ${field}`;
           });
           errorMessage = messages.join(". ");
