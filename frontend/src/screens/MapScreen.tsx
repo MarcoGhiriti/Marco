@@ -408,9 +408,9 @@ export default function MapScreen() {
           onEventPress={(eventId) => router.push(`/event/${eventId}`)}
         />
 
-        {sharingLocation && (
-          <View style={styles.locationBadge} data-testid="location-sharing-badge">
-            <View style={styles.locationBadgeDot} />
+        {sharingLocation && showLiveMessage && (
+          <View style={styles.liveToast} data-testid="location-live-toast">
+            <Text style={styles.liveToastText}>Your location is live</Text>
           </View>
         )}
       </View>
@@ -526,25 +526,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent,
     borderColor: Colors.accent,
   },
-  locationBadge: {
+  liveToast: {
     position: "absolute",
     top: 58,
-    right: 58,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
+    left: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: Colors.accent,
+    borderRadius: 8,
     zIndex: 100,
   },
-  locationBadgeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.accent,
+  liveToastText: {
+    color: Colors.bg,
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
   },
   modalOverlay: {
     flex: 1,
