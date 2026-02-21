@@ -120,7 +120,12 @@ function ChatsTab() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <Pressable style={styles.inner} onPress={() => {}}>
+      <ScrollView
+        style={styles.inner}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 20 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.searchRow}>
           <View style={styles.searchBox}>
             <Ionicons name="search-outline" size={18} color={Colors.muted} />
