@@ -124,6 +124,40 @@ const MAP_STYLE = [
   { featureType: "transit", stylers: [{ visibility: "off" }] },
 ];
 
+const FriendMarkerView = ({ friend }: { friend: FriendMarker }) => {
+  const initial = (friend.username || "?")[0].toUpperCase();
+  const now = new Date();
+  const updatedAt = new Date(friend.updated_at);
+  const minutesAgo = (now.getTime() - updatedAt.getTime()) / 60000;
+  const isLive = minutesAgo < 5;
+
+  return (
+    <View style={fmStyles.wrap}>
+      <View style={[fmStyles.circle, !isLive && fmStyles.circleOffline]}>
+        <Text style={[fmStyles.initial, !isLive && fmStyles.initialOffline]}>{initial}</Text>
+      </View>
+      <View style={[fmStyles.dot, isLive ? fmStyles.dotLive : fmStyles.dotOffline]} />
+      <Text style={fmStyles.name} numberOfLines={1}>{friend.username}</Text>
+    </View>
+  );
+};
+
+const fmStyles = StyleSheet.create({
+  wrap: { alignItems: "center", width: 52 },
+  circle: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: Colors.accent, alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: Colors.bg,
+  },
+  circleOffline: { backgroundColor: "#555", opacity: 0.6 },
+  initial: { color: Colors.bg, fontSize: 14, fontFamily: "Inter_700Bold" },
+  initialOffline: { color: "#999" },
+  dot: { width: 10, height: 10, borderRadius: 5, marginTop: -6, borderWidth: 1.5, borderColor: Colors.bg },
+  dotLive: { backgroundColor: Colors.accent },
+  dotOffline: { backgroundColor: "#888" },
+  name: { color: Colors.text, fontSize: 9, fontFamily: "Inter_600SemiBold", marginTop: 2, textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+});
+
 export default function MapCanvas({
   mapRef,
   region,
@@ -138,9 +172,12 @@ export default function MapCanvas({
   showEvents,
   showGas,
   showService,
+  showFriends,
+  friendMarkers,
   onToggleEvents,
   onToggleGas,
   onToggleService,
+  onToggleFriends,
   onReportPolice,
   onVotePolice,
   isFetching,
