@@ -43,6 +43,22 @@ export default function DmChatScreen() {
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
+  const threadId = useMemo(() => {
+    if (!me?.id || !otherUserId) return null;
+    const [a, b] = [me.id, otherUserId].sort();
+    return `dm:${a}:${b}`;
+  }, [me?.id, otherUserId]);
+
+  const markThreadRead = useCallback(async () => {
+    if (!authHeader || !threadId) return;
+    clearThread({ kind: "dm", userId: otherUserId });
+    try {
+      await apiPost("/api/messages/mark-read", { thread_id: threadId }, authHeader);
+    } catch (e) {
+      console.log("Failed to mark thread read:", e instanceof Error ? e.message : e);
+    }
+  }, [authHeader, threadId, clearThread, otherUserId]);
+
   const scrollToBottom = useCallback((animated = true) => {
     // FlatList without inverted: last item is the bottom
     requestAnimationFrame(() => {
