@@ -87,6 +87,13 @@ type MapCanvasProps = {
   onEventPress?: (eventId: string) => void;
   onFriendPress?: (friendId: string) => void;
   onFriendProfilePress?: (friendId: string) => void;
+  showRoutes?: boolean;
+  showLiveRides?: boolean;
+  routeMarkers?: any[];
+  rideMarkers?: any[];
+  onToggleRoutes?: () => void;
+  onToggleLiveRides?: () => void;
+  onRoutePress?: (routeId: string) => void;
 };
 
 const MAP_STYLE = [
@@ -195,6 +202,13 @@ export default function MapCanvas({
   onEventPress,
   onFriendPress,
   onFriendProfilePress,
+  showRoutes,
+  showLiveRides,
+  routeMarkers = [],
+  rideMarkers = [],
+  onToggleRoutes,
+  onToggleLiveRides,
+  onRoutePress,
 }: MapCanvasProps) {
   const searchAnim = useRef(new Animated.Value(showSearchArea ? 1 : 0)).current;
   const [selectedFriend, setSelectedFriend] = useState<FriendMarker | null>(null);
