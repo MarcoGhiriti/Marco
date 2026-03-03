@@ -159,6 +159,22 @@ const FriendMarkerView = ({ friend }: { friend: FriendMarker }) => {
   );
 };
 
+
+const mpStyles = StyleSheet.create({
+  routePin: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: Colors.accent, alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "#fff",
+    shadowColor: Colors.accent, shadowOpacity: 0.6, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 8,
+  },
+  ridePin: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: "#FF6B35", alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "#fff",
+    shadowColor: "#FF6B35", shadowOpacity: 0.6, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 8,
+  },
+});
+
 const fmStyles = StyleSheet.create({
   wrap: { alignItems: "center", width: 52 },
   circle: {
@@ -394,6 +410,33 @@ export default function MapCanvas({
             </Callout>
           </Marker>
         ))}
+
+        {/* Route Meeting Point Markers */}
+        {showRoutes && routeMarkers.map((rm: any) => (
+          <Marker
+            key={`route-mp-${rm.id}`}
+            coordinate={{ latitude: rm.lat, longitude: rm.lng }}
+            tracksViewChanges={false}
+            onPress={() => onRoutePress?.(rm.id)}
+          >
+            <View style={mpStyles.routePin}>
+              <Ionicons name="flag" size={14} color="#fff" />
+            </View>
+          </Marker>
+        ))}
+
+        {/* Live Ride Meeting Point Markers */}
+        {showLiveRides && rideMarkers.map((rm: any) => (
+          <Marker
+            key={`ride-mp-${rm.id}`}
+            coordinate={{ latitude: rm.lat, longitude: rm.lng }}
+            tracksViewChanges={false}
+          >
+            <View style={mpStyles.ridePin}>
+              <Ionicons name="bicycle" size={14} color="#fff" />
+            </View>
+          </Marker>
+        ))}
       </ClusteredMapView>
 
       <View style={styles.filtersRow}>
@@ -428,6 +471,20 @@ export default function MapCanvas({
           data-testid="filter-friends"
         >
           <Ionicons name="people" size={18} color={showFriends ? Colors.bg : Colors.text} />
+        </Pressable>
+        <Pressable
+          style={[styles.filterChip, showRoutes && styles.filterChipActiveRoutes]}
+          onPress={onToggleRoutes}
+          data-testid="filter-routes"
+        >
+          <Ionicons name="map" size={18} color={showRoutes ? Colors.bg : Colors.text} />
+        </Pressable>
+        <Pressable
+          style={[styles.filterChip, showLiveRides && styles.filterChipActiveRides]}
+          onPress={onToggleLiveRides}
+          data-testid="filter-live-rides"
+        >
+          <Ionicons name="bicycle" size={18} color={showLiveRides ? Colors.bg : Colors.text} />
         </Pressable>
       </View>
 
@@ -586,6 +643,14 @@ const styles = StyleSheet.create({
   filterChipActiveFriends: {
     backgroundColor: "#9B59B6",
     borderColor: "#9B59B6",
+  },
+  filterChipActiveRoutes: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  filterChipActiveRides: {
+    backgroundColor: "#FF6B35",
+    borderColor: "#FF6B35",
   },
   searchButton: {
     position: "absolute",
