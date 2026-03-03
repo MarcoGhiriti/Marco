@@ -87,3 +87,7 @@ android-sdk/
 # Model patches
 model.patch
 -e 
+-e 
+# Environment files
+*.env
+*.env.*
