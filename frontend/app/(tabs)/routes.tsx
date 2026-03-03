@@ -16,7 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useSafeTabBarHeight } from "../../src/hooks/useSafeTabBarHeight";
 import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost } from "../../src/lib/api";
@@ -29,7 +29,7 @@ export default function RoutesScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { accessToken, me } = useAuthStore();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [myRoutes, setMyRoutes] = useState<RouteOut[]>([]);

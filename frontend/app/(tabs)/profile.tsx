@@ -15,7 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useSafeTabBarHeight } from "../../src/hooks/useSafeTabBarHeight";
 import * as ImagePicker from "expo-image-picker";
 import { useTranslation } from "react-i18next";
 import { Colors } from "../../src/theme/colors";
@@ -109,7 +109,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { accessToken, me, logout, refreshMe } = useAuthStore();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);

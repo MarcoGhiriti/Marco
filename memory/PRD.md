@@ -67,11 +67,18 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
   - Date shown in Romanian (ro-RO locale)
 - **Deployment Fix**: installed `react-native-worklets@0.7.4` (required by react-native-reanimated@~4.1.1 v4 peer dependency)
 
+### Session 5 — Critical Bug Fixes (Mar 3, 2026)
+- **`useBottomTabBarHeight` crash fix**: Created `src/hooks/useSafeTabBarHeight.ts` — safe wrapper that returns fallback value (90px iOS / 70px Android) when BottomTabBarHeightContext is unavailable. Replaced in all 7 tab screens: home, routes, map (events), shop, profile, community, store
+  - Root cause: `useBottomTabBarHeight()` from `@react-navigation/bottom-tabs` throws if context is undefined (happens on Expo Go / certain render timing)
+- **MongoDB index conflict fix**: Made TTL index creation idempotent in `database.py` by wrapping `stories.create_index` and `story_views.create_index` in individual try/except blocks
+  - Root cause: `database.py` created index without name (→ `expires_at_1`), `server.py` tried to create same index with name `stories_ttl_idx` → conflict
+
 ---
 
 ## Pending Issues (Priority Order)
 
 ### P0 — Needs User Verification
+- **Ecran negru Expo Go**: Fix aplicat (`useSafeTabBarHeight`). User trebuie să testeze pe mobil
 - **Badge mesaje necitite grup**: Fix implementat. User trebuie să testeze după deploy
 - **Map callout Android**: Custom overlay implementat. User trebuie să testeze tap marker prieten pe Android
 - **Date/Time Picker**: Picker nativ implementat. User trebuie să testeze creare/editare eveniment și traseu
@@ -79,11 +86,7 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 ### P1 — Known Bugs
 - **Eroare pauză traseu**: `PUT /api/routes/pause/{route_id}` — fix aplicat dar NETESTAT
   - Test: `curl -X PUT {API}/api/routes/pause/{route_id} -H "Authorization: Bearer {token}"`
-- **MongoDB Atlas Index Conflict**: La fiecare startup apare eroarea:
-  `Error creating indexes: Index already exists with a different name: stories_ttl_idx`
-  - **Root cause**: Codul încearcă să creeze un index cu alt nume față de cel existent pe Atlas
-  - **Fix necesar**: În `server.py`, la crearea indexului `stories_ttl_idx`, adăugați try/except pentru `OperationFailure` code 85 (IndexOptionsConflict) și skipuiți în loc să logați eroare
-  - **Fișier**: `/app/backend/server.py` — căutați `stories_ttl_idx`
+- ~~**MongoDB Atlas Index Conflict**~~: REZOLVAT — crearea indexului făcută idempotentă în `database.py`
 
 ### P1 — 401 Unauthorized în Production (după un timp)
 - Pattern: primele request-uri reușesc (200), apoi TOATE devin 401

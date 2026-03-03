@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useSafeTabBarHeight } from "../../src/hooks/useSafeTabBarHeight";
 import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost } from "../../src/lib/api";
@@ -43,7 +43,7 @@ const formatDate = (dateStr: string) => {
 function MyEventsTab() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   const [events, setEvents] = useState<EventOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -175,7 +175,7 @@ function MyEventsTab() {
 function MyRoutesTab() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

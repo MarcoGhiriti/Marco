@@ -14,7 +14,7 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useSafeTabBarHeight } from "../../src/hooks/useSafeTabBarHeight";
 import { Colors } from "../../src/theme/colors";
 import { apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
@@ -77,7 +77,7 @@ const LEVEL_TITLES = [
 export default function LeaderboardScreen() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [myBadges, setMyBadges] = useState<BadgeOut[]>([]);

@@ -328,9 +328,15 @@ async def ensure_indexes():
         await db.groups.create_index("members", background=True)
         await db.groups.create_index([("name", "text")], background=True)
 
-        # Stories TTL index
-        await db.stories.create_index("expires_at", expireAfterSeconds=0, background=True)
-        await db.story_views.create_index([("story_id", 1), ("user_id", 1)], unique=True, background=True)
+        # Stories TTL index - handle name conflict gracefully
+        try:
+            await db.stories.create_index("expires_at", expireAfterSeconds=0, background=True)
+        except Exception:
+            pass
+        try:
+            await db.story_views.create_index([("story_id", 1), ("user_id", 1)], unique=True, background=True)
+        except Exception:
+            pass
 
         # Reports TTL index
         await db.map_reports.create_index("expires_at", expireAfterSeconds=0, background=True)

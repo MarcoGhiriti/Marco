@@ -19,7 +19,7 @@ import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useSafeTabBarHeight } from "../../src/hooks/useSafeTabBarHeight";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
@@ -60,7 +60,7 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { hasUnread, refresh: refreshUnread } = useUnreadStore();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   
   // Cross-platform alert helper (Alert.alert doesn't work on web)
   const showAlert = (title: string, message: string, buttons?: Array<{ text: string; style?: string; onPress?: () => void }>) => {

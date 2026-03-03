@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useSafeTabBarHeight } from "../../src/hooks/useSafeTabBarHeight";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Colors } from "../../src/theme/colors";
@@ -36,7 +36,7 @@ function ChatsTab() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
   const { dmUserIds } = useUnreadStore();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
 
   const [q, setQ] = useState("");
   const [results, setResults] = useState<UserSearchOut[]>([]);
@@ -258,7 +258,7 @@ function GroupsTab() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
   const { groupIds } = useUnreadStore();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
 
   const [groups, setGroups] = useState<GroupOut[]>([]);
 
