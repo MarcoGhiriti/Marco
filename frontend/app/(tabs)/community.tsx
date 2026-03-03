@@ -45,6 +45,7 @@ function ChatsTab() {
   const { accessToken } = useAuthStore();
   const { dmUserIds } = useUnreadStore();
   const tabBarHeight = useSafeTabBarHeight();
+  const { searchVisible } = React.useContext(CommunityCtx);
 
   const [q, setQ] = useState("");
   const [results, setResults] = useState<UserSearchOut[]>([]);
@@ -133,6 +134,7 @@ function ChatsTab() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {searchVisible && (
         <View style={styles.searchRow}>
           <View style={styles.searchBox}>
             <Ionicons name="search-outline" size={18} color={Colors.muted} />
@@ -146,12 +148,14 @@ function ChatsTab() {
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"
+              autoFocus
             />
           </View>
           <Pressable onPress={onSearch} style={styles.searchBtn}>
             <Text style={styles.searchBtnText}>Go</Text>
           </Pressable>
         </View>
+        )}
 
         {loading ? (
           <View style={styles.center}>
@@ -494,6 +498,7 @@ function GroupsTab() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Descoperă grupuri</Text>
 
+        {groupSearchVisible && (
         <View style={styles.searchRow}>
           <View style={styles.searchBox}>
             <Ionicons name="search-outline" size={18} color={Colors.muted} />
@@ -507,12 +512,14 @@ function GroupsTab() {
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"
+              autoFocus
             />
           </View>
           <Pressable onPress={searchGroups} style={styles.searchBtn}>
             <Text style={styles.searchBtnText}>Caută</Text>
           </Pressable>
         </View>
+        )}
 
         {searching ? (
           <View style={styles.center}>
