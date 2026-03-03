@@ -609,8 +609,8 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
   },
-  h1: { color: Colors.text, fontSize: 24, fontFamily: "Inter_900Black" },
-  sub: { color: Colors.muted, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  h1: { color: Colors.text, fontSize: 22, fontFamily: "Inter_900Black" },
+  sub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
   createBtn: {
     width: 48,
     height: 48,

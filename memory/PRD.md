@@ -47,7 +47,11 @@ Social-mapping application for motorcyclists with features for route planning, l
   - Backend: Updated `/api/friends/locations` to include `active_ride` and `distance_km` fields
   - Backend: Added `/api/friends/{friend_id}/detail` endpoint
   - Frontend: Added `onFriendPress` handler to open DM with friend
-### Ride Recommendation Chip (Mar 3, 2026)
+### UI Standardization — Design Tokens (Mar 3, 2026)
+- Created `src/theme/design.ts` — centralized design tokens: Typography (h1=22/sub=13/stackTitle=16/modalTitle=18), HeaderLayout, ButtonTokens (iconBtn 44×44 r14), CardTokens (r16), SheetTokens (r24 top)
+- Fixed `events.tsx`, `routes.tsx`, `shop.tsx`: h1 24→22, sub 14→13 (matched Home source of truth)
+- Fixed `notifications/index.tsx`: buttons 40×40 r20 → 44×44 r14, headerTitle 18 fontWeight:800 → 16 Inter_700Bold
+- Fixed `profile/friends.tsx`: headerTitle Inter_900Black → Inter_700Bold (stack title token)
 - Created `src/hooks/useRideScore.ts` — fetches Open-Meteo weather API (free, no key), computes score 0-10, caches via AsyncStorage (10min TTL), refreshes on location change >2km or timer
 - Created `src/components/RideStatusChip.tsx` — compact badge chip (36px) next to share-location toggle: [RideChip] [ShareLocationToggle] [CreateBtn]
 - Score algorithm: start 10, penalizes rain (−7/−4/−2), wind (−4/−2/−1), extreme temp (−2 each); labels: GREAT ≥8.5, GOOD ≥7, CAUTION ≥4, NO <4

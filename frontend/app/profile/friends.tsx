@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: Colors.text,
     fontSize: 16,
-    fontFamily: "Inter_900Black",
+    fontFamily: "Inter_700Bold",
   },
   friendCount: {
     color: Colors.accent,
