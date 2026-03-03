@@ -4,12 +4,12 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
@@ -34,16 +34,11 @@ export default function EditProfileScreen() {
   const { accessToken, me, refreshMe } = useAuthStore();
 
   const [bio, setBio] = useState(me?.bio ?? "");
+  const [username, setUsername] = useState(me?.username ?? "");
+  const [usernameError, setUsernameError] = useState<string | null>(null);
   const [bikeModel, setBikeModel] = useState(me?.bike?.model ?? "");
   const [bikeCc, setBikeCc] = useState(me?.bike?.cc ? String(me.bike.cc) : "");
   const [country, setCountry] = useState(me?.country ?? "");
-
-  const [privacy, setPrivacy] = useState<Privacy>({
-    location_visible: false,
-    routes_visible: "public",
-    km_visible: true,
-    last_active_visible: true,
-  });
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,26 +51,6 @@ export default function EditProfileScreen() {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
-
-  // Fetch full profile with privacy settings
-  const loadPrivacy = useCallback(async () => {
-    if (!headers) return;
-    try {
-      const fullMe = await apiGet<any>("/api/me", headers);
-      if (fullMe.privacy) {
-        setPrivacy({
-          location_visible: fullMe.privacy.location_visible ?? false,
-          routes_visible: fullMe.privacy.routes_visible ?? "public",
-          km_visible: fullMe.privacy.km_visible ?? true,
-          last_active_visible: fullMe.privacy.last_active_visible ?? true,
-        });
-      }
-    } catch (e) {
-      // Fall through with defaults
-    }
-  }, [headers]);
-
-  useEffect(() => { loadPrivacy(); }, [loadPrivacy]);
 
   const pickPhoto = async () => {
     if (!headers) return;
@@ -117,54 +92,37 @@ export default function EditProfileScreen() {
     Keyboard.dismiss();
 
     setError(null);
+    setUsernameError(null);
     setSaving(true);
     try {
       const cc = bikeCc.trim() ? Number(bikeCc.trim()) : undefined;
       await apiPatch(
         "/api/me",
         {
+          username: username.trim() || undefined,
           bio: bio.trim(),
           country: country.trim() ? country.trim().toUpperCase() : null,
           bike: {
             model: bikeModel.trim() ? bikeModel.trim() : null,
             cc: Number.isFinite(cc) ? cc : null,
           },
-          privacy,
           profile_photo_base64: photoBase64,
         },
         headers,
       );
       await refreshMe();
       router.back();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
+    } catch (e: any) {
+      const msg = e?.message || "Save failed";
+      if (msg.includes("Username already taken") || msg.includes("409")) {
+        setUsernameError("Username-ul este deja folosit");
+      } else {
+        setError(msg);
+      }
     } finally {
       setSaving(false);
     }
   };
-
-  const togglePrivacy = (key: keyof Privacy) => {
-    setPrivacy(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const cycleRoutesVisibility = () => {
-    setPrivacy(prev => ({
-      ...prev,
-      routes_visible:
-        prev.routes_visible === "public"
-          ? "friends"
-          : prev.routes_visible === "friends"
-            ? "private"
-            : "public",
-    }));
-  };
-
-  const routesLabel =
-    privacy.routes_visible === "public"
-      ? "Toți"
-      : privacy.routes_visible === "friends"
-        ? "Doar prieteni"
-        : "Nimeni";
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -206,7 +164,19 @@ export default function EditProfileScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>Username</Text>
-                <Text style={styles.value}>{me?.username ?? ""}</Text>
+                <TextInput
+                  value={username}
+                  onChangeText={(t) => { setUsername(t); setUsernameError(null); }}
+                  placeholder="username"
+                  placeholderTextColor={Colors.muted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  maxLength={30}
+                  style={[styles.input, usernameError ? { borderColor: Colors.danger } : {}]}
+                  data-testid="username-input"
+                />
+                {usernameError && <Text style={styles.fieldError}>{usernameError}</Text>}
+                <Text style={styles.help}>Min. 3 caractere, unic</Text>
               </View>
               <Pressable onPress={pickPhoto} style={styles.photoBtn} data-testid="pick-photo-btn">
                 <Ionicons name="image-outline" size={18} color={Colors.accent} />
@@ -254,77 +224,17 @@ export default function EditProfileScreen() {
             </Text>
           </View>
 
-          {/* Privacy Settings */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Confidențialitate</Text>
-
-            <View style={styles.privacyRow}>
-              <View style={styles.privacyInfo}>
-                <Ionicons name="location-outline" size={18} color={Colors.accent} />
-                <View>
-                  <Text style={styles.privacyLabel}>Locație vizibilă</Text>
-                  <Text style={styles.privacyDesc}>Arată orașul pe profil</Text>
-                </View>
-              </View>
-              <Switch
-                value={privacy.location_visible}
-                onValueChange={() => togglePrivacy("location_visible")}
-                trackColor={{ false: Colors.card2, true: Colors.accent + "60" }}
-                thumbColor={privacy.location_visible ? Colors.accent : Colors.muted}
-                data-testid="privacy-location-toggle"
-              />
-            </View>
-
-            <View style={styles.privacyRow}>
-              <View style={styles.privacyInfo}>
-                <Ionicons name="speedometer-outline" size={18} color={Colors.accent} />
-                <View>
-                  <Text style={styles.privacyLabel}>Km total vizibil</Text>
-                  <Text style={styles.privacyDesc}>Arată kilometrii pe profil</Text>
-                </View>
-              </View>
-              <Switch
-                value={privacy.km_visible}
-                onValueChange={() => togglePrivacy("km_visible")}
-                trackColor={{ false: Colors.card2, true: Colors.accent + "60" }}
-                thumbColor={privacy.km_visible ? Colors.accent : Colors.muted}
-                data-testid="privacy-km-toggle"
-              />
-            </View>
-
-            <View style={styles.privacyRow}>
-              <View style={styles.privacyInfo}>
-                <Ionicons name="time-outline" size={18} color={Colors.accent} />
-                <View>
-                  <Text style={styles.privacyLabel}>Ultima activitate</Text>
-                  <Text style={styles.privacyDesc}>Arată când ai fost activ</Text>
-                </View>
-              </View>
-              <Switch
-                value={privacy.last_active_visible}
-                onValueChange={() => togglePrivacy("last_active_visible")}
-                trackColor={{ false: Colors.card2, true: Colors.accent + "60" }}
-                thumbColor={privacy.last_active_visible ? Colors.accent : Colors.muted}
-                data-testid="privacy-active-toggle"
-              />
-            </View>
-
-            <Pressable style={styles.privacyRow} onPress={cycleRoutesVisibility} data-testid="privacy-routes-btn">
-              <View style={styles.privacyInfo}>
-                <Ionicons name="map-outline" size={18} color={Colors.accent} />
-                <View>
-                  <Text style={styles.privacyLabel}>Cine vede rutele</Text>
-                  <Text style={styles.privacyDesc}>Vizibilitate rute: {routesLabel}</Text>
-                </View>
-              </View>
-              <View style={styles.cycleBtn}>
-                <Text style={styles.cycleBtnText}>{routesLabel}</Text>
-                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
-              </View>
-            </Pressable>
-          </View>
-
           {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          {/* Support */}
+          <Pressable
+            style={styles.supportRow}
+            onPress={() => Linking.openURL("mailto:support@motogo.life")}
+            data-testid="support-email-btn"
+          >
+            <Ionicons name="mail-outline" size={18} color={Colors.accent} />
+            <Text style={styles.supportText}>support@motogo.life</Text>
+          </Pressable>
 
           <View style={{ height: 24 }} />
         </ScrollView>
@@ -424,6 +334,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
   error: { color: Colors.danger, fontSize: 12, fontFamily: "Inter_700Bold" },
+  fieldError: { color: Colors.danger, fontSize: 11, marginTop: 2, fontWeight: "600" },
+  supportRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, paddingVertical: 16,
+  },
+  supportText: { color: Colors.accent, fontSize: 13, fontWeight: "700" },
   privacyRow: {
     flexDirection: "row",
     alignItems: "center",

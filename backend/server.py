@@ -486,8 +486,8 @@ class UserPublic(BaseModel):
 
 
 class MeUpdate(BaseModel):
+    username: Optional[str] = Field(default=None, min_length=3, max_length=30)
     country: Optional[str] = Field(default=None, max_length=2)
-
     bio: Optional[str] = Field(default=None, max_length=280)
     bike: Optional[BikeInfo] = None
     privacy: Optional[PrivacySettings] = None
@@ -1087,6 +1087,15 @@ async def auth_login(payload: AuthLogin):
 async def update_me(payload: MeUpdate, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
     update: dict[str, Any] = {}
+
+    if payload.username is not None:
+        clean = payload.username.strip().lower()
+        if len(clean) < 3:
+            raise HTTPException(400, "Username must be at least 3 characters")
+        existing = await db.users.find_one({"username": clean, "_id": {"$ne": _as_object_id(uid)}})
+        if existing:
+            raise HTTPException(409, "Username already taken")
+        update["username"] = clean
 
     if payload.bio is not None:
         update["bio"] = payload.bio
