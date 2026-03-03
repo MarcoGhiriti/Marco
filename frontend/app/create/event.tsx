@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -19,6 +19,7 @@ import { apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import { PlaceSearchInput } from "../../src/components/PlaceSearchInput";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
+import { DateTimePickerField } from "../../src/components/DateTimePickerField";
 
 interface PlaceDetails {
   place_id: string;
@@ -134,8 +135,12 @@ export default function CreateEventScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [eventType, setEventType] = useState<string>("meetup");
-  const [dateStr, setDateStr] = useState("");
-  const [timeStr, setTimeStr] = useState("");
+  const [eventDateTime, setEventDateTime] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    d.setHours(10, 0, 0, 0);
+    return d;
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -144,29 +149,14 @@ export default function CreateEventScreen() {
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
-  // Set default date/time
-  useEffect(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 7); // Default to 1 week from now
-    setDateStr(tomorrow.toISOString().split("T")[0]);
-    setTimeStr("10:00");
-  }, []);
-
   const canProceed = meetingLocation !== null;
 
   const handleCreate = async () => {
-    if (!headers || !meetingLocation || !title.trim() || !dateStr || !timeStr) return;
+    if (!headers || !meetingLocation || !title.trim()) return;
 
     setLoading(true);
     setError(null);
     try {
-      const startTime = new Date(`${dateStr}T${timeStr}:00`);
-      if (isNaN(startTime.getTime())) {
-        setError("Invalid date/time format");
-        setLoading(false);
-        return;
-      }
-
       await apiPost(
         "/api/events",
         {
@@ -174,7 +164,7 @@ export default function CreateEventScreen() {
           description: description.trim(),
           start_point: [meetingLocation.lat, meetingLocation.lng],
           location_name: meetingLocation.address || meetingLocation.name,
-          start_time: startTime.toISOString(),
+          start_time: eventDateTime.toISOString(),
           event_type: eventType,
         },
         headers
@@ -337,27 +327,30 @@ export default function CreateEventScreen() {
 
             <View style={styles.formCard}>
               <Text style={styles.formLabel}>Date & Time *</Text>
-              <View style={styles.dateTimeRow}>
-                <View style={styles.dateTimeField}>
-                  <Ionicons name="calendar-outline" size={18} color={Colors.muted} />
-                  <TextInput
-                    value={dateStr}
-                    onChangeText={setDateStr}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={Colors.muted}
-                    style={styles.dateTimeInput}
-                  />
-                </View>
-                <View style={styles.dateTimeField}>
-                  <Ionicons name="time-outline" size={18} color={Colors.muted} />
-                  <TextInput
-                    value={timeStr}
-                    onChangeText={setTimeStr}
-                    placeholder="HH:MM"
-                    placeholderTextColor={Colors.muted}
-                    style={styles.dateTimeInput}
-                  />
-                </View>
+              <View style={{ gap: 10 }}>
+                <DateTimePickerField
+                  label="Date"
+                  value={eventDateTime}
+                  mode="date"
+                  minimumDate={new Date()}
+                  onChange={(d) => {
+                    const next = new Date(d);
+                    next.setHours(eventDateTime.getHours(), eventDateTime.getMinutes());
+                    setEventDateTime(next);
+                  }}
+                  testID="event-create-date-picker"
+                />
+                <DateTimePickerField
+                  label="Time"
+                  value={eventDateTime}
+                  mode="time"
+                  onChange={(d) => {
+                    const next = new Date(eventDateTime);
+                    next.setHours(d.getHours(), d.getMinutes());
+                    setEventDateTime(next);
+                  }}
+                  testID="event-create-time-picker"
+                />
               </View>
             </View>
 

@@ -19,6 +19,7 @@ import { apiPost, apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import { PlaceSearchInput } from "../../src/components/PlaceSearchInput";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
+import { DateTimePickerField } from "../../src/components/DateTimePickerField";
 
 interface PlaceDetails {
   place_id: string;
@@ -173,8 +174,12 @@ export default function CreateRouteScreen() {
   }, [minEngineCc]);
 
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
-  const [startDate, setStartDate] = useState("");
-  const [startTime, setStartTime] = useState("");
+  const [routeDateTime, setRouteDateTime] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    d.setHours(10, 0, 0, 0);
+    return d;
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -211,13 +216,7 @@ export default function CreateRouteScreen() {
     checkLicense();
   }, [headers]);
 
-  // Set default date
-  useEffect(() => {
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    setStartDate(nextWeek.toISOString().split("T")[0]);
-    setStartTime("10:00");
-  }, []);
+  // Set default date — replaced by Date state initializer above
 
   // Fetch route when we have start and end
   useEffect(() => {
@@ -267,18 +266,11 @@ export default function CreateRouteScreen() {
   const canProceed = startPoint && endPoint && routeInfo && !loadingRoute;
 
   const handleCreate = async () => {
-    if (!headers || !routeInfo || !title.trim() || !startDate || !startTime) return;
+    if (!headers || !routeInfo || !title.trim()) return;
 
     setLoading(true);
     setError(null);
     try {
-      const startDateTime = new Date(`${startDate}T${startTime}:00`);
-      if (isNaN(startDateTime.getTime())) {
-        setError("Invalid date/time format");
-        setLoading(false);
-        return;
-      }
-
       await apiPost(
         "/api/routes",
         {
@@ -296,11 +288,10 @@ export default function CreateRouteScreen() {
             lng: w.lng,
           })),
           min_engine_cc: minEngineCc.trim() ? Number(minEngineCc.trim()) : null,
-          start_date: startDateTime.toISOString(),
+          start_date: routeDateTime.toISOString(),
         },
         headers
       );
-      // Navigate to Profile so user can immediately see it in "My Routes"
       router.replace("/(tabs)/profile");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error creating route");
@@ -581,27 +572,30 @@ export default function CreateRouteScreen() {
 
             <View style={styles.formCard}>
               <Text style={styles.formLabel}>Ride Date & Time *</Text>
-              <View style={styles.dateTimeRow}>
-                <View style={styles.dateTimeField}>
-                  <Ionicons name="calendar-outline" size={18} color={Colors.muted} />
-                  <TextInput
-                    value={startDate}
-                    onChangeText={setStartDate}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={Colors.muted}
-                    style={styles.dateTimeInput}
-                  />
-                </View>
-                <View style={styles.dateTimeField}>
-                  <Ionicons name="time-outline" size={18} color={Colors.muted} />
-                  <TextInput
-                    value={startTime}
-                    onChangeText={setStartTime}
-                    placeholder="HH:MM"
-                    placeholderTextColor={Colors.muted}
-                    style={styles.dateTimeInput}
-                  />
-                </View>
+              <View style={{ gap: 10 }}>
+                <DateTimePickerField
+                  label="Date"
+                  value={routeDateTime}
+                  mode="date"
+                  minimumDate={new Date()}
+                  onChange={(d) => {
+                    const next = new Date(d);
+                    next.setHours(routeDateTime.getHours(), routeDateTime.getMinutes());
+                    setRouteDateTime(next);
+                  }}
+                  testID="route-create-date-picker"
+                />
+                <DateTimePickerField
+                  label="Time"
+                  value={routeDateTime}
+                  mode="time"
+                  onChange={(d) => {
+                    const next = new Date(routeDateTime);
+                    next.setHours(d.getHours(), d.getMinutes());
+                    setRouteDateTime(next);
+                  }}
+                  testID="route-create-time-picker"
+                />
               </View>
             </View>
 

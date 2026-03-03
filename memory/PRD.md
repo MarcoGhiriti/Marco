@@ -47,7 +47,12 @@ Social-mapping application for motorcyclists with features for route planning, l
   - Backend: Updated `/api/friends/locations` to include `active_ride` and `distance_km` fields
   - Backend: Added `/api/friends/{friend_id}/detail` endpoint
   - Frontend: Added `onFriendPress` handler to open DM with friend
-### UI Standardization — Design Tokens (Mar 3, 2026)
+### Date/Time Picker — Native Fix (Mar 3, 2026)
+- ROOT CAUSE: `TextInput` cu format manual `YYYY-MM-DD` / `HH:MM` era imposibil de folosit pe mobil
+- Instalat `@react-native-community/datetimepicker@8.6.0`
+- Creat `src/components/DateTimePickerField.tsx` — component cross-platform: iOS (spinner sheet modal) + Android (DateTimePickerAndroid.open native dialog)
+- Aplicat în `create/event.tsx`, `create/route.tsx`, `event/[id].tsx` (edit modal)
+- Picker afișează data în română (ro-RO), cu buton "Done" pe iOS
 - Created `src/theme/design.ts` — centralized design tokens: Typography (h1=22/sub=13/stackTitle=16/modalTitle=18), HeaderLayout, ButtonTokens (iconBtn 44×44 r14), CardTokens (r16), SheetTokens (r24 top)
 - Fixed `events.tsx`, `routes.tsx`, `shop.tsx`: h1 24→22, sub 14→13 (matched Home source of truth)
 - Fixed `notifications/index.tsx`: buttons 40×40 r20 → 44×44 r14, headerTitle 18 fontWeight:800 → 16 Inter_700Bold

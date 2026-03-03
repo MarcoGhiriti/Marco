@@ -26,6 +26,7 @@ import { useAuthStore } from "../../src/state/authStore";
 import type { EventOut, UserSearchOut } from "../../src/types/api";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
+import { DateTimePickerField } from "../../src/components/DateTimePickerField";
 
 // Haversine distance calculator
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -64,6 +65,7 @@ export default function EventDetailScreen() {
 
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
+  const [editDateTime, setEditDateTime] = useState<Date>(new Date());
   const [editSaving, setEditSaving] = useState(false);
 
   const headers = useMemo(() => {
@@ -202,10 +204,7 @@ export default function EventDetailScreen() {
     if (!event) return;
     setEditTitle(event.title);
     setEditDescription(event.description || "");
-    // Parse the date
-    const eventDate = new Date(event.start_time);
-    setEditDate(eventDate.toISOString().split('T')[0]); // YYYY-MM-DD
-    setEditTime(eventDate.toTimeString().slice(0, 5)); // HH:MM
+    setEditDateTime(new Date(event.start_time));
     setShowEditModal(true);
   };
 
@@ -213,18 +212,12 @@ export default function EventDetailScreen() {
     if (!headers || !event) return;
     setEditSaving(true);
     try {
-      // Combine date and time
-      const eventDateTime = editDate && editTime 
-        ? new Date(`${editDate}T${editTime}:00`) 
-        : null;
-      
       await apiPut(`/api/events/${event.id}`, {
         title: editTitle.trim(),
         description: editDescription.trim(),
-        event_date: eventDateTime?.toISOString(),
+        event_date: editDateTime.toISOString(),
       }, headers);
       setShowEditModal(false);
-
       await loadEvent();
       Alert.alert("Success", "Event updated successfully!");
     } catch (e) {
@@ -527,27 +520,29 @@ export default function EventDetailScreen() {
               />
 
               <Text style={styles.inputLabel}>Date & Time</Text>
-              <View style={styles.editDateTimeRow}>
-                <View style={styles.dateInput}>
-                  <Ionicons name="calendar-outline" size={18} color={Colors.muted} />
-                  <TextInput
-                    style={styles.dateTimeTextInput}
-                    value={editDate}
-                    onChangeText={setEditDate}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={Colors.muted}
-                  />
-                </View>
-                <View style={styles.timeInput}>
-                  <Ionicons name="time-outline" size={18} color={Colors.muted} />
-                  <TextInput
-                    style={styles.dateTimeTextInput}
-                    value={editTime}
-                    onChangeText={setEditTime}
-                    placeholder="HH:MM"
-                    placeholderTextColor={Colors.muted}
-                  />
-                </View>
+              <View style={{ gap: 10, marginBottom: 16 }}>
+                <DateTimePickerField
+                  label="Date"
+                  value={editDateTime}
+                  mode="date"
+                  onChange={(d) => {
+                    const next = new Date(d);
+                    next.setHours(editDateTime.getHours(), editDateTime.getMinutes());
+                    setEditDateTime(next);
+                  }}
+                  testID="event-edit-date-picker"
+                />
+                <DateTimePickerField
+                  label="Time"
+                  value={editDateTime}
+                  mode="time"
+                  onChange={(d) => {
+                    const next = new Date(editDateTime);
+                    next.setHours(d.getHours(), d.getMinutes());
+                    setEditDateTime(next);
+                  }}
+                  testID="event-edit-time-picker"
+                />
               </View>
 
               <Pressable
