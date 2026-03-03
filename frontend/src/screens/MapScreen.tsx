@@ -121,6 +121,12 @@ export default function MapScreen() {
   const friendsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const locationSharingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Map layer toggles: Routes & Live Rides meeting points
+  const [showRoutes, setShowRoutes] = useState(true);
+  const [showLiveRides, setShowLiveRides] = useState(true);
+  const [routeMarkers, setRouteMarkers] = useState<any[]>([]);
+  const [rideMarkers, setRideMarkers] = useState<any[]>([]);
+
   // Ride score — location permission tracking
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
 
@@ -171,6 +177,40 @@ export default function MapScreen() {
         setEvents(eventsData || []);
         setGasMarkers(gasData || []);
         setPoliceReports(policeData || []);
+
+        // Fetch routes with meeting points for map markers
+        if (showRoutes) {
+          try {
+            const routes = await apiGet<any[]>(`/api/routes`, authHeader);
+            setRouteMarkers((routes || []).filter(r => r.meeting_point).map(r => ({
+              id: r.id, type: "route", name: r.title, lat: r.meeting_point.lat, lng: r.meeting_point.lng,
+              distance_km: r.distance_km, start_date: r.start_date, difficulty: r.difficulty,
+            })));
+          } catch { setRouteMarkers([]); }
+        } else { setRouteMarkers([]); }
+
+        // Fetch active rides for map markers
+        if (showLiveRides) {
+          try {
+            const rides = await apiGet<any[]>(`/api/rides/active`, authHeader);
+            const rideItems: any[] = [];
+            for (const ride of (rides || [])) {
+              if (ride.route_id) {
+                try {
+                  const route = await apiGet<any>(`/api/routes/${ride.route_id}`, authHeader);
+                  if (route?.meeting_point) {
+                    rideItems.push({
+                      id: ride.id, type: "live_ride", name: route.title || "Live Ride",
+                      lat: route.meeting_point.lat, lng: route.meeting_point.lng,
+                      start_time: ride.start_time,
+                    });
+                  }
+                } catch {}
+              }
+            }
+            setRideMarkers(rideItems);
+          } catch { setRideMarkers([]); }
+        } else { setRideMarkers([]); }
       } catch (error) {
         console.error("Failed to fetch map data", error);
       } finally {
