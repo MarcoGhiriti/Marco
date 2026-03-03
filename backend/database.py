@@ -1,4 +1,5 @@
 """Shared database connection, helpers, and utilities."""
+import asyncio
 import logging
 import math
 import os
@@ -25,7 +26,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 # --- Database ---
 mongo_url = os.environ["MONGO_URL"]
 db_name = os.environ["DB_NAME"]
-client = AsyncIOMotorClient(mongo_url, maxPoolSize=100, minPoolSize=10, maxIdleTimeMS=30000)
+client = AsyncIOMotorClient(
+    mongo_url,
+    maxPoolSize=100,
+    minPoolSize=10,
+    maxIdleTimeMS=30000,
+    serverSelectionTimeoutMS=30000,
+    connectTimeoutMS=20000,
+    socketTimeoutMS=20000,
+    retryWrites=True,
+)
 db = client[db_name]
 
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
@@ -286,67 +296,69 @@ Respond ONLY in valid JSON format:
         return {"is_valid": True, "license_type": "unknown", "confidence": 0.5, "reason": "AI verification unavailable, manual review needed"}
 
 # --- Database indexes for 10k+ users optimization ---
+async def _safe_create_index(collection, keys, **kwargs):
+    """Create a single index, silently ignoring conflicts."""
+    try:
+        await collection.create_index(keys, **kwargs)
+    except Exception as e:
+        logger.warning(f"Index skip ({collection.name}): {e}")
+
 async def ensure_indexes():
-    """Create all necessary indexes for performance at scale."""
+    """Create all necessary indexes for performance at scale.
+    Each index is created independently so one failure doesn't block the rest."""
     try:
         # Users indexes
-        await db.users.create_index("email", unique=True, background=True)
-        await db.users.create_index("username", background=True)
+        await _safe_create_index(db.users, "email", unique=True, background=True)
+        await _safe_create_index(db.users, "username", background=True)
 
         # Friends indexes
-        await db.friends.create_index("user_id", background=True)
-        await db.friend_requests.create_index([("from_user_id", 1), ("to_user_id", 1)], background=True)
-        await db.friend_requests.create_index("to_user_id", background=True)
+        await _safe_create_index(db.friends, "user_id", background=True)
+        await _safe_create_index(db.friend_requests, [("from_user_id", 1), ("to_user_id", 1)], background=True)
+        await _safe_create_index(db.friend_requests, "to_user_id", background=True)
 
         # Messages indexes
-        await db.messages.create_index([("thread_id", 1), ("created_at", -1)], background=True)
-        await db.thread_reads.create_index([("user_id", 1), ("thread_id", 1)], background=True)
+        await _safe_create_index(db.messages, [("thread_id", 1), ("created_at", -1)], background=True)
+        await _safe_create_index(db.thread_reads, [("user_id", 1), ("thread_id", 1)], background=True)
 
         # Notifications indexes
-        await db.notifications.create_index([("user_id", 1), ("created_at", -1)], background=True)
-        await db.notifications.create_index([("user_id", 1), ("read", 1)], background=True)
+        await _safe_create_index(db.notifications, [("user_id", 1), ("created_at", -1)], background=True)
+        await _safe_create_index(db.notifications, [("user_id", 1), ("read", 1)], background=True)
 
         # Routes indexes
-        await db.routes.create_index("created_at", background=True)
-        await db.routes.create_index("created_by", background=True)
+        await _safe_create_index(db.routes, "created_at", background=True)
+        await _safe_create_index(db.routes, "created_by", background=True)
 
         # Events indexes
-        await db.events.create_index("start_time", background=True)
-        await db.events.create_index("created_by", background=True)
-        await db.events.create_index([("start_point", "2dsphere")], background=True)
+        await _safe_create_index(db.events, "start_time", background=True)
+        await _safe_create_index(db.events, "created_by", background=True)
+        await _safe_create_index(db.events, [("start_point", "2dsphere")], background=True)
 
         # Rides indexes
-        await db.ride_sessions.create_index([("user_id", 1), ("status", 1)], background=True)
-        await db.ride_sessions.create_index("route_id", background=True)
+        await _safe_create_index(db.ride_sessions, [("user_id", 1), ("status", 1)], background=True)
+        await _safe_create_index(db.ride_sessions, "route_id", background=True)
 
         # Marketplace indexes
-        await db.marketplace_listings.create_index("created_at", background=True)
-        await db.marketplace_listings.create_index("seller_id", background=True)
-        await db.marketplace_listings.create_index("category", background=True)
+        await _safe_create_index(db.marketplace_listings, "created_at", background=True)
+        await _safe_create_index(db.marketplace_listings, "seller_id", background=True)
+        await _safe_create_index(db.marketplace_listings, "category", background=True)
 
         # Groups indexes
-        await db.groups.create_index("members", background=True)
-        await db.groups.create_index([("name", "text")], background=True)
+        await _safe_create_index(db.groups, "members", background=True)
+        await _safe_create_index(db.groups, [("name", "text")], background=True)
 
-        # Stories TTL index - handle name conflict gracefully
-        try:
-            await db.stories.create_index("expires_at", expireAfterSeconds=0, background=True)
-        except Exception:
-            pass
-        try:
-            await db.story_views.create_index([("story_id", 1), ("user_id", 1)], unique=True, background=True)
-        except Exception:
-            pass
+        # Stories TTL index
+        await _safe_create_index(db.stories, "expires_at", expireAfterSeconds=0, background=True)
+        await _safe_create_index(db.story_views, [("story_id", 1), ("user_id", 1)], unique=True, background=True)
 
         # Reports TTL index
-        await db.map_reports.create_index("expires_at", expireAfterSeconds=0, background=True)
-        await db.map_reports.create_index([("location", "2dsphere")], background=True)
+        await _safe_create_index(db.map_reports, "expires_at", expireAfterSeconds=0, background=True)
+        await _safe_create_index(db.map_reports, [("location", "2dsphere")], background=True)
 
         # Police reports TTL index
-        await db.police_reports.create_index("expires_at", expireAfterSeconds=0, background=True)
+        await _safe_create_index(db.police_reports, "expires_at", expireAfterSeconds=0, background=True)
 
         # Badges indexes
-        await db.badges.create_index([("user_id", 1), ("badge_type", 1)], unique=True, background=True)
+        await _safe_create_index(db.badges, [("user_id", 1), ("badge_type", 1)], unique=True, background=True)
 
         logger.info("All database indexes ensured successfully")
     except Exception as e:

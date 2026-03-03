@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import uuid
@@ -4438,7 +4439,7 @@ async def shutdown_db_client():
 
 @fastapi_app.on_event("startup")
 async def startup_ensure_indexes():
-    await ensure_indexes()
+    asyncio.create_task(ensure_indexes())
 
 
 @fastapi_app.get("/api/realtime/health")
