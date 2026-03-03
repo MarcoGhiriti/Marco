@@ -47,7 +47,13 @@ Social-mapping application for motorcyclists with features for route planning, l
   - Backend: Updated `/api/friends/locations` to include `active_ride` and `distance_km` fields
   - Backend: Added `/api/friends/{friend_id}/detail` endpoint
   - Frontend: Added `onFriendPress` handler to open DM with friend
-### Responsive Layout App-Wide (Feb 21, 2026 - Session 3)
+### Ride Recommendation Chip (Mar 3, 2026)
+- Created `src/hooks/useRideScore.ts` — fetches Open-Meteo weather API (free, no key), computes score 0-10, caches via AsyncStorage (10min TTL), refreshes on location change >2km or timer
+- Created `src/components/RideStatusChip.tsx` — compact badge chip (36px) next to share-location toggle: [RideChip] [ShareLocationToggle] [CreateBtn]
+- Score algorithm: start 10, penalizes rain (−7/−4/−2), wind (−4/−2/−1), extreme temp (−2 each); labels: GREAT ≥8.5, GOOD ≥7, CAUTION ≥4, NO <4
+- Tap opens bottom sheet with: score badge, summary, Temp/Wind/Rain% rows, label banner, disclaimer
+- Handles: no-permission (grey disabled + prompt), loading (skeleton), offline (stale cache + indicator)
+- Updated `MapScreen.tsx`: added `hasLocationPermission` state, `useRideScore` hook, chip in headerActions
 - Applied `useBottomTabBarHeight` + dynamic `paddingBottom` to ALL 8 tab screens
 - Fixed `community.tsx`: ChatsTab & GroupsTab now use `ScrollView` with dynamic paddingBottom instead of unscrollable containers
 - Fixed `store.tsx` (Rankings): All 3 content areas (FlatList + 2 ScrollViews) now have dynamic paddingBottom

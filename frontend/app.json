@@ -54,7 +54,9 @@
           "photosPermission": "Allow Moto GO to access your photos for stories",
           "cameraPermission": "Allow Moto GO to use the camera for stories"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

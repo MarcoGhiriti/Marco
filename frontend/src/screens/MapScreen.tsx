@@ -5,6 +5,8 @@ import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import { useFocusEffect } from "@react-navigation/native";
 import MapCanvas from "../components/MapCanvas";
+import { RideStatusChip } from "../components/RideStatusChip";
+import { useRideScore } from "../hooks/useRideScore";
 import { apiGet, apiPost } from "../lib/api";
 import { useAuthStore } from "../state/authStore";
 import { Colors } from "../theme/colors";
@@ -119,6 +121,16 @@ export default function MapScreen() {
   const friendsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const locationSharingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Ride score — location permission tracking
+  const [hasLocationPermission, setHasLocationPermission] = useState(false);
+
+  // Ride Score hook — weather-based score for current location
+  const rideScore = useRideScore({
+    lat: userLocation?.lat ?? null,
+    lng: userLocation?.lng ?? null,
+    hasPermission: hasLocationPermission,
+  });
+
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
     return { Authorization: `Bearer ${accessToken}` };
@@ -129,8 +141,10 @@ export default function MapScreen() {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
       Alert.alert("Location required", "Please enable location permissions for the map.");
+      setHasLocationPermission(false);
       return null;
     }
+    setHasLocationPermission(true);
     const position = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });
@@ -140,7 +154,7 @@ export default function MapScreen() {
     };
     setUserLocation(coords);
     return coords;
-  }, []);
+  }, [isWeb]);
 
   const fetchMapData = useCallback(
     async (targetRegion: MapRegion) => {
@@ -399,7 +413,15 @@ export default function MapScreen() {
             <Text style={styles.sub}>Friends & events nearby</Text>
           </View>
           <View style={styles.headerActions}>
-            {/* Friends Location Toggle */}
+            {/* Ride Score Chip */}
+            <RideStatusChip
+              data={rideScore.data}
+              loading={rideScore.loading}
+              isOffline={rideScore.isOffline}
+              hasPermission={hasLocationPermission}
+            />
+
+            {/* Location Sharing Toggle */}
             <Pressable 
               style={[styles.headerBtn, sharingLocation && styles.headerBtnActive]} 
               onPress={toggleLocationSharing}
