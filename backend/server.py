@@ -4418,11 +4418,13 @@ async def get_static_map_image(
 # Import routers
 from routers import friends as friends_router
 from routers import location as location_router
+from routers import listing_chat as listing_chat_router
 
 # Include routers
 fastapi_app.include_router(api_router)
 fastapi_app.include_router(friends_router.router, prefix="/api")
 fastapi_app.include_router(location_router.router, prefix="/api")
+fastapi_app.include_router(listing_chat_router.router)
 
 fastapi_app.add_middleware(
     CORSMiddleware,

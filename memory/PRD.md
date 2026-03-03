@@ -76,10 +76,22 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 - **`.gitignore` fix**: Removed broad `*.env` pattern that blocked `.env` files from deployment
 
 ### Session 6 — Layout Refactor: Shop & Community (Mar 3, 2026)
-- **Shop header redesign**: Moved Search, My Listings, Add Listing buttons to header right (matching Home's 44x44 icon style). Content area now only shows categories + listings grid. Search bar toggles from header icon
-- **Community header redesign**: Moved Create Group and Search to header right. Removed big "Create Group" card from GroupsTab content area. Clean content with just group search and group list
-- **Shared context pattern**: Used React.createContext (`ShopCtx`, `CommunityCtx`) to communicate between parent header and child tab components
-- **UI consistency**: All headers now use identical tokens: fontSize 22, fontWeight 900, 44x44 icon buttons with borderRadius 14, gap 10, accent-colored action buttons
+- **Shop header redesign**: Moved Search, My Listings, Add Listing buttons to header right (matching Home's 44x44 icon style). Search bar between header and tabs. Content area only shows categories + listings grid
+- **Community header redesign**: Moved Create Group and Search to header right. Removed big "Create Group" card. Search = only group search
+- **Shop listing cards**: Removed seller username from cards (visible only on detail page), reduced spacing between categories and listings
+- **UI consistency**: All headers now use identical tokens: fontSize 22, fontWeight 900, 44x44 icon buttons
+
+### Session 7 — Map Full-Width + Listing Chat Backend (Mar 3, 2026)
+- **Map full-width**: Removed `margin: 16`, `borderRadius: 20`, `borderWidth: 1` from `mapWrapper` in `MapCanvas.native.tsx` — map now renders edge-to-edge
+- **Listing Chat API**: Created `/app/backend/routers/listing_chat.py` with complete CRUD:
+  - `GET /api/marketplace/chat/conversations` — all user's listing chats
+  - `GET /api/marketplace/chat/listing/{id}/conversations` — conversations for a specific listing (seller)
+  - `GET /api/marketplace/chat/listing/{id}/count` — unread count per listing
+  - `POST /api/marketplace/chat/listing/{id}/send` — buyer sends message (creates chat if needed)
+  - `POST /api/marketplace/chat/{chat_id}/send` — reply to existing chat (buyer or seller)
+  - `GET /api/marketplace/chat/{chat_id}/messages` — get messages + mark as read
+- **TTL 30 days**: `listing_chats` has TTL index on `last_message_at`, `listing_chat_messages` has TTL on `expires_at`
+- **Notifications**: Push notification sent to other party on each message
 
 ---
 

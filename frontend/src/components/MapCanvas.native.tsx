@@ -516,11 +516,7 @@ export default function MapCanvas({
 const styles = StyleSheet.create({
   mapWrapper: {
     flex: 1,
-    margin: 16,
-    borderRadius: 20,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
