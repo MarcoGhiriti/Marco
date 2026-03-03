@@ -4442,6 +4442,8 @@ async def shutdown_db_client():
 @fastapi_app.on_event("startup")
 async def startup_ensure_indexes():
     asyncio.create_task(ensure_indexes())
+    from routers.listing_chat import ensure_listing_chat_indexes
+    asyncio.create_task(ensure_listing_chat_indexes())
 
 
 @fastapi_app.get("/api/realtime/health")

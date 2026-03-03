@@ -1,7 +1,9 @@
 """Listing chat routes — isolated from Community messaging."""
 from datetime import datetime, timezone, timedelta
-from bson import ObjectId
+import json
+from bson import ObjectId, json_util
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 
@@ -46,19 +48,23 @@ def _oid(v):
 
 
 def _chat_out(chat, user_id: str) -> dict:
-    other_id = chat["buyer_id"] if chat["seller_id"] == user_id else chat["seller_id"]
+    sid = str(chat.get("seller_id", ""))
+    bid = str(chat.get("buyer_id", ""))
+    other_id = bid if sid == user_id else sid
+    last_msg_at = chat.get("last_message_at", chat.get("created_at"))
+    created = chat.get("created_at")
     return {
-        "id": _oid(chat["_id"]),
-        "listing_id": chat["listing_id"],
+        "id": str(chat.get("_id", "")),
+        "listing_id": str(chat.get("listing_id", "")),
         "listing_title": chat.get("listing_title", ""),
-        "buyer_id": chat["buyer_id"],
-        "seller_id": chat["seller_id"],
+        "buyer_id": bid,
+        "seller_id": sid,
         "other_user_id": other_id,
-        "other_username": chat.get("buyer_username") if chat["seller_id"] == user_id else chat.get("seller_username"),
+        "other_username": chat.get("buyer_username") if sid == user_id else chat.get("seller_username"),
         "last_message": chat.get("last_message", ""),
-        "last_message_at": chat.get("last_message_at", chat.get("created_at", datetime.now(timezone.utc))).isoformat(),
+        "last_message_at": last_msg_at.isoformat() if isinstance(last_msg_at, datetime) else str(last_msg_at or ""),
         "unread_count": chat.get(f"unread_{user_id}", 0),
-        "created_at": chat.get("created_at", datetime.now(timezone.utc)).isoformat(),
+        "created_at": created.isoformat() if isinstance(created, datetime) else str(created or ""),
     }
 
 
@@ -71,13 +77,10 @@ async def get_my_conversations(user=Depends(get_current_user)):
     chats = []
     async for c in db.listing_chats.find(
         {"$or": [{"seller_id": uid}, {"buyer_id": uid}]},
-        {"_id": 1, "listing_id": 1, "listing_title": 1, "buyer_id": 1, "seller_id": 1,
-         "buyer_username": 1, "seller_username": 1,
-         "last_message": 1, "last_message_at": 1, "created_at": 1,
-         f"unread_{uid}": 1},
     ).sort("last_message_at", -1):
+        c["_id"] = str(c["_id"])
         chats.append(_chat_out(c, uid))
-    return chats
+    return JSONResponse(content=json.loads(json_util.dumps(chats)))
 
 
 @router.get("/listing/{listing_id}/conversations")
@@ -90,10 +93,6 @@ async def get_listing_conversations(listing_id: str, user=Depends(get_current_us
     chats = []
     async for c in db.listing_chats.find(
         {"listing_id": listing_id, "seller_id": uid},
-        {"_id": 1, "listing_id": 1, "listing_title": 1, "buyer_id": 1, "seller_id": 1,
-         "buyer_username": 1, "seller_username": 1,
-         "last_message": 1, "last_message_at": 1, "created_at": 1,
-         f"unread_{uid}": 1},
     ).sort("last_message_at", -1):
         chats.append(_chat_out(c, uid))
     return chats
@@ -153,7 +152,6 @@ async def send_message(listing_id: str, body: SendMessageBody, user=Depends(get_
                 "$set": {
                     "last_message": text[:100],
                     "last_message_at": now,
-                    f"unread_{seller_id}": {"$ifNull": [f"$unread_{seller_id}", 0]},
                 },
                 "$setOnInsert": {
                     "listing_id": listing_id,
