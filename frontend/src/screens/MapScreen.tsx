@@ -510,6 +510,13 @@ export default function MapScreen() {
           onEventPress={(eventId) => router.push(`/event/${eventId}`)}
           onFriendPress={(friendId) => router.push(`/community/dm/${friendId}`)}
           onFriendProfilePress={(friendId) => router.push(`/profile/${friendId}`)}
+          showRoutes={showRoutes}
+          showLiveRides={showLiveRides}
+          routeMarkers={routeMarkers}
+          rideMarkers={rideMarkers}
+          onToggleRoutes={() => setShowRoutes((prev) => !prev)}
+          onToggleLiveRides={() => setShowLiveRides((prev) => !prev)}
+          onRoutePress={(routeId) => router.push(`/route/${routeId}`)}
         />
 
         {sharingLocation && showLiveMessage && (
