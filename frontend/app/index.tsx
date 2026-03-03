@@ -20,7 +20,7 @@ export default function Index() {
   }
 
   if (!accessToken) {
-    return <Redirect href="/auth/login" />;
+    return <Redirect href="/auth/welcome" />;
   }
 
   return <Redirect href="/(tabs)/home" />;
