@@ -279,6 +279,13 @@ export default function CreateRouteScreen() {
           polyline: routeInfo.polyline,
           difficulty,
           stops_count: waypoints.length,
+          meeting_point: {
+            lat: startPoint!.lat,
+            lng: startPoint!.lng,
+            name: startPoint!.name || "",
+            address: startPoint!.address || "",
+          },
+          start_radius_km: 5.0,
           start_point: startPoint ? [startPoint.lat, startPoint.lng] : null,
           end_point: endPoint ? [endPoint.lat, endPoint.lng] : null,
           waypoints: waypoints.map((w) => ({
