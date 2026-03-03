@@ -45,7 +45,6 @@ function ChatsTab() {
   const { accessToken } = useAuthStore();
   const { dmUserIds } = useUnreadStore();
   const tabBarHeight = useSafeTabBarHeight();
-  const { searchVisible } = React.useContext(CommunityCtx);
 
   const [q, setQ] = useState("");
   const [results, setResults] = useState<UserSearchOut[]>([]);
@@ -134,29 +133,6 @@ function ChatsTab() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {searchVisible && (
-        <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
-            <Ionicons name="search-outline" size={18} color={Colors.muted} />
-            <TextInput
-              value={q}
-              onChangeText={setQ}
-              onSubmitEditing={onSearch}
-              placeholder="Search users"
-              placeholderTextColor={Colors.muted}
-              style={styles.searchInput}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="search"
-              autoFocus
-            />
-          </View>
-          <Pressable onPress={onSearch} style={styles.searchBtn}>
-            <Text style={styles.searchBtnText}>Go</Text>
-          </Pressable>
-        </View>
-        )}
-
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={Colors.accent} />
