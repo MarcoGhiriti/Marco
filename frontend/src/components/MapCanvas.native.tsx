@@ -433,7 +433,7 @@ export default function MapCanvas({
           <Text style={styles.reportFabText}>Report Police</Text>
         </Pressable>
         <Pressable style={styles.recenterBtn} onPress={onRecenter} data-testid="recenter-btn">
-          <Ionicons name="locate" size={18} color={Colors.text} />
+          <Ionicons name="locate" size={20} color={Colors.accent} />
         </Pressable>
       </View>
 
@@ -597,19 +597,19 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   recenterBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.card2,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+    borderWidth: 1.5,
+    borderColor: Colors.accent + "40",
     shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 6,
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 8,
   },
   reportFab: {
     flexDirection: "row",
