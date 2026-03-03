@@ -26,6 +26,14 @@ import { useRouter } from "expo-router";
 
 const TopTabs = createMaterialTopTabNavigator();
 
+// Shared context so header buttons can control tab content
+const ShopCtx = React.createContext<{
+  showCreate: boolean;
+  setShowCreate: (v: boolean) => void;
+  searchVisible: boolean;
+  setSearchVisible: (v: boolean) => void;
+}>({ showCreate: false, setShowCreate: () => {}, searchVisible: false, setSearchVisible: () => {} });
+
 // Types
 type ListingOut = {
   id: string;
@@ -107,10 +115,10 @@ function SecondHandTab() {
   const router = useRouter();
   const { accessToken, me } = useAuthStore();
   const tabBarHeight = useSafeTabBarHeight();
+  const { showCreate, setShowCreate, searchVisible } = React.useContext(ShopCtx);
   
   const [listings, setListings] = useState<ListingOut[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -197,33 +205,24 @@ function SecondHandTab() {
 
   return (
     <View style={styles.tabContent}>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={18} color={Colors.muted} />
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={loadListings}
-            placeholder="Search listings..."
-            placeholderTextColor={Colors.muted}
-            style={styles.searchInput}
-            returnKeyType="search"
-          />
+      {/* Collapsible Search Bar - toggled from header */}
+      {searchVisible && (
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBox}>
+            <Ionicons name="search-outline" size={18} color={Colors.muted} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={loadListings}
+              placeholder="Search listings..."
+              placeholderTextColor={Colors.muted}
+              style={styles.searchInput}
+              returnKeyType="search"
+              autoFocus
+            />
+          </View>
         </View>
-        <Pressable
-          style={styles.myListingsBtn}
-          onPress={() => router.push("/marketplace/my-listings")}
-        >
-          <Ionicons name="person" size={22} color={Colors.text} />
-        </Pressable>
-        <Pressable 
-          style={styles.addListingBtn}
-          onPress={() => setShowCreateModal(true)}
-        >
-          <Ionicons name="add" size={24} color={Colors.bg} />
-        </Pressable>
-      </View>
+      )}
 
       {/* Category Filter - Compact with icons only */}
       <ScrollView 
@@ -268,7 +267,7 @@ function SecondHandTab() {
           <Text style={styles.emptyText}>Be the first to add a listing!</Text>
           <Pressable 
             style={styles.addFirstBtn}
-            onPress={() => setShowCreateModal(true)}
+            onPress={() => setShowCreate(true)}
           >
             <Ionicons name="add" size={20} color={Colors.bg} />
             <Text style={styles.addFirstBtnText}>Add Listing</Text>
@@ -288,10 +287,10 @@ function SecondHandTab() {
 
       {/* Create Listing Modal */}
       <CreateListingModal
-        visible={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        visible={showCreate}
+        onClose={() => setShowCreate(false)}
         onCreated={() => {
-          setShowCreateModal(false);
+          setShowCreate(false);
           loadListings();
         }}
         authHeader={authHeader}
@@ -718,34 +717,65 @@ function CreateListingModal({
 
 // Main Shop Screen
 export default function ShopScreen() {
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Text style={styles.h1}>Moto Shop</Text>
-        <Text style={styles.sub}>Buy & sell motorcycle gear</Text>
-      </View>
+  const router = useRouter();
+  const [showCreate, setShowCreate] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
 
-      <TopTabs.Navigator
-        screenOptions={{
-          tabBarStyle: { backgroundColor: Colors.bg },
-          tabBarIndicatorStyle: { backgroundColor: Colors.accent },
-          tabBarActiveTintColor: Colors.text,
-          tabBarInactiveTintColor: Colors.muted,
-          tabBarLabelStyle: { fontWeight: "700", fontSize: 13 },
-        }}
-      >
-        <TopTabs.Screen 
-          name="New" 
-          component={NewTab}
-          options={{ tabBarLabel: "New" }}
-        />
-        <TopTabs.Screen 
-          name="SecondHand" 
-          component={SecondHandTab}
-          options={{ tabBarLabel: "Second Hand" }}
-        />
-      </TopTabs.Navigator>
-    </SafeAreaView>
+  return (
+    <ShopCtx.Provider value={{ showCreate, setShowCreate, searchVisible, setSearchVisible }}>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.h1}>Moto Shop</Text>
+            <Text style={styles.sub}>Buy & sell motorcycle gear</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Pressable
+              data-testid="shop-search-btn"
+              onPress={() => setSearchVisible(!searchVisible)}
+              style={[styles.iconBtn, searchVisible && styles.iconBtnActive]}
+            >
+              <Ionicons name={searchVisible ? "close" : "search-outline"} size={20} color={searchVisible ? Colors.bg : Colors.text} />
+            </Pressable>
+            <Pressable
+              data-testid="shop-my-listings-btn"
+              onPress={() => router.push("/marketplace/my-listings")}
+              style={styles.iconBtn}
+            >
+              <Ionicons name="person-outline" size={20} color={Colors.text} />
+            </Pressable>
+            <Pressable
+              data-testid="shop-add-listing-btn"
+              onPress={() => setShowCreate(true)}
+              style={styles.addBtn}
+            >
+              <Ionicons name="add" size={22} color={Colors.bg} />
+            </Pressable>
+          </View>
+        </View>
+
+        <TopTabs.Navigator
+          screenOptions={{
+            tabBarStyle: { backgroundColor: Colors.bg },
+            tabBarIndicatorStyle: { backgroundColor: Colors.accent },
+            tabBarActiveTintColor: Colors.text,
+            tabBarInactiveTintColor: Colors.muted,
+            tabBarLabelStyle: { fontWeight: "700", fontSize: 13 },
+          }}
+        >
+          <TopTabs.Screen 
+            name="New" 
+            component={NewTab}
+            options={{ tabBarLabel: "New" }}
+          />
+          <TopTabs.Screen 
+            name="SecondHand" 
+            component={SecondHandTab}
+            options={{ tabBarLabel: "Second Hand" }}
+          />
+        </TopTabs.Navigator>
+      </SafeAreaView>
+    </ShopCtx.Provider>
   );
 }
 
@@ -755,10 +785,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
-    gap: 4,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
   },
-  h1: { color: Colors.text, fontSize: 22, fontFamily: "Inter_900Black" },
-  sub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  headerLeft: { gap: 4 },
+  headerRight: { flexDirection: "row", gap: 10, alignItems: "center" },
+  h1: { color: Colors.text, fontSize: 22, fontWeight: "900", letterSpacing: 0.2 },
+  sub: { color: Colors.muted, fontSize: 13, fontWeight: "600" },
+  iconBtn: {
+    height: 44,
+    width: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconBtnActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  addBtn: {
+    height: 44,
+    width: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   
   tabContent: { flex: 1, backgroundColor: Colors.bg },
   

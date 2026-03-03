@@ -75,6 +75,12 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 - **MongoDB client resilience**: Added explicit timeouts (serverSelectionTimeoutMS=30000, connectTimeoutMS=20000, socketTimeoutMS=20000)
 - **`.gitignore` fix**: Removed broad `*.env` pattern that blocked `.env` files from deployment
 
+### Session 6 — Layout Refactor: Shop & Community (Mar 3, 2026)
+- **Shop header redesign**: Moved Search, My Listings, Add Listing buttons to header right (matching Home's 44x44 icon style). Content area now only shows categories + listings grid. Search bar toggles from header icon
+- **Community header redesign**: Moved Create Group and Search to header right. Removed big "Create Group" card from GroupsTab content area. Clean content with just group search and group list
+- **Shared context pattern**: Used React.createContext (`ShopCtx`, `CommunityCtx`) to communicate between parent header and child tab components
+- **UI consistency**: All headers now use identical tokens: fontSize 22, fontWeight 900, 44x44 icon buttons with borderRadius 14, gap 10, accent-colored action buttons
+
 ---
 
 ## Pending Issues (Priority Order)

@@ -27,6 +27,14 @@ import { useUnreadStore } from "../../src/state/unreadStore";
 
 const TopTabs = createMaterialTopTabNavigator();
 
+// Shared context so header buttons can control GroupsTab
+const CommunityCtx = React.createContext<{
+  showCreateGroup: boolean;
+  setShowCreateGroup: (v: boolean) => void;
+  searchVisible: boolean;
+  setSearchVisible: (v: boolean) => void;
+}>({ showCreateGroup: false, setShowCreateGroup: () => {}, searchVisible: false, setSearchVisible: () => {} });
+
 function UnreadDot() {
   return <View style={styles.unreadDot} />;
 }
@@ -259,6 +267,7 @@ function GroupsTab() {
   const { accessToken, me } = useAuthStore();
   const { groupIds } = useUnreadStore();
   const tabBarHeight = useSafeTabBarHeight();
+  const { showCreateGroup, setShowCreateGroup, searchVisible: groupSearchVisible } = React.useContext(CommunityCtx);
 
   const [groups, setGroups] = useState<GroupOut[]>([]);
 
@@ -268,7 +277,6 @@ function GroupsTab() {
   const [searching, setSearching] = useState(false);
   const [joiningId, setJoiningId] = useState<string | null>(null);
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
@@ -402,25 +410,13 @@ function GroupsTab() {
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      {/* Create Group Button */}
-      <Pressable onPress={() => setShowCreateModal(true)} style={styles.createGroupBtn}>
-        <View style={styles.createGroupIcon}>
-          <Ionicons name="add" size={24} color={Colors.bg} />
-        </View>
-        <View style={styles.createGroupText}>
-          <Text style={styles.createGroupTitle}>Create New Group</Text>
-          <Text style={styles.createGroupSub}>Start a riding community</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
-      </Pressable>
-
       {/* Create Modal */}
-      {showCreateModal && (
+      {showCreateGroup && (
         <View style={styles.createModal}>
           <View style={styles.createModalHeader}>
             <Text style={styles.createModalTitle}>New Group</Text>
             <Pressable onPress={() => {
-              setShowCreateModal(false);
+              setShowCreateGroup(false);
               setPhotoBase64(null);
               setName("");
               setDescription("");
@@ -487,7 +483,7 @@ function GroupsTab() {
         </View>
       )}
 
-      {loading && !showCreateModal ? (
+      {loading && !showCreateGroup ? (
         <View style={styles.center}>
           <ActivityIndicator color={Colors.accent} />
         </View>
@@ -607,37 +603,91 @@ function GroupsTab() {
 }
 
 export default function CommunityScreen() {
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.h1}>Community</Text>
-          <Text style={styles.sub}>Chats & groups</Text>
-        </View>
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
 
-        <TopTabs.Navigator
-          screenOptions={{
-            tabBarStyle: { backgroundColor: Colors.bg },
-            tabBarIndicatorStyle: { backgroundColor: Colors.accent },
-            tabBarActiveTintColor: Colors.text,
-            tabBarInactiveTintColor: Colors.muted,
-            tabBarLabelStyle: { fontWeight: "900" },
-          }}
-        >
-          <TopTabs.Screen name="Chats" component={ChatsTab} />
-          <TopTabs.Screen name="Groups" component={GroupsTab} />
-        </TopTabs.Navigator>
-      </View>
-    </SafeAreaView>
+  return (
+    <CommunityCtx.Provider value={{ showCreateGroup, setShowCreateGroup, searchVisible, setSearchVisible }}>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.h1}>Community</Text>
+              <Text style={styles.sub}>Chats & groups</Text>
+            </View>
+            <View style={styles.headerRight}>
+              <Pressable
+                data-testid="community-search-btn"
+                onPress={() => setSearchVisible(!searchVisible)}
+                style={[styles.iconBtn, searchVisible && styles.iconBtnActive]}
+              >
+                <Ionicons name={searchVisible ? "close" : "search-outline"} size={20} color={searchVisible ? Colors.bg : Colors.text} />
+              </Pressable>
+              <Pressable
+                data-testid="community-create-group-btn"
+                onPress={() => setShowCreateGroup(true)}
+                style={styles.addBtn}
+              >
+                <Ionicons name="add" size={22} color={Colors.bg} />
+              </Pressable>
+            </View>
+          </View>
+
+          <TopTabs.Navigator
+            screenOptions={{
+              tabBarStyle: { backgroundColor: Colors.bg },
+              tabBarIndicatorStyle: { backgroundColor: Colors.accent },
+              tabBarActiveTintColor: Colors.text,
+              tabBarInactiveTintColor: Colors.muted,
+              tabBarLabelStyle: { fontWeight: "900" },
+            }}
+          >
+            <TopTabs.Screen name="Chats" component={ChatsTab} />
+            <TopTabs.Screen name="Groups" component={GroupsTab} />
+          </TopTabs.Navigator>
+        </View>
+      </SafeAreaView>
+    </CommunityCtx.Provider>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
   container: { flex: 1, backgroundColor: Colors.bg },
-  header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, gap: 4 },
-  h1: { color: Colors.text, fontSize: 22, fontFamily: "Inter_900Black" },
-  sub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+  },
+  headerLeft: { gap: 4 },
+  headerRight: { flexDirection: "row", gap: 10, alignItems: "center" },
+  h1: { color: Colors.text, fontSize: 22, fontWeight: "900", letterSpacing: 0.2 },
+  sub: { color: Colors.muted, fontSize: 13, fontWeight: "600" },
+  iconBtn: {
+    height: 44,
+    width: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconBtnActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  addBtn: {
+    height: 44,
+    width: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   inner: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
   searchRow: { flexDirection: "row", gap: 10, alignItems: "center" },
   searchBox: {
