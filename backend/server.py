@@ -514,10 +514,21 @@ class WaypointOut(BaseModel):
     city: Optional[str] = None
 
 
+class MeetingPoint(BaseModel):
+    lat: float
+    lng: float
+    name: str = ""
+    address: str = ""
+
+
 class RouteCreate(BaseModel):
     title: str = Field(min_length=2, max_length=80)
     description: str = Field(default="", max_length=800)
     polyline: list[list[float]] = Field(min_length=2, description="List of [lat,lng] points")
+
+    # Meeting point (obligatoriu)
+    meeting_point: MeetingPoint
+    start_radius_km: float = Field(default=5.0, ge=0.5, le=50)
 
     # For displaying start/stops/end cities in details UI
     start_point: Optional[list[float]] = Field(default=None, min_length=2, max_length=2)
@@ -564,6 +575,10 @@ class RouteOut(BaseModel):
     title: str
     description: str
     polyline: list[list[float]]
+
+    # Meeting point
+    meeting_point: Optional[dict] = None
+    start_radius_km: float = 5.0
 
     # Optional points for UI
     start_point: Optional[list[float]] = None
@@ -784,6 +799,8 @@ class ReportOut(BaseModel):
 
 class RideSessionStart(BaseModel):
     route_id: str
+    user_lat: Optional[float] = None
+    user_lng: Optional[float] = None
 
 
 class RideSessionEnd(BaseModel):
@@ -3546,6 +3563,21 @@ async def start_ride(payload: RideSessionStart, current_user: dict = Depends(get
     route = await db.routes.find_one({"_id": _as_object_id(payload.route_id)})
     if not route:
         raise HTTPException(status_code=404, detail="Route not found")
+
+    # Meeting point distance validation (anti-fraud server check)
+    mp = route.get("meeting_point")
+    radius = route.get("start_radius_km", 5.0)
+    if mp and payload.user_lat is not None and payload.user_lng is not None:
+        dist = math.acos(
+            min(1.0, math.sin(math.radians(payload.user_lat)) * math.sin(math.radians(mp["lat"]))
+            + math.cos(math.radians(payload.user_lat)) * math.cos(math.radians(mp["lat"]))
+            * math.cos(math.radians(mp["lng"] - payload.user_lng)))
+        ) * 6371
+        if dist > radius:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Too far from meeting point ({dist:.1f} km). Must be within {radius} km."
+            )
 
     # Safety: auto-close any stale sessions (shouldn't happen, but prevents phantom banners)
     try:
