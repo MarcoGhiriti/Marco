@@ -87,8 +87,8 @@ export default function ListingDetailScreen() {
 
   const handleMessage = () => {
     if (!listing) return;
-    // Navigate to DM with seller
-    router.push(`/community/dm/${listing.seller_id}`);
+    // Open listing-specific chat (NOT Community DM)
+    router.push(`/marketplace/chat?listingId=${listing.id}`);
   };
 
   const handleDelete = () => {

@@ -29,11 +29,14 @@ type ListingOut = {
   is_active: boolean;
 };
 
+type MsgCount = { listing_id: string; unread_count: number; conversation_count: number };
+
 export default function MyListingsScreen() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<ListingOut[]>([]);
+  const [msgCounts, setMsgCounts] = useState<Record<string, MsgCount>>({});
 
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
@@ -49,6 +52,17 @@ export default function MyListingsScreen() {
         authHeader
       );
       setListings(data);
+      // Load message counts per listing
+      const counts: Record<string, MsgCount> = {};
+      await Promise.all(
+        data.map(async (l) => {
+          try {
+            const c = await apiGet<MsgCount>(`/api/marketplace/chat/listing/${l.id}/count`, authHeader);
+            counts[l.id] = c;
+          } catch {}
+        })
+      );
+      setMsgCounts(counts);
     } catch (e) {
       console.error("Failed to load my listings", e);
     } finally {
@@ -114,9 +128,24 @@ export default function MyListingsScreen() {
           <Ionicons name="location-outline" size={12} color={Colors.muted} />
           <Text style={styles.cardLocation}>{item.location}</Text>
         </View>
-        <Text style={styles.cardDate}>
-          Posted {new Date(item.created_at).toLocaleDateString()}
-        </Text>
+        <Pressable
+          style={styles.messagesBtn}
+          onPress={(e) => {
+            e.stopPropagation();
+            router.push(`/marketplace/listing-messages?listingId=${item.id}&title=${encodeURIComponent(item.title)}`);
+          }}
+          data-testid={`listing-messages-${item.id}`}
+        >
+          <Ionicons name="chatbubble-outline" size={14} color={Colors.accent} />
+          <Text style={styles.messagesBtnText}>
+            Messages{msgCounts[item.id]?.conversation_count ? ` (${msgCounts[item.id].conversation_count})` : ""}
+          </Text>
+          {(msgCounts[item.id]?.unread_count ?? 0) > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadBadgeText}>{msgCounts[item.id].unread_count}</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
     </Pressable>
   );
@@ -271,5 +300,35 @@ const styles = StyleSheet.create({
     color: Colors.muted,
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
+  },
+  messagesBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: Colors.card2,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginTop: 2,
+  },
+  messagesBtnText: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  unreadBadge: {
+    backgroundColor: Colors.danger,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  unreadBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "800",
   },
 });
