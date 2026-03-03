@@ -173,6 +173,23 @@ const mpStyles = StyleSheet.create({
     borderWidth: 2, borderColor: "#fff",
     shadowColor: "#FF6B35", shadowOpacity: 0.6, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 8,
   },
+  card: {
+    backgroundColor: Colors.card, borderRadius: 16, padding: 16, width: 280,
+    borderWidth: 1, borderColor: Colors.border, gap: 8,
+  },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  typeBadge: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
+  },
+  typeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  cardTitle: { color: Colors.text, fontSize: 15, fontWeight: "700" },
+  cardMeta: { color: Colors.muted, fontSize: 12, fontWeight: "600" },
+  viewBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    backgroundColor: Colors.accent, borderRadius: 10, paddingVertical: 10, marginTop: 4,
+  },
+  viewBtnText: { color: Colors.bg, fontSize: 13, fontWeight: "700" },
 });
 
 const fmStyles = StyleSheet.create({
@@ -228,6 +245,7 @@ export default function MapCanvas({
 }: MapCanvasProps) {
   const searchAnim = useRef(new Animated.Value(showSearchArea ? 1 : 0)).current;
   const [selectedFriend, setSelectedFriend] = useState<FriendMarker | null>(null);
+  const [selectedMP, setSelectedMP] = useState<any>(null);
 
   useEffect(() => {
     Animated.timing(searchAnim, {
@@ -417,7 +435,7 @@ export default function MapCanvas({
             key={`route-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
-            onPress={() => onRoutePress?.(rm.id)}
+            onPress={() => { setSelectedMP(rm); setSelectedFriend(null); }}
           >
             <View style={mpStyles.routePin}>
               <Ionicons name="flag" size={14} color="#fff" />
@@ -431,6 +449,7 @@ export default function MapCanvas({
             key={`ride-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
+            onPress={() => { setSelectedMP(rm); setSelectedFriend(null); }}
           >
             <View style={mpStyles.ridePin}>
               <Ionicons name="bicycle" size={14} color="#fff" />
@@ -580,9 +599,34 @@ export default function MapCanvas({
           </Pressable>
         </Pressable>
       )}
+
+      {/* Meeting Point Mini Card */}
+      {selectedMP && (
+        <Pressable style={styles.friendOverlayBackdrop} onPress={() => setSelectedMP(null)}>
+          <Pressable style={mpStyles.card} onPress={(e) => e.stopPropagation()}>
+            <View style={mpStyles.cardHeader}>
+              <View style={[mpStyles.typeBadge, { backgroundColor: selectedMP.type === "route" ? Colors.accent : "#FF6B35" }]}>
+                <Ionicons name={selectedMP.type === "route" ? "flag" : "bicycle"} size={12} color="#fff" />
+                <Text style={mpStyles.typeText}>{selectedMP.type === "route" ? "Route" : "Live Ride"}</Text>
+              </View>
+              <Pressable onPress={() => setSelectedMP(null)}>
+                <Ionicons name="close" size={20} color={Colors.muted} />
+              </Pressable>
+            </View>
+            <Text style={mpStyles.cardTitle} numberOfLines={2}>{selectedMP.name}</Text>
+            {selectedMP.difficulty && <Text style={mpStyles.cardMeta}>Difficulty: {selectedMP.difficulty}</Text>}
+            {selectedMP.distance_km && <Text style={mpStyles.cardMeta}>{selectedMP.distance_km.toFixed(1)} km</Text>}
+            <Pressable
+              style={mpStyles.viewBtn}
+              onPress={() => { onRoutePress?.(selectedMP.id); setSelectedMP(null); }}
+            >
+              <Text style={mpStyles.viewBtnText}>View details</Text>
+              <Ionicons name="chevron-forward" size={14} color={Colors.bg} />
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      )}
     </View>
-  );
-}
 
 const styles = StyleSheet.create({
   mapWrapper: {
