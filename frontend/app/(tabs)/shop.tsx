@@ -205,25 +205,6 @@ function SecondHandTab() {
 
   return (
     <View style={styles.tabContent}>
-      {/* Collapsible Search Bar - toggled from header */}
-      {searchVisible && (
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBox}>
-            <Ionicons name="search-outline" size={18} color={Colors.muted} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={loadListings}
-              placeholder="Search listings..."
-              placeholderTextColor={Colors.muted}
-              style={styles.searchInput}
-              returnKeyType="search"
-              autoFocus
-            />
-          </View>
-        </View>
-      )}
-
       {/* Category Filter - Compact with icons only */}
       <ScrollView 
         horizontal 
@@ -720,6 +701,7 @@ export default function ShopScreen() {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <ShopCtx.Provider value={{ showCreate, setShowCreate, searchVisible, setSearchVisible }}>
@@ -753,6 +735,27 @@ export default function ShopScreen() {
             </Pressable>
           </View>
         </View>
+
+        {/* Search bar between header and tabs */}
+        {searchVisible && (
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBox}>
+              <Ionicons name="search-outline" size={18} color={Colors.muted} />
+              <TextInput
+                placeholder="Search listings..."
+                placeholderTextColor={Colors.muted}
+                style={styles.searchInput}
+                returnKeyType="search"
+                autoFocus
+                onChangeText={(text) => {
+                  // Store query in context for SecondHandTab to use
+                  setSearchQuery(text);
+                }}
+                onSubmitEditing={() => {}}
+              />
+            </View>
+          </View>
+        )}
 
         <TopTabs.Navigator
           screenOptions={{
