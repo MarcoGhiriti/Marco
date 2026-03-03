@@ -81,17 +81,21 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 - **Shop listing cards**: Removed seller username from cards (visible only on detail page), reduced spacing between categories and listings
 - **UI consistency**: All headers now use identical tokens: fontSize 22, fontWeight 900, 44x44 icon buttons
 
-### Session 7 — Map Full-Width + Listing Chat Backend (Mar 3, 2026)
-- **Map full-width**: Removed `margin: 16`, `borderRadius: 20`, `borderWidth: 1` from `mapWrapper` in `MapCanvas.native.tsx` — map now renders edge-to-edge
-- **Listing Chat API**: Created `/app/backend/routers/listing_chat.py` with complete CRUD:
-  - `GET /api/marketplace/chat/conversations` — all user's listing chats
-  - `GET /api/marketplace/chat/listing/{id}/conversations` — conversations for a specific listing (seller)
-  - `GET /api/marketplace/chat/listing/{id}/count` — unread count per listing
-  - `POST /api/marketplace/chat/listing/{id}/send` — buyer sends message (creates chat if needed)
-  - `POST /api/marketplace/chat/{chat_id}/send` — reply to existing chat (buyer or seller)
-  - `GET /api/marketplace/chat/{chat_id}/messages` — get messages + mark as read
-- **TTL 30 days**: `listing_chats` has TTL index on `last_message_at`, `listing_chat_messages` has TTL on `expires_at`
-- **Notifications**: Push notification sent to other party on each message
+### Session 7 — Map Full-Width + Listing Chat + Profile Edit (Mar 3, 2026)
+- **Map full-width**: Removed margin/borderRadius from MapCanvas.native.tsx - map renders edge-to-edge
+- **Listing Chat System** (Backend + Frontend):
+  - Backend: `/app/backend/routers/listing_chat.py` - 6 API endpoints with TTL 30 days auto-delete
+  - Frontend: chat.tsx (chat screen), listing-messages.tsx (seller conversations list), my-listings.tsx (Messages badge per listing)
+  - Listing detail: "Message Seller" button opens listing chat (not Community DM)
+  - Fixed ObjectId serialization bugs with JSONResponse + json_util
+  - Listing chat indexes ensured at startup
+- **Profile Edit redesign**:
+  - Username now editable (TextInput) with backend uniqueness validation (409 Conflict)
+  - Removed entire "Confidentialitate" (Privacy) section
+  - Added support@motogo.life email link (mailto:)
+  - Cleaned up dead code (loadPrivacy, togglePrivacy, cycleRoutesVisibility, Switch)
+
+**Pending: Backend refactor** - server.py has 4460 lines / 70+ endpoints. Needs incremental migration to routers: marketplace, events, routes, rides, stories, groups, notifications, messages, users
 
 ---
 
