@@ -70,8 +70,10 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 ### Session 5 — Critical Bug Fixes (Mar 3, 2026)
 - **`useBottomTabBarHeight` crash fix**: Created `src/hooks/useSafeTabBarHeight.ts` — safe wrapper that returns fallback value (90px iOS / 70px Android) when BottomTabBarHeightContext is unavailable. Replaced in all 7 tab screens: home, routes, map (events), shop, profile, community, store
   - Root cause: `useBottomTabBarHeight()` from `@react-navigation/bottom-tabs` throws if context is undefined (happens on Expo Go / certain render timing)
-- **MongoDB index conflict fix**: Made TTL index creation idempotent in `database.py` by wrapping `stories.create_index` and `story_views.create_index` in individual try/except blocks
-  - Root cause: `database.py` created index without name (→ `expires_at_1`), `server.py` tried to create same index with name `stories_ttl_idx` → conflict
+- **MongoDB index conflict fix**: Made ALL index creation idempotent in `database.py` using `_safe_create_index` wrapper. Each index is created independently with try/except
+- **Non-blocking startup**: Changed `ensure_indexes()` to run via `asyncio.create_task()` so backend starts instantly without waiting for Atlas
+- **MongoDB client resilience**: Added explicit timeouts (serverSelectionTimeoutMS=30000, connectTimeoutMS=20000, socketTimeoutMS=20000)
+- **`.gitignore` fix**: Removed broad `*.env` pattern that blocked `.env` files from deployment
 
 ---
 
