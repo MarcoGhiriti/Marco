@@ -23,7 +23,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://ui-consistency-test.preview.emergentagent.com"
+    BASE_URL = "https://mongo-401-errors.preview.emergentagent.com"
 
 # Test credentials
 TEST_EMAIL = "user1@example.com"

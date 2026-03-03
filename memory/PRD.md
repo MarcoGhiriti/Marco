@@ -1,168 +1,146 @@
 # MotoGO - Product Requirements Document
 
 ## Original Problem Statement
-Social-mapping application for motorcyclists with features for route planning, live location sharing, events, friend management, police reporting, and real-time map interactions.
+Social-mapping application for motorcyclists with features for route planning, live location sharing, events, friend management, police reporting, real-time map interactions, group chats, DMs, leaderboard, badges, and marketplace.
 
 ## User Personas
-- Romanian motorcyclists who want to plan routes, share locations with riding buddies, report police checkpoints, and organize group rides.
+Romanian motorcyclists who want to plan routes, share locations with riding buddies, report police checkpoints, and organize group rides.
 
 ## Core Requirements
 - Interactive map with route planning and POI markers (gas, service, events, police)
-- Friend system with location sharing
+- Friend system with live location sharing
 - Route management (create, start, pause, end rides)
 - Event creation and participation
-- Real-time location sharing between friends
+- Real-time messaging (DM + Group chats with unread badges)
 - Police reporting with community voting
 - Stories feature (time-limited posts)
-- Messaging/DM system
+- Leaderboard, badges/levels system
+- Marketplace for second-hand gear
 
 ## Tech Stack
-- **Frontend**: React Native / Expo (TypeScript)
-- **Backend**: FastAPI (Python) - Monolithic server.py
-- **Database**: MongoDB
+- **Frontend**: React Native / Expo SDK 54 (TypeScript)
+- **Backend**: FastAPI (Python) - server.py + /routers/
+- **Database**: MongoDB (local dev / Atlas production)
 - **Map**: Google Maps Platform + react-native-maps-clustering
 - **Real-time**: Socket.IO
 - **AI**: OpenAI GPT-4o
 
-## What's Been Implemented
+## Language
+- Conversations with user: **Romanian**
+- UI text / code / errors: **English**
 
-### Badge Mesaje Necitite Fix (Feb 21, 2026)
-- **Root cause**: `group/[groupId].tsx` nu chema niciodată `clearThread` sau `POST /api/messages/mark-read` → badge grupuri persistent
-- **Fix**: Adăugat `useUnreadStore` import + `markGroupRead` callback în `GroupChatScreen`:
-  - Apelat la mount (în `useEffect` cu `loadHistory/loadGroupInfo`)
-  - Apelat când un mesaj nou sosește via socket (user activ în chat)
-- **Confirmat via curl**: endpoint `POST /api/messages/mark-read` funcționează corect
+---
 
-### Callout Hartă Fix (Feb 21, 2026)
-- Înlocuit sistemul `<Callout tooltip>` (buggy pe iOS+Android) cu overlay custom state-driven
-- Popup apare în josul hărții la tap pe marker, dismiss la tap în afară sau pan harta
-- **Global Dynamic Layout for Android (NEW - Feb 21, 2026):**
-  - Problem: On Android 9:19 screens, edit/delete buttons for events/routes were cut off by the absolute tab bar (70px) or bottom bars.
-  - Fix: Used `useBottomTabBarHeight()` from `@react-navigation/bottom-tabs` in all tab screens to dynamically calculate the correct `paddingBottom` for FlatList/ScrollView content.
-  - Fixed screens: `routes.tsx`, `events.tsx`, `home.tsx`, `shop.tsx` (all tab screens)
-  - Fixed detail screens: `event/[id].tsx`, `route/[id].tsx` - used `useSafeAreaInsets().bottom` for bottomBar padding + increased spacer to 200px.
-  - This is a universal fix that adapts to any Android device, gesture bar size, and screen ratio.
-- **Friend Popup on Map (NEW):**
-  - Click on friend marker shows callout with: photo + username, active ride status, distance from you, message button
-  - Backend: Updated `/api/friends/locations` to include `active_ride` and `distance_km` fields
-  - Backend: Added `/api/friends/{friend_id}/detail` endpoint
-  - Frontend: Added `onFriendPress` handler to open DM with friend
-### Date/Time Picker — Native Fix (Mar 3, 2026)
-- ROOT CAUSE: `TextInput` cu format manual `YYYY-MM-DD` / `HH:MM` era imposibil de folosit pe mobil
-- Instalat `@react-native-community/datetimepicker@8.6.0`
-- Creat `src/components/DateTimePickerField.tsx` — component cross-platform: iOS (spinner sheet modal) + Android (DateTimePickerAndroid.open native dialog)
-- Aplicat în `create/event.tsx`, `create/route.tsx`, `event/[id].tsx` (edit modal)
-- Picker afișează data în română (ro-RO), cu buton "Done" pe iOS
-- Created `src/theme/design.ts` — centralized design tokens: Typography (h1=22/sub=13/stackTitle=16/modalTitle=18), HeaderLayout, ButtonTokens (iconBtn 44×44 r14), CardTokens (r16), SheetTokens (r24 top)
-- Fixed `events.tsx`, `routes.tsx`, `shop.tsx`: h1 24→22, sub 14→13 (matched Home source of truth)
-- Fixed `notifications/index.tsx`: buttons 40×40 r20 → 44×44 r14, headerTitle 18 fontWeight:800 → 16 Inter_700Bold
-- Fixed `profile/friends.tsx`: headerTitle Inter_900Black → Inter_700Bold (stack title token)
-- Created `src/hooks/useRideScore.ts` — fetches Open-Meteo weather API (free, no key), computes score 0-10, caches via AsyncStorage (10min TTL), refreshes on location change >2km or timer
-- Created `src/components/RideStatusChip.tsx` — compact badge chip (36px) next to share-location toggle: [RideChip] [ShareLocationToggle] [CreateBtn]
-- Score algorithm: start 10, penalizes rain (−7/−4/−2), wind (−4/−2/−1), extreme temp (−2 each); labels: GREAT ≥8.5, GOOD ≥7, CAUTION ≥4, NO <4
-- Tap opens bottom sheet with: score badge, summary, Temp/Wind/Rain% rows, label banner, disclaimer
-- Handles: no-permission (grey disabled + prompt), loading (skeleton), offline (stale cache + indicator)
-- Updated `MapScreen.tsx`: added `hasLocationPermission` state, `useRideScore` hook, chip in headerActions
-- Applied `useBottomTabBarHeight` + dynamic `paddingBottom` to ALL 8 tab screens
-- Fixed `community.tsx`: ChatsTab & GroupsTab now use `ScrollView` with dynamic paddingBottom instead of unscrollable containers
-- Fixed `store.tsx` (Rankings): All 3 content areas (FlatList + 2 ScrollViews) now have dynamic paddingBottom
-- Cleaned unused `useSafeAreaInsets` imports from `notifications/index.tsx` and `profile/friends.tsx`
-- All stack screens (notifications, friends, DM, group, event, route) correctly use `SafeAreaView`
-- **Status**: COMPLETE - awaiting user device verification**
-  - Created `/app/backend/routers/` directory structure
-  - Extracted authentication endpoints to `/app/backend/routers/auth.py`
-  - Extracted friends endpoints to `/app/backend/routers/friends.py`
-  - Extracted location endpoints to `/app/backend/routers/location.py`
-- **Map UI - Responsive Layout:**
-  - "Report Police" and "Recenter" buttons now in a flexbox container (responsive for all screen sizes including 9:16)
-  - Silent loading indicator (small spinner near filter chips instead of blocking overlay)
-- **Android UI Bug Fixes (Feb 21, 2026):**
-  - Global status bar padding via root layout on Android (prevents overlap across all screens)
-  - Map: recenter button lifted above tab bar; loading indicator now a static green dot
-  - Friend popup: distance text set to neon green; DM navigation route fixed (`/community/dm/:userId`)
-  - Map styling adjusted for clearer streets on dark theme
-- **Friend Callout Interactions (Feb 21, 2026):**
-  - Callout shown on both iOS/Android; marker tap no longer auto-navigates
-  - Profile tap routes to `/profile/:id`, chat button routes to `/community/dm/:id`
-  - iOS uses `CalloutSubview` for reliable taps; Android uses `Pressable` fallback
-- **Ride Banner Enhancement:**
-  - Added "Directions" button (navigate icon) to active ride banner
-  - Added "End Route" button (stop icon, red) for ride creators
-- **Friends API Fix:**
-  - Fixed `fetchFriendsLocations` to pass proper `authHeader` object
+## What's Been Implemented (Changelog)
 
-### Completed Features
+### Session 1-2 (Feb 2026)
 - User auth (register, login, JWT)
 - Friend system (request, accept, remove)
 - Route CRUD + static map previews
-- Events system
+- Events system + RSVP
 - "My Routes" control panel (Start/Pause/End/Directions)
-- Map Phase 1: "+" create button + Location Sharing toggle
-- **Map Phase 2: Friends on Map** (Feb 2026)
-  - Backend: `POST /api/location/update`, `GET /api/friends/locations`
-  - Frontend: Friends filter chip (people icon) in filter row
-  - Friend markers on map with initials + online status (live vs. last seen)
-  - Location sharing sends updates every 15s, fetches friends every 20s
-- **Map Phase 3: Silent Loading** (Feb 21, 2026)
-  - Replaced blocking loading overlay with subtle spinner indicator
-  - Responsive button layout using Flexbox
-- Police reporting with community voting
-- Stories feature
-- Messaging system
-- Registration error fix (Pydantic error parsing)
-- Friend re-add fix (payload correction)
-- End Route error fix (payload correction)
-- English error messages
+- Map Phase 1-3: Location sharing toggle, friends on map, police reports, silent loading
+- Friend callout overlays (iOS + Android custom overlay system)
+- Unread message badge fix for group chats (useEffect → mark-read API)
+- Backend routers: extracted auth.py, friends.py, location.py from server.py
 
-### API Endpoints (Key)
-- `POST /api/auth/register`, `POST /api/auth/login`
-- `POST /api/friends/request`, `POST /api/friends/remove`
-- `POST /api/location/update` - Update user's live location
-- `GET /api/friends/locations` - Get friends' recent locations (30min window)
-- `POST /api/routes/{route_id}/start`, `POST /api/routes/active/finish`
-- `POST /api/routes/active/pause`, `POST /api/routes/active/resume`
+### Session 3 — Responsive Layout (Feb 21, 2026)
+- Applied `useBottomTabBarHeight` + dynamic `paddingBottom` to ALL 8 tab screens
+- Fixed `community.tsx`: ChatsTab & GroupsTab — ScrollView with dynamic paddingBottom
+- Fixed `store.tsx` (Rankings): FlatList + 2 ScrollViews with dynamic paddingBottom
+- Cleaned unused imports: `notifications/index.tsx`, `profile/friends.tsx`
+- All stack screens use `SafeAreaView` correctly
 
-## Database Access
-- **Connection**: `mongodb://localhost:27017`
-- **Database**: `test_database`
-- **Collections**: users, routes, ride_sessions, friends, events, stories, messages, notifications, police_reports, marketplace_listings, groups, badges
+### Session 4 — Features + Fixes (Mar 3, 2026)
+- **Ride Score Chip**: `src/hooks/useRideScore.ts` + `src/components/RideStatusChip.tsx`
+  - Open-Meteo API (free, no key), score 0-10 algorithm, 10min cache (AsyncStorage)
+  - Chip: [RideChip] [ShareLocationToggle] [CreateBtn] in MapScreen header
+  - Bottom sheet: score badge, summary, Temp/Wind/Rain%, label, disclaimer
+  - States: loading (skeleton), offline (stale cache), no-permission (grey)
+- **UI Design System**: `src/theme/design.ts` — typography, button, card, sheet tokens
+  - Fixed events.tsx, routes.tsx, shop.tsx: h1 24→22, sub 14→13
+  - Fixed notifications/index.tsx: buttons 40→44 r20→r14
+  - Fixed profile/friends.tsx: Inter_900Black → Inter_700Bold (stack title)
+- **Date/Time Picker**: installed `@react-native-community/datetimepicker@8.6.0`
+  - Created `src/components/DateTimePickerField.tsx` (iOS spinner sheet + Android native dialog)
+  - Applied to `create/event.tsx`, `create/route.tsx`, `event/[id].tsx`
+  - Date shown in Romanian (ro-RO locale)
+- **Deployment Fix**: installed `react-native-worklets@0.7.4` (required by react-native-reanimated@~4.1.1 v4 peer dependency)
 
-## Prioritized Backlog
+---
 
-### P0
-- (NEEDS VERIFICATION) Android UI fixes: global status bar padding, map recenter visibility, map style contrast, friend popup DM route + distance color, loading dot
-- (NEEDS VERIFICATION) Friend callout actions (profile + chat) on iOS/Android
-- (DONE) Map Phase 3: Silent refresh
-- (DONE) Map Phase 4: Police Reports optimistic UI
+## Pending Issues (Priority Order)
 
-### P1
-- Backend refactor: Split server.py into APIRouter modules (IN PROGRESS)
-  - DONE: auth.py, friends.py, location.py
-  - TODO: routes.py, users.py, events.py, rides.py, map.py, messages.py
+### P0 — Needs User Verification
+- **Badge mesaje necitite grup**: Fix implementat. User trebuie să testeze după deploy
+- **Map callout Android**: Custom overlay implementat. User trebuie să testeze tap marker prieten pe Android
+- **Date/Time Picker**: Picker nativ implementat. User trebuie să testeze creare/editare eveniment și traseu
+
+### P1 — Known Bugs
+- **Eroare pauză traseu**: `PUT /api/routes/pause/{route_id}` — fix aplicat dar NETESTAT
+  - Test: `curl -X PUT {API}/api/routes/pause/{route_id} -H "Authorization: Bearer {token}"`
+- **MongoDB Atlas Index Conflict**: La fiecare startup apare eroarea:
+  `Error creating indexes: Index already exists with a different name: stories_ttl_idx`
+  - **Root cause**: Codul încearcă să creeze un index cu alt nume față de cel existent pe Atlas
+  - **Fix necesar**: În `server.py`, la crearea indexului `stories_ttl_idx`, adăugați try/except pentru `OperationFailure` code 85 (IndexOptionsConflict) și skipuiți în loc să logați eroare
+  - **Fișier**: `/app/backend/server.py` — căutați `stories_ttl_idx`
+
+### P1 — 401 Unauthorized în Production (după un timp)
+- Pattern: primele request-uri reușesc (200), apoi TOATE devin 401
+- Cauza probabilă: JWT_SECRET diferit între sessii sau token expiry
+- Verificați că `JWT_SECRET` în `.env` e consistent între deployment-uri
+- Dacă problema persistă: verificați `decode_access_token()` din `server.py` / `routers/auth.py`
 
 ### P2
-- Map Phase 5: UI Polish (filter text labels, recenter button refinement)
+- **Buton Recenter hartă invizibil**: Investigare `MapCanvas.native.tsx` (styling/z-index)
+- **Backend refactor incomplet**: `server.py` mai conține endpoint-uri de mutat în:
+  - `routers/routes.py`, `routers/events.py`, `routers/rides.py`, `routers/map.py`, `routers/messages.py`
 
-### Blocked
-- Forgot Password flow (needs email service API key)
+### Blocat
+- **Forgot Password**: Necesită cheie API email service (SendGrid/Resend)
 
-## Test Credentials
-- user1@example.com / Password123
-- user2@example.com / Password123
-
-## Language
-- UI error messages: English
-- Conversational interactions: Romanian
-
-## Router Structure (Backend Refactoring)
-```
-/app/backend/routers/
-├── auth.py       # Register, login endpoints
-├── friends.py    # Friends CRUD, locations, requests
-└── location.py   # User location updates
-```
+---
 
 ## Key Files Reference
-- Frontend Map: `/app/frontend/src/screens/MapScreen.tsx`, `/app/frontend/src/components/MapCanvas.native.tsx`
-- Backend Main: `/app/backend/server.py`
-- Database: `/app/backend/database.py`
+
+### Frontend
+- Map screen: `/app/frontend/src/screens/MapScreen.tsx`
+- Map canvas: `/app/frontend/src/components/MapCanvas.native.tsx`
+- Ride chip: `/app/frontend/src/components/RideStatusChip.tsx`
+- Ride score hook: `/app/frontend/src/hooks/useRideScore.ts`
+- Date picker: `/app/frontend/src/components/DateTimePickerField.tsx`
+- Design tokens: `/app/frontend/src/theme/design.ts`
+- Colors: `/app/frontend/src/theme/colors.ts`
+- Tab screens: `/app/frontend/app/(tabs)/`
+- Stack screens: `/app/frontend/app/event/[id].tsx`, `route/[id].tsx`, `community/group/[groupId].tsx`, `community/dm/[userId].tsx`
+- Create screens: `/app/frontend/app/create/event.tsx`, `create/route.tsx`
+
+### Backend
+- Main: `/app/backend/server.py`
+- Routers: `/app/backend/routers/auth.py`, `friends.py`, `location.py`
+- Env: `/app/backend/.env`
+
+---
+
+## Test Credentials
+- User 1: `user1@example.com` / `Password123`
+- Register fresh user: `testuser_gen@example.com` / `TestPass123!`
+
+## API Base URL (production preview)
+- `https://mongo-401-errors.preview.emergentagent.com`
+
+## Environment Notes
+- Backend port: 8001 (internal), all routes prefixed `/api`
+- Frontend: `REACT_APP_BACKEND_URL` / `EXPO_PUBLIC_BACKEND_URL`
+- MongoDB: `MONGO_URL` from `/app/backend/.env`
+- Hot reload active — restart supervisor only for .env / dependency changes
+
+## Key API Endpoints
+- Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/me`
+- Friends: `GET /api/friends`, `POST /api/friends/request`, `GET /api/friends/locations`
+- Routes: `GET /api/routes`, `POST /api/routes`, `PUT /api/routes/pause/{id}`
+- Rides: `POST /api/rides/start`, `POST /api/rides/pause`, `POST /api/rides/end`
+- Events: `GET /api/events`, `POST /api/events`, `PUT /api/events/{id}`
+- Messages: `GET /api/messages/inbox`, `POST /api/messages/mark-read`
+- Map: `GET /api/map/events`, `GET /api/map/police-reports`, `POST /api/map/police-reports`
+- Notifications: `GET /api/notifications`, `GET /api/notifications/unread-count`
