@@ -181,16 +181,6 @@ function SecondHandTab() {
         )}
         
         <View style={styles.listingFooter}>
-          <Pressable 
-            onPress={(e) => {
-              e.stopPropagation();
-              if (item.seller_id) router.push(`/profile/${item.seller_id}`);
-            }}
-            style={styles.sellerRow}
-          >
-            <Ionicons name="person-circle-outline" size={14} color={Colors.accent} />
-            <Text style={styles.sellerName} numberOfLines={1}>{item.seller_username}</Text>
-          </Pressable>
           <View style={styles.locationRow}>
             <Ionicons name="location-outline" size={12} color={Colors.muted} />
             <Text style={styles.listingLocation}>{item.location}</Text>
@@ -939,6 +929,7 @@ const styles = StyleSheet.create({
   categoriesRow: {
     paddingHorizontal: 12,
     paddingBottom: 2,
+    paddingTop: 4,
     gap: 6,
   },
   categoryChip: {
@@ -967,7 +958,7 @@ const styles = StyleSheet.create({
   // Listings
   listingsContainer: {
     padding: 12,
-    paddingTop: 2,
+    paddingTop: 6,
   },
   listingRow: {
     justifyContent: "space-between",
