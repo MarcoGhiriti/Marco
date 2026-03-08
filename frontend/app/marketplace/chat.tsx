@@ -35,6 +35,12 @@ type ChatData = {
   messages: Message[];
 };
 
+type Conversation = {
+  id: string;
+  listing_id: string;
+  listing_title: string;
+};
+
 export default function ListingChatScreen() {
   const router = useRouter();
   const { chatId, listingId } = useLocalSearchParams<{ chatId?: string; listingId?: string }>();
@@ -51,18 +57,33 @@ export default function ListingChatScreen() {
     return { Authorization: `Bearer ${accessToken}` };
   }, [accessToken]);
 
+  const loadMessagesForChat = useCallback(async (targetChatId: string) => {
+    if (!authHeader) return;
+    const data = await apiGet<ChatData>(`/api/marketplace/chat/${targetChatId}/messages`, authHeader);
+    setChatData(data);
+    setMessages(data.messages);
+    return data;
+  }, [authHeader]);
+
   const loadMessages = useCallback(async () => {
-    if (!authHeader || !chatId) return;
+    if (!authHeader) return;
     try {
-      const data = await apiGet<ChatData>(`/api/marketplace/chat/${chatId}/messages`, authHeader);
-      setChatData(data);
-      setMessages(data.messages);
+      if (chatId) {
+        await loadMessagesForChat(chatId);
+      } else if (listingId) {
+        const conversations = await apiGet<Conversation[]>(`/api/marketplace/chat/conversations`, authHeader);
+        const existing = conversations.find((conversation) => conversation.listing_id === listingId);
+        if (existing) {
+          await loadMessagesForChat(existing.id);
+          router.replace(`/marketplace/chat?listingId=${listingId}&chatId=${existing.id}`);
+        }
+      }
     } catch (e) {
       console.error("Failed to load messages", e);
     } finally {
       setLoading(false);
     }
-  }, [authHeader, chatId]);
+  }, [authHeader, chatId, listingId, loadMessagesForChat, router]);
 
   useEffect(() => {
     if (chatId) {
@@ -95,7 +116,10 @@ export default function ListingChatScreen() {
         setMessages((prev) => [...prev, newMsg]);
         setText("");
         if (!chatId && result.chat_id) {
-          router.setParams({ chatId: result.chat_id });
+          router.replace(`/marketplace/chat?listingId=${listingId}&chatId=${result.chat_id}`);
+          setTimeout(() => {
+            loadMessagesForChat(result.chat_id);
+          }, 150);
         }
         setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
       }

@@ -47,6 +47,15 @@ def _oid(v):
     return str(v) if v else None
 
 
+def _user_variants(user_id: str) -> list:
+    variants = [user_id]
+    try:
+        variants.append(ObjectId(user_id))
+    except Exception:
+        pass
+    return variants
+
+
 def _chat_out(chat, user_id: str) -> dict:
     sid = str(chat.get("seller_id", ""))
     bid = str(chat.get("buyer_id", ""))
@@ -74,9 +83,10 @@ def _chat_out(chat, user_id: str) -> dict:
 async def get_my_conversations(user=Depends(get_current_user)):
     """Get all listing chat conversations for current user (as buyer or seller)."""
     uid = user["id"]
+    uid_variants = _user_variants(uid)
     chats = []
     async for c in db.listing_chats.find(
-        {"$or": [{"seller_id": uid}, {"buyer_id": uid}]},
+        {"$or": [{"seller_id": {"$in": uid_variants}}, {"buyer_id": {"$in": uid_variants}}]},
     ).sort("last_message_at", -1):
         c["_id"] = str(c["_id"])
         chats.append(_chat_out(c, uid))
@@ -88,11 +98,12 @@ async def get_listing_conversations(listing_id: str, user=Depends(get_current_us
     """Seller: get all conversations for a specific listing they own."""
     uid = user["id"]
     listing = await db.marketplace_listings.find_one({"_id": ObjectId(listing_id)}, {"seller_id": 1})
-    if not listing or listing.get("seller_id") != uid:
+    if not listing or str(listing.get("seller_id")) != uid:
         raise HTTPException(404, "Listing not found or not yours")
+    uid_variants = _user_variants(uid)
     chats = []
     async for c in db.listing_chats.find(
-        {"listing_id": listing_id, "seller_id": uid},
+        {"listing_id": listing_id, "seller_id": {"$in": uid_variants}},
     ).sort("last_message_at", -1):
         chats.append(_chat_out(c, uid))
     return chats
@@ -102,13 +113,14 @@ async def get_listing_conversations(listing_id: str, user=Depends(get_current_us
 async def get_listing_message_count(listing_id: str, user=Depends(get_current_user)):
     """Get unread message count for a listing (seller view)."""
     uid = user["id"]
+    uid_variants = _user_variants(uid)
     pipeline = [
-        {"$match": {"listing_id": listing_id, "seller_id": uid}},
+        {"$match": {"listing_id": listing_id, "seller_id": {"$in": uid_variants}}},
         {"$group": {"_id": None, "total": {"$sum": f"$unread_{uid}"}}},
     ]
     result = await db.listing_chats.aggregate(pipeline).to_list(1)
-    total = result[0]["total"] if result else 0
-    return {"listing_id": listing_id, "unread_count": total, "conversation_count": await db.listing_chats.count_documents({"listing_id": listing_id, "seller_id": uid})}
+    total = result[0]["total"] if result and result[0].get("total") is not None else 0
+    return {"listing_id": listing_id, "unread_count": total, "conversation_count": await db.listing_chats.count_documents({"listing_id": listing_id, "seller_id": {"$in": uid_variants}})}
 
 
 @router.post("/listing/{listing_id}/send")
@@ -128,7 +140,7 @@ async def send_message(listing_id: str, body: SendMessageBody, user=Depends(get_
     if not listing:
         raise HTTPException(404, "Listing not found")
 
-    seller_id = listing["seller_id"]
+    seller_id = str(listing["seller_id"])
     seller_username = listing.get("seller_username", "seller")
     listing_title = listing.get("title", "Listing")
 
@@ -223,12 +235,14 @@ async def send_message_to_chat(chat_id: str, body: SendMessageBody, user=Depends
         raise HTTPException(404, "Chat not found")
 
     # Must be participant
-    if uid not in [chat["seller_id"], chat["buyer_id"]]:
+    seller_id = str(chat["seller_id"])
+    buyer_id = str(chat["buyer_id"])
+    if uid not in [seller_id, buyer_id]:
         raise HTTPException(403, "Not a participant")
 
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(days=30)
-    other_id = chat["buyer_id"] if uid == chat["seller_id"] else chat["seller_id"]
+    other_id = buyer_id if uid == seller_id else seller_id
 
     # Insert message
     msg_doc = {
@@ -277,7 +291,9 @@ async def get_chat_messages(chat_id: str, limit: int = 50, user=Depends(get_curr
     chat = await db.listing_chats.find_one({"_id": ObjectId(chat_id)})
     if not chat:
         raise HTTPException(404, "Chat not found")
-    if uid not in [chat["seller_id"], chat["buyer_id"]]:
+    seller_id = str(chat["seller_id"])
+    buyer_id = str(chat["buyer_id"])
+    if uid not in [seller_id, buyer_id]:
         raise HTTPException(403, "Not a participant")
 
     # Mark as read
@@ -305,8 +321,8 @@ async def get_chat_messages(chat_id: str, limit: int = 50, user=Depends(get_curr
         "chat_id": chat_id,
         "listing_id": chat["listing_id"],
         "listing_title": chat.get("listing_title", ""),
-        "seller_id": chat["seller_id"],
-        "buyer_id": chat["buyer_id"],
-        "other_username": chat.get("buyer_username") if uid == chat["seller_id"] else chat.get("seller_username"),
+        "seller_id": seller_id,
+        "buyer_id": buyer_id,
+        "other_username": chat.get("buyer_username") if uid == seller_id else chat.get("seller_username"),
         "messages": messages,
     }
