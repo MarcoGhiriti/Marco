@@ -108,6 +108,24 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
   - API smoke tests: PASS (`/api/routes`, `/api/routes/my`, create/delete route with meeting point)
   - Testing agent iteration 12: PASS for meeting point flows and frontend load
 
+### Session 9 — Route Creation Meeting Point + Routes Explore Sections (Mar 8, 2026)
+- **Create Route updated**:
+  - Added explicit **Meeting Point** section in `app/create/route.tsx`
+  - Meeting point is now clearly selectable, previewed, and required before proceeding
+  - Added quick action `Use start point` to reuse the start location as meeting point
+- **Map meeting point popup improved**:
+  - `MapCanvas.native.tsx` meeting point sheet is now dynamically sized using screen width + safe-area insets
+  - Overlay bottom spacing now avoids clipping behind bottom navigation on small screens
+  - Popup now shows name, route title, address, meta badges, directions action, and view details action in a more adaptive layout
+- **Routes Explore redesign**:
+  - Added `Created by users` section in Explore with horizontally scrollable normal route cards, filtered to routes within 100 km of user location
+  - Added `Recommendation of the day` section with a premium-locked Moto GO styled card (`Available with Moto Go Premium`)
+  - Added graceful fallback card when location is unavailable or no nearby user-created routes exist
+- **Verification status**:
+  - Expo web export: PASS after all UI changes
+  - Route create API regression smoke test: PASS (`POST /api/routes` still returns 201 with meeting_point)
+  - Frontend automation on web preview is LIMITED by React Native Web pressable/login interaction behavior; code review confirms requested UI is present in source
+
 **Pending: Backend refactor** - server.py has 4460 lines / 70+ endpoints. Needs incremental migration to routers: marketplace, events, routes, rides, stories, groups, notifications, messages, users
 
 ---
@@ -117,6 +135,8 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 ### P0 — Needs User Verification
 - **Deployment/build stability**: syntax blocker in `MapCanvas.native.tsx` fixed; user should verify the updated build on target devices
 - **Meeting Point ride start flow**: UI complete and tested with temporary routes; user should verify with their own routes after deploy/update
+- **Create Route Meeting Point section**: user should verify on-device that the new Meeting Point section is visible and usable in the create flow
+- **Map meeting point popup responsiveness**: user should verify on mobile that the bottom popup no longer clips behind tab navigation and adapts to narrow screens
 - **Ecran negru Expo Go**: Fix aplicat (`useSafeTabBarHeight`). User trebuie să testeze pe mobil
 - **Badge mesaje necitite grup**: Fix implementat. User trebuie să testeze după deploy
 - **Map callout Android**: Custom overlay implementat. User trebuie să testeze tap marker prieten pe Android
@@ -127,6 +147,7 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
   - Test: `curl -X PUT {API}/api/routes/pause/{route_id} -H "Authorization: Bearer {token}"`
 - ~~**MongoDB Atlas Index Conflict**~~: REZOLVAT — crearea indexului făcută idempotentă în `database.py`
 - **Date inconsistency on legacy routes**: multe rute vechi au `meeting_point: null`; pentru verificare completă UI este nevoie de rute noi/create cu meeting point setat
+- **Frontend web automation limitation**: anumite ecrane React Native Web (login / splash / pressables) nu răspund consistent la Playwright în preview; nu blochează funcționalitatea nativă, dar limitează verificarea automată vizuală
 
 ### P1 — 401 Unauthorized în Production (după un timp)
 - Pattern: primele request-uri reușesc (200), apoi TOATE devin 401
