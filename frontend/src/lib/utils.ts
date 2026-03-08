@@ -27,3 +27,28 @@ export function openDirectionsInGoogleMaps(polyline: number[][] | undefined) {
     }
   }
 }
+
+type PointLike = {
+  lat: number;
+  lng: number;
+};
+
+export function openDirectionsToPoint(point: PointLike, label = "Meeting Point") {
+  const encoded = encodeURIComponent(label);
+  try {
+    const { Linking, Platform } = require("react-native");
+    const url = Platform.select({
+      ios: `maps:0,0?q=${encoded}@${point.lat},${point.lng}`,
+      android: `google.navigation:q=${point.lat},${point.lng}`,
+      default: `https://www.google.com/maps/dir/?api=1&destination=${point.lat},${point.lng}&travelmode=driving`,
+    });
+    Linking.openURL(url as string);
+  } catch {
+    if (typeof window !== "undefined") {
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${point.lat},${point.lng}&travelmode=driving`,
+        "_blank"
+      );
+    }
+  }
+}

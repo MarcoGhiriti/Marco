@@ -11,7 +11,6 @@ import {
   View,
   Alert,
   Platform,
-  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -21,9 +20,9 @@ import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
-import type { RouteOut, RideSessionOut, ActiveRideForHomeOut } from "../../src/types/api";
+import type { MeetingPointOut, RouteOut, ActiveRideForHomeOut } from "../../src/types/api";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
-import { formatDuration, openDirectionsInGoogleMaps } from "../../src/lib/utils";
+import { formatDuration, openDirectionsInGoogleMaps, openDirectionsToPoint } from "../../src/lib/utils";
 
 export default function RoutesScreen() {
   const router = useRouter();
@@ -43,8 +42,6 @@ export default function RoutesScreen() {
   
   // Minimum participants required to start a route
   const MIN_PARTICIPANTS_TO_START = 3;
-  // Maximum distance from start point (in km) to start a route
-  const MAX_DISTANCE_TO_START_KM = 3;
 
   const authHeader = useMemo(() => {
     if (!accessToken) return undefined;
@@ -71,6 +68,9 @@ export default function RoutesScreen() {
 
   // Handle Start Ride with validations
   const handleStartRide = async (route: RouteOut) => {
+    const meetingPoint = getMeetingPoint(route.meeting_point);
+    const startRadiusKm = route.start_radius_km ?? 5;
+
     // Validation 1: Check minimum participants
     if (route.participants_count < MIN_PARTICIPANTS_TO_START) {
       showAlert(
@@ -80,29 +80,31 @@ export default function RoutesScreen() {
       return;
     }
 
-    // Validation 2: Check user is within 3km of start point
-    const startPoint = getStartPoint(route.polyline);
-    if (!startPoint) {
-      showAlert(t("common.error"), t("routes.noStartPoint"));
+    // Validation 2: Check user is within the allowed meeting point radius
+    if (!meetingPoint) {
+      showAlert(t("common.error"), "This route is missing a meeting point.");
       return;
     }
 
     if (!userLocation) {
-      showAlert(t("common.error"), t("routes.locationRequired"));
+      showAlert(
+        t("common.error"),
+        `Location access is required to start within ${startRadiusKm.toFixed(1)} km of the meeting point.`
+      );
       return;
     }
 
     const distanceToStart = calculateDistance(
       userLocation.lat,
       userLocation.lng,
-      startPoint.lat,
-      startPoint.lng
+      meetingPoint.lat,
+      meetingPoint.lng
     );
 
-    if (distanceToStart > MAX_DISTANCE_TO_START_KM) {
+    if (distanceToStart > startRadiusKm) {
       showAlert(
         t("routes.cannotStart"),
-        `${t("routes.tooFarFromStart")} (${distanceToStart.toFixed(1)} km)`
+        `Too far from meeting point (${distanceToStart.toFixed(1)} km). Move within ${startRadiusKm.toFixed(1)} km to start.`
       );
       return;
     }
@@ -110,7 +112,15 @@ export default function RoutesScreen() {
     // All validations passed - start the ride
     setActionLoading(route.id);
     try {
-      await apiPost("/api/rides/start", { route_id: route.id }, authHeader);
+      await apiPost(
+        "/api/rides/start",
+        {
+          route_id: route.id,
+          user_lat: userLocation.lat,
+          user_lng: userLocation.lng,
+        },
+        authHeader
+      );
       await loadRoutes(); // Refresh to get updated active ride status
       showAlert(t("routes.rideStarted"), t("routes.rideStartedMessage"));
     } catch (error: any) {
@@ -197,17 +207,60 @@ export default function RoutesScreen() {
 
   // Get user location
   useEffect(() => {
+    let subscription: Location.LocationSubscription | null = null;
+    let browserWatchId: number | null = null;
+    let cancelled = false;
+
+    const updateLocation = (lat: number, lng: number) => {
+      if (!cancelled) {
+        setUserLocation({ lat, lng });
+      }
+    };
+
     (async () => {
-      if (Platform.OS === "web") return;
       try {
+        if (Platform.OS === "web") {
+          if (typeof navigator !== "undefined" && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => updateLocation(position.coords.latitude, position.coords.longitude),
+              (error) => console.log("Browser location error:", error),
+              { enableHighAccuracy: true, maximumAge: 15000, timeout: 15000 }
+            );
+            browserWatchId = navigator.geolocation.watchPosition(
+              (position) => updateLocation(position.coords.latitude, position.coords.longitude),
+              (error) => console.log("Browser location watch error:", error),
+              { enableHighAccuracy: true, maximumAge: 15000, timeout: 15000 }
+            );
+          }
+          return;
+        }
+
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") return;
-        const loc = await Location.getCurrentPositionAsync({});
-        setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        updateLocation(loc.coords.latitude, loc.coords.longitude);
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Balanced,
+            distanceInterval: 100,
+            timeInterval: 15000,
+          },
+          (location) => updateLocation(location.coords.latitude, location.coords.longitude)
+        );
       } catch (e) {
         console.log("Location error:", e);
       }
     })();
+
+    return () => {
+      cancelled = true;
+      subscription?.remove();
+      if (browserWatchId !== null && typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.clearWatch(browserWatchId);
+      }
+    };
   }, []);
 
   // Calculate distance between two points (Haversine formula)
@@ -222,17 +275,17 @@ export default function RoutesScreen() {
     return R * c;
   };
 
-  // Get start point from polyline (polyline is already decoded as number[][])
-  const getStartPoint = (polyline: number[][] | undefined): { lat: number; lng: number } | null => {
-    try {
-      if (polyline && polyline.length > 0) {
-        return { lat: polyline[0][0], lng: polyline[0][1] };
-      }
-    } catch (e) {
-      console.log("Polyline error:", e);
+  const getMeetingPoint = (meetingPoint?: MeetingPointOut | null): MeetingPointOut | null => {
+    if (
+      meetingPoint &&
+      typeof meetingPoint.lat === "number" &&
+      typeof meetingPoint.lng === "number"
+    ) {
+      return meetingPoint;
     }
     return null;
   };
+
   const loadRoutes = useCallback(async () => {
     if (!authHeader) {
       setLoading(false);
@@ -282,20 +335,32 @@ export default function RoutesScreen() {
     const isInMyRoutesTab = activeTab === "my";
     const hasActiveRideOnThisRoute = activeRide?.route_id === item.id;
     const isRidePaused = hasActiveRideOnThisRoute && activeRide?.status === "paused";
-    const isRideActive = hasActiveRideOnThisRoute && activeRide?.status === "active";
-    const canStartRide = isOwner && isInMyRoutesTab && !activeRide;
     const participantsCount = item.participants_count || 0;
     const hasEnoughParticipants = participantsCount >= MIN_PARTICIPANTS_TO_START;
+    const meetingPoint = getMeetingPoint(item.meeting_point);
+    const startRadiusKm = item.start_radius_km ?? 5;
     
-    // Calculate distance to start point
-    let distanceToStart: number | null = null;
-    if (userLocation && item.polyline) {
-      const startPoint = getStartPoint(item.polyline);
-      if (startPoint) {
-        distanceToStart = calculateDistance(userLocation.lat, userLocation.lng, startPoint.lat, startPoint.lng);
-      }
+    // Calculate distance to meeting point
+    let distanceToMeetingPoint: number | null = null;
+    if (userLocation && meetingPoint) {
+      distanceToMeetingPoint = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        meetingPoint.lat,
+        meetingPoint.lng
+      );
     }
-    const isWithinStartRange = distanceToStart !== null && distanceToStart <= MAX_DISTANCE_TO_START_KM;
+    const isWithinStartRange =
+      distanceToMeetingPoint !== null && distanceToMeetingPoint <= startRadiusKm;
+    const isStartDisabled =
+      actionLoading === item.id ||
+      !!activeRide ||
+      !meetingPoint ||
+      !hasEnoughParticipants ||
+      distanceToMeetingPoint === null ||
+      !isWithinStartRange;
+    const meetingPointLabel = meetingPoint?.name?.trim() || "Meeting point";
+    const meetingPointAddress = meetingPoint?.address?.trim();
     
     return (
       <Pressable
@@ -373,6 +438,54 @@ export default function RoutesScreen() {
           {isInMyRoutesTab && isOwner && (
             <View style={styles.controlPanel} data-testid={`control-panel-${item.id}`}>
               <Text style={styles.controlPanelTitle}>{t("routes.controlPanel")}</Text>
+
+              <View style={styles.meetingPointCard} data-testid={`meeting-point-card-${item.id}`}>
+                <View style={styles.meetingPointHeader}>
+                  <View style={styles.meetingPointTitleRow}>
+                    <Ionicons name="flag" size={14} color={Colors.accent} />
+                    <Text style={styles.meetingPointTitle} data-testid={`meeting-point-name-${item.id}`}>
+                      {meetingPointLabel}
+                    </Text>
+                  </View>
+                  <View style={styles.meetingRadiusBadge}>
+                    <Text style={styles.meetingRadiusText}>{startRadiusKm.toFixed(1)} km radius</Text>
+                  </View>
+                </View>
+
+                {meetingPointAddress ? (
+                  <Text style={styles.meetingPointAddress} data-testid={`meeting-point-address-${item.id}`}>
+                    {meetingPointAddress}
+                  </Text>
+                ) : null}
+
+                {meetingPoint ? (
+                  <View style={styles.meetingPointMetaRow}>
+                    <View style={styles.meetingDistancePill}>
+                      <Ionicons name="navigate" size={12} color={Colors.accent} />
+                      <Text style={styles.meetingDistanceText} data-testid={`meeting-point-distance-${item.id}`}>
+                        {distanceToMeetingPoint !== null
+                          ? `Distance to meeting point: ${distanceToMeetingPoint.toFixed(1)} km`
+                          : "Distance to meeting point: enable location"}
+                      </Text>
+                    </View>
+                    <Pressable
+                      style={styles.navigateMeetingPointBtn}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        openDirectionsToPoint(meetingPoint, meetingPointLabel || item.title);
+                      }}
+                      data-testid={`navigate-meeting-point-btn-${item.id}`}
+                    >
+                      <Ionicons name="navigate" size={14} color={Colors.bg} />
+                      <Text style={styles.navigateMeetingPointText}>Navigate to meeting point</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Text style={styles.controlWarning} data-testid={`meeting-point-missing-${item.id}`}>
+                    This route is missing a meeting point.
+                  </Text>
+                )}
+              </View>
               
               <View style={styles.controlButtonsRow}>
                 {/* Start Button - visible when no active ride */}
@@ -387,7 +500,7 @@ export default function RoutesScreen() {
                       e.stopPropagation();
                       handleStartRide(item);
                     }}
-                    disabled={actionLoading === item.id || !!activeRide}
+                    disabled={isStartDisabled}
                     data-testid={`start-btn-${item.id}`}
                   >
                     {actionLoading === item.id ? (
@@ -465,18 +578,23 @@ export default function RoutesScreen() {
               
               {/* Warning messages when Start is disabled */}
               {!hasActiveRideOnThisRoute && !hasEnoughParticipants && (
-                <Text style={styles.controlWarning}>
+                <Text style={styles.controlWarning} data-testid={`control-warning-participants-${item.id}`}>
                   {t("routes.minParticipantsRequired", { count: MIN_PARTICIPANTS_TO_START })} ({participantsCount}/{MIN_PARTICIPANTS_TO_START})
                 </Text>
               )}
-              {!hasActiveRideOnThisRoute && hasEnoughParticipants && !isWithinStartRange && distanceToStart !== null && (
-                <Text style={styles.controlWarning}>
-                  {t("routes.tooFarFromStart")} ({distanceToStart.toFixed(1)} km)
+              {!hasActiveRideOnThisRoute && hasEnoughParticipants && !meetingPoint && (
+                <Text style={styles.controlWarning} data-testid={`control-warning-meeting-point-${item.id}`}>
+                  Add a meeting point to start this ride.
                 </Text>
               )}
-              {!hasActiveRideOnThisRoute && hasEnoughParticipants && distanceToStart === null && (
-                <Text style={styles.controlWarning}>
-                  {t("routes.locationRequired")}
+              {!hasActiveRideOnThisRoute && hasEnoughParticipants && meetingPoint && !isWithinStartRange && distanceToMeetingPoint !== null && (
+                <Text style={styles.controlWarning} data-testid={`control-warning-distance-${item.id}`}>
+                  Move within {startRadiusKm.toFixed(1)} km of the meeting point to start. You are {distanceToMeetingPoint.toFixed(1)} km away.
+                </Text>
+              )}
+              {!hasActiveRideOnThisRoute && hasEnoughParticipants && meetingPoint && distanceToMeetingPoint === null && (
+                <Text style={styles.controlWarning} data-testid={`control-warning-location-${item.id}`}>
+                  Enable location access to measure your distance to the meeting point.
                 </Text>
               )}
             </View>
@@ -863,6 +981,83 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     textTransform: "uppercase",
     marginBottom: 10,
+  },
+  meetingPointCard: {
+    backgroundColor: Colors.bg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    padding: 12,
+    gap: 10,
+    marginBottom: 12,
+  },
+  meetingPointHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  meetingPointTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  meetingPointTitle: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    flex: 1,
+  },
+  meetingRadiusBadge: {
+    backgroundColor: `${Colors.accent}20`,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  meetingRadiusText: {
+    color: Colors.accent,
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+  },
+  meetingPointAddress: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 18,
+  },
+  meetingPointMetaRow: {
+    gap: 10,
+  },
+  meetingDistancePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    backgroundColor: Colors.card,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  meetingDistanceText: {
+    color: Colors.text,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  navigateMeetingPointBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  navigateMeetingPointText: {
+    color: Colors.bg,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
   },
   controlButtonsRow: {
     flexDirection: "row",

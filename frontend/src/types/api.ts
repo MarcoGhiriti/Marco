@@ -14,11 +14,21 @@ export type WaypointOut = {
   city?: string | null;
 };
 
+export type MeetingPointOut = {
+  lat: number;
+  lng: number;
+  name?: string | null;
+  address?: string | null;
+};
+
 export type RouteOut = {
   id: string;
   title: string;
   description: string;
   polyline: number[][]; // [lat,lng]
+
+  meeting_point?: MeetingPointOut | null;
+  start_radius_km?: number;
 
   start_point?: number[] | null;
   end_point?: number[] | null;

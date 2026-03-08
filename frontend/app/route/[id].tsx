@@ -24,6 +24,7 @@ import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut, UserSearchOut } from "../../src/types/api";
 import { InviteFriendsModal } from "../../src/components/InviteFriendsModal";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
+import { openDirectionsToPoint } from "../../src/lib/utils";
 
 export default function RouteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -245,8 +246,8 @@ export default function RouteDetailScreen() {
         <View style={styles.mapContainer}>
           <RouteMiniMap
             polyline={route.polyline}
-            startCity={route.start_city}
-            endCity={route.end_city}
+            startCity={route.start_city ?? undefined}
+            endCity={route.end_city ?? undefined}
             height={220}
           />
           
@@ -328,6 +329,44 @@ export default function RouteDetailScreen() {
                 <Text style={styles.kvValue}>{route.end_city}</Text>
               </View>
             ) : null}
+          </View>
+        ) : null}
+
+        {route.meeting_point ? (
+          <View style={styles.section} data-testid={`route-meeting-point-section-${route.id}`}>
+            <Text style={styles.sectionTitle}>Meeting point</Text>
+            <View style={styles.meetingPointCard}>
+              <View style={styles.meetingPointRow}>
+                <Ionicons name="flag" size={18} color={Colors.accent} />
+                <View style={styles.meetingPointInfo}>
+                  <Text style={styles.meetingPointName} data-testid={`route-meeting-point-name-${route.id}`}>
+                    {route.meeting_point.name || "Meeting point"}
+                  </Text>
+                  {route.meeting_point.address ? (
+                    <Text style={styles.meetingPointAddress} data-testid={`route-meeting-point-address-${route.id}`}>
+                      {route.meeting_point.address}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+
+              <View style={styles.meetingPointFooter}>
+                <View style={styles.meetingRadiusChip}>
+                  <Ionicons name="locate" size={14} color={Colors.accent} />
+                  <Text style={styles.meetingRadiusText} data-testid={`route-meeting-point-radius-${route.id}`}>
+                    Start within {(route.start_radius_km ?? 5).toFixed(1)} km
+                  </Text>
+                </View>
+                <Pressable
+                  style={styles.meetingPointButton}
+                  onPress={() => openDirectionsToPoint(route.meeting_point!, route.meeting_point?.name || route.title)}
+                  data-testid={`route-meeting-point-navigate-${route.id}`}
+                >
+                  <Ionicons name="navigate" size={16} color={Colors.bg} />
+                  <Text style={styles.meetingPointButtonText}>Navigate to meeting point</Text>
+                </Pressable>
+              </View>
+            </View>
           </View>
         ) : null}
 
@@ -714,6 +753,62 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_700Bold",
     marginBottom: 10,
+  },
+  meetingPointCard: {
+    gap: 12,
+  },
+  meetingPointRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  meetingPointInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  meetingPointName: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  meetingPointAddress: {
+    color: Colors.muted,
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 20,
+  },
+  meetingPointFooter: {
+    gap: 10,
+  },
+  meetingRadiusChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    backgroundColor: `${Colors.accent}18`,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  meetingRadiusText: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
+  meetingPointButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  meetingPointButtonText: {
+    color: Colors.bg,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
   },
   description: {
     color: Colors.muted,

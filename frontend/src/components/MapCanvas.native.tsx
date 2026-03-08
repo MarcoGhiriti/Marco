@@ -627,6 +627,8 @@ export default function MapCanvas({
         </Pressable>
       )}
     </View>
+  );
+}
 
 const styles = StyleSheet.create({
   mapWrapper: {
