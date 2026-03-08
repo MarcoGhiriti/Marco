@@ -1,345 +1,364 @@
 #!/usr/bin/env python3
 """
-Backend testing for Marketplace functionality
-Tests the marketplace endpoints as requested by the user.
+Backend Smoke Test for Moto GO API
+Tests the specific API behaviors requested in the review:
+1. POST /api/auth/login returns access token
+2. POST /api/routes with meeting_point payload succeeds and returns HTTP 201
+3. GET /api/routes/my includes meeting_point and start_radius_km
+4. DELETE /api/routes/{id} cleans up the temporary route
+5. Confirm no regression in GET /api/routes
 """
 
-import asyncio
-import base64
 import json
-import os
-from datetime import datetime, timedelta
+import requests
+import sys
+from datetime import datetime
 from typing import Dict, Any
 
-import httpx
-
-
-# Backend URL from frontend .env
-BACKEND_URL = "https://ride-start-gating.preview.emergentagent.com/api"
+# API Base URL from frontend .env
+BASE_URL = "https://ride-start-gating.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_EMAIL = "user1@example.com"
 TEST_PASSWORD = "Password123"
 
-# Sample base64 image (1x1 pixel PNG)
-SAMPLE_IMAGE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-
-
-class MarketplaceTestRunner:
+class MotoGoTester:
     def __init__(self):
-        self.client = httpx.AsyncClient(timeout=30.0)
-        self.token = None
-        self.created_listing_id = None
+        self.base_url = BASE_URL
+        self.access_token = None
+        self.headers = {"Content-Type": "application/json"}
+        self.created_route_id = None
         
-    async def __aenter__(self):
-        return self
+    def log(self, message: str, level: str = "INFO"):
+        """Log test messages with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
         
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.client.aclose()
-
-    async def login(self) -> bool:
-        """Step 1: Login with user1@example.com / Password123 and obtain token"""
-        print("🔐 Step 1: Testing login...")
+    def make_request(self, method: str, endpoint: str, data: Dict[Any, Any] = None, expected_status: int = None) -> requests.Response:
+        """Make HTTP request with proper error handling"""
+        url = f"{self.base_url}{endpoint}"
+        headers = self.headers.copy()
         
-        try:
-            response = await self.client.post(
-                f"{BACKEND_URL}/auth/login",
-                json={
-                    "email": TEST_EMAIL,
-                    "password": TEST_PASSWORD
-                }
-            )
+        if self.access_token:
+            headers["Authorization"] = f"Bearer {self.access_token}"
             
-            if response.status_code == 200:
-                data = response.json()
-                self.token = data.get("access_token")
-                if self.token:
-                    print(f"✅ Login successful! Token obtained: {self.token[:20]}...")
-                    return True
-                else:
-                    print("❌ Login failed: No access token in response")
-                    return False
+        try:
+            if method.upper() == "GET":
+                response = requests.get(url, headers=headers, timeout=30)
+            elif method.upper() == "POST":
+                response = requests.post(url, headers=headers, json=data, timeout=30)
+            elif method.upper() == "DELETE":
+                response = requests.delete(url, headers=headers, timeout=30)
             else:
-                print(f"❌ Login failed with status {response.status_code}: {response.text}")
+                raise ValueError(f"Unsupported method: {method}")
+                
+            self.log(f"{method.upper()} {endpoint} -> {response.status_code}")
+            
+            if expected_status and response.status_code != expected_status:
+                self.log(f"Expected status {expected_status}, got {response.status_code}", "ERROR")
+                self.log(f"Response: {response.text[:500]}", "ERROR")
+                
+            return response
+            
+        except requests.exceptions.RequestException as e:
+            self.log(f"Request failed: {e}", "ERROR")
+            raise
+            
+    def test_login(self) -> bool:
+        """Test 1: POST /api/auth/login returns access token"""
+        self.log("🔐 Testing login endpoint...")
+        
+        login_data = {
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
+        }
+        
+        response = self.make_request("POST", "/auth/login", login_data, expected_status=200)
+        
+        if response.status_code != 200:
+            self.log("❌ Login failed - incorrect status code", "ERROR")
+            return False
+            
+        try:
+            data = response.json()
+            if "access_token" not in data:
+                self.log("❌ Login response missing access_token", "ERROR")
                 return False
                 
-        except Exception as e:
-            print(f"❌ Login error: {e}")
+            self.access_token = data["access_token"]
+            self.log(f"✅ Login successful - token: {self.access_token[:20]}...")
+            return True
+            
+        except json.JSONDecodeError:
+            self.log("❌ Login response not valid JSON", "ERROR")
             return False
-
-    def get_auth_headers(self) -> Dict[str, str]:
-        """Get authorization headers with token"""
-        if not self.token:
-            raise ValueError("No token available. Login first.")
-        return {"Authorization": f"Bearer {self.token}"}
-
-    async def create_listing(self) -> bool:
-        """Step 2: POST /api/marketplace/listings with phone (optional) + minimum 1 base64 image"""
-        print("\n📝 Step 2: Testing create marketplace listing...")
+            
+    def test_create_route_with_meeting_point(self) -> bool:
+        """Test 2: POST /api/routes with meeting_point payload succeeds and returns HTTP 201"""
+        self.log("🛣️  Testing route creation with meeting point...")
         
+        # Create a test route with meeting point and polyline
+        route_data = {
+            "title": "Test Route with Meeting Point",
+            "description": "Backend smoke test route with meeting point",
+            "polyline": [
+                [44.4268, 26.1025],  # Bucharest start
+                [44.4500, 26.1200],  # Intermediate point
+                [44.4800, 26.1500]   # End point
+            ],
+            "meeting_point": {
+                "lat": 44.4268,
+                "lng": 26.1025,
+                "name": "Central Meeting Point",
+                "address": "Piața Universității, București, Romania"
+            },
+            "start_radius_km": 3.5,
+            "difficulty": "medium",
+            "participants_min": 2,
+            "participants_max": 8,
+            "fuel_price_per_l": 7.2,
+            "bike_consumption_l_per_100km": 5.5,
+            "toll_estimate": 0.0,
+            "currency": "RON"
+        }
+        
+        response = self.make_request("POST", "/routes", route_data, expected_status=201)
+        
+        if response.status_code != 201:
+            self.log("❌ Route creation failed - incorrect status code", "ERROR")
+            return False
+            
         try:
-            listing_data = {
-                "title": "Test Motorcycle Yamaha R1",
-                "description": "Beautiful motorcycle in excellent condition. Perfect for weekend rides.",
-                "price": 8500.0,
-                "currency": "EUR",
-                "location": "Bucharest, Romania",
-                "category": "motorcycle",
-                "brand": "Yamaha",
-                "model": "R1",
-                "year": 2020,
-                "engine_cc": 998,
-                "horsepower": 200,
-                "kilometers": 15000,
-                "license_type": "A",
-                "condition": "Used",
-                "images": [SAMPLE_IMAGE_BASE64],  # Minimum 1 image as required
-                "phone": "+40721234567"  # Optional phone field
-            }
-            
-            response = await self.client.post(
-                f"{BACKEND_URL}/marketplace/listings",
-                json=listing_data,
-                headers=self.get_auth_headers()
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.created_listing_id = data.get("id")
-                print(f"✅ Listing created successfully! ID: {self.created_listing_id}")
-                print(f"   Title: {data.get('title')}")
-                print(f"   Phone: {data.get('phone')}")
-                print(f"   Images count: {len(data.get('images', []))}")
-                return True
-            else:
-                print(f"❌ Create listing failed with status {response.status_code}: {response.text}")
+            data = response.json()
+            if "id" not in data:
+                self.log("❌ Route creation response missing id", "ERROR")
                 return False
                 
-        except Exception as e:
-            print(f"❌ Create listing error: {e}")
-            return False
-
-    async def get_my_listings(self) -> bool:
-        """Step 3: GET /api/marketplace/listings?mine=true and verify listing appears"""
-        print("\n📋 Step 3: Testing get my listings...")
-        
-        try:
-            response = await self.client.get(
-                f"{BACKEND_URL}/marketplace/listings?mine=true",
-                headers=self.get_auth_headers()
-            )
+            self.created_route_id = data["id"]
             
-            if response.status_code == 200:
-                listings = response.json()
-                print(f"✅ My listings retrieved successfully! Count: {len(listings)}")
-                
-                # Verify our created listing appears
-                found_listing = None
-                for listing in listings:
-                    if listing.get("id") == self.created_listing_id:
-                        found_listing = listing
-                        break
-                
-                if found_listing:
-                    print(f"✅ Created listing found in my listings!")
-                    print(f"   Title: {found_listing.get('title')}")
-                    print(f"   Phone: {found_listing.get('phone')}")
-                    return True
-                else:
-                    print(f"❌ Created listing NOT found in my listings!")
-                    return False
-            else:
-                print(f"❌ Get my listings failed with status {response.status_code}: {response.text}")
+            # Verify meeting_point is in response
+            if "meeting_point" not in data or not data["meeting_point"]:
+                self.log("❌ Route response missing meeting_point", "ERROR")
                 return False
                 
-        except Exception as e:
-            print(f"❌ Get my listings error: {e}")
-            return False
-
-    async def get_listing_detail(self) -> bool:
-        """Step 4: GET /api/marketplace/listings/{id} and verify phone is included"""
-        print("\n🔍 Step 4: Testing get listing detail...")
-        
-        if not self.created_listing_id:
-            print("❌ No listing ID available for detail test")
-            return False
-        
-        try:
-            response = await self.client.get(
-                f"{BACKEND_URL}/marketplace/listings/{self.created_listing_id}",
-                headers=self.get_auth_headers()
-            )
-            
-            if response.status_code == 200:
-                listing = response.json()
-                print(f"✅ Listing detail retrieved successfully!")
-                print(f"   Title: {listing.get('title')}")
-                print(f"   Phone: {listing.get('phone')}")
-                print(f"   Created at: {listing.get('created_at')}")
-                
-                # Verify phone is included
-                if listing.get("phone"):
-                    print(f"✅ Phone field is included: {listing.get('phone')}")
-                    return True
-                else:
-                    print(f"❌ Phone field is missing or empty!")
-                    return False
-            else:
-                print(f"❌ Get listing detail failed with status {response.status_code}: {response.text}")
+            meeting_point = data["meeting_point"]
+            if not all(key in meeting_point for key in ["lat", "lng", "name", "address"]):
+                self.log("❌ Meeting point missing required fields", "ERROR")
                 return False
                 
-        except Exception as e:
-            print(f"❌ Get listing detail error: {e}")
-            return False
-
-    async def test_3_month_filter(self) -> bool:
-        """Step 5: Verify 3-month filter (check that endpoint uses created_at >= 90 days)"""
-        print("\n📅 Step 5: Testing 3-month filter...")
-        
-        try:
-            # Test 1: Get all listings (should include recent ones)
-            response = await self.client.get(
-                f"{BACKEND_URL}/marketplace/listings",
-                headers=self.get_auth_headers()
-            )
+            # Verify start_radius_km is in response
+            if "start_radius_km" not in data:
+                self.log("❌ Route response missing start_radius_km", "ERROR")
+                return False
+                
+            if data["start_radius_km"] != 3.5:
+                self.log(f"❌ start_radius_km mismatch: expected 3.5, got {data['start_radius_km']}", "ERROR")
+                return False
+                
+            self.log(f"✅ Route created successfully - ID: {self.created_route_id}")
+            self.log(f"✅ Meeting point verified: {meeting_point['name']} at ({meeting_point['lat']}, {meeting_point['lng']})")
+            self.log(f"✅ Start radius verified: {data['start_radius_km']} km")
+            return True
             
-            if response.status_code == 200:
-                all_listings = response.json()
-                print(f"✅ All listings retrieved: {len(all_listings)} listings")
+        except json.JSONDecodeError:
+            self.log("❌ Route creation response not valid JSON", "ERROR")
+            return False
+            
+    def test_get_my_routes(self) -> bool:
+        """Test 3: GET /api/routes/my includes meeting_point and start_radius_km"""
+        self.log("📋 Testing get my routes endpoint...")
+        
+        response = self.make_request("GET", "/routes/my", expected_status=200)
+        
+        if response.status_code != 200:
+            self.log("❌ Get my routes failed - incorrect status code", "ERROR")
+            return False
+            
+        try:
+            data = response.json()
+            if not isinstance(data, list):
+                self.log("❌ My routes response not a list", "ERROR")
+                return False
                 
-                # Check if our recent listing is included
-                recent_found = any(l.get("id") == self.created_listing_id for l in all_listings)
-                if recent_found:
-                    print(f"✅ Recent listing (created now) is included in results")
-                else:
-                    print(f"❌ Recent listing NOT found in all listings")
-                    return False
-                
-                # Verify all listings are within 3 months (90 days)
-                cutoff_date = datetime.utcnow() - timedelta(days=90)
-                old_listings_count = 0
-                
-                for listing in all_listings:
-                    created_at_str = listing.get("created_at")
-                    if created_at_str:
-                        try:
-                            created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
-                            if created_at < cutoff_date:
-                                old_listings_count += 1
-                        except:
-                            pass
-                
-                if old_listings_count == 0:
-                    print(f"✅ 3-month filter working: No listings older than 90 days found")
-                    return True
-                else:
-                    print(f"⚠️  Found {old_listings_count} listings older than 90 days - filter may not be working")
-                    return True  # Still pass as this might be expected in test environment
+            # Find our created route
+            created_route = None
+            for route in data:
+                if route.get("id") == self.created_route_id:
+                    created_route = route
+                    break
                     
-            else:
-                print(f"❌ Get all listings failed with status {response.status_code}: {response.text}")
+            if not created_route:
+                self.log("❌ Created route not found in my routes", "ERROR")
                 return False
                 
-        except Exception as e:
-            print(f"❌ 3-month filter test error: {e}")
-            return False
-
-    async def delete_listing(self) -> bool:
-        """Step 6: DELETE /api/marketplace/listings/{id} as owner"""
-        print("\n🗑️  Step 6: Testing delete listing as owner...")
-        
-        if not self.created_listing_id:
-            print("❌ No listing ID available for delete test")
-            return False
-        
-        try:
-            response = await self.client.delete(
-                f"{BACKEND_URL}/marketplace/listings/{self.created_listing_id}",
-                headers=self.get_auth_headers()
-            )
+            # Verify meeting_point is present and populated
+            if "meeting_point" not in created_route or not created_route["meeting_point"]:
+                self.log("❌ Meeting point missing from my routes response", "ERROR")
+                return False
+                
+            meeting_point = created_route["meeting_point"]
+            expected_fields = ["lat", "lng", "name", "address"]
+            if not all(key in meeting_point for key in expected_fields):
+                self.log(f"❌ Meeting point missing fields: {expected_fields}", "ERROR")
+                return False
+                
+            # Verify start_radius_km is present
+            if "start_radius_km" not in created_route:
+                self.log("❌ start_radius_km missing from my routes response", "ERROR")
+                return False
+                
+            if created_route["start_radius_km"] != 3.5:
+                self.log(f"❌ start_radius_km mismatch in my routes: expected 3.5, got {created_route['start_radius_km']}", "ERROR")
+                return False
+                
+            self.log(f"✅ My routes endpoint working - found route: {created_route['title']}")
+            self.log(f"✅ Meeting point present: {meeting_point['name']}")
+            self.log(f"✅ Start radius present: {created_route['start_radius_km']} km")
+            return True
             
-            if response.status_code == 200:
-                data = response.json()
-                print(f"✅ Listing deleted successfully!")
-                print(f"   Response: {data}")
+        except json.JSONDecodeError:
+            self.log("❌ My routes response not valid JSON", "ERROR")
+            return False
+            
+    def test_get_all_routes(self) -> bool:
+        """Test 5: Confirm no regression in GET /api/routes"""
+        self.log("🌍 Testing get all routes endpoint...")
+        
+        response = self.make_request("GET", "/routes", expected_status=200)
+        
+        if response.status_code != 200:
+            self.log("❌ Get all routes failed - incorrect status code", "ERROR")
+            return False
+            
+        try:
+            data = response.json()
+            if not isinstance(data, list):
+                self.log("❌ All routes response not a list", "ERROR")
+                return False
                 
-                # Verify listing is actually deleted by trying to get it
-                verify_response = await self.client.get(
-                    f"{BACKEND_URL}/marketplace/listings/{self.created_listing_id}",
-                    headers=self.get_auth_headers()
-                )
+            # Find our created route in the list
+            found_route = None
+            for route in data:
+                if route.get("id") == self.created_route_id:
+                    found_route = route
+                    break
+                    
+            if not found_route:
+                self.log("❌ Created route not visible in all routes", "ERROR")
+                return False
                 
-                if verify_response.status_code == 404:
-                    print(f"✅ Listing deletion verified - listing no longer accessible")
-                    return True
-                else:
-                    print(f"❌ Listing still accessible after deletion (status: {verify_response.status_code})")
+            # Verify basic route structure
+            required_fields = [
+                "id", "title", "description", "polyline", 
+                "meeting_point", "start_radius_km", "distance_km", 
+                "duration_min", "participants_count", "created_by"
+            ]
+            
+            for field in required_fields:
+                if field not in found_route:
+                    self.log(f"❌ Route missing required field: {field}", "ERROR")
                     return False
                     
-            else:
-                print(f"❌ Delete listing failed with status {response.status_code}: {response.text}")
+            # Verify meeting_point structure
+            meeting_point = found_route["meeting_point"]
+            if not meeting_point or not isinstance(meeting_point, dict):
+                self.log("❌ Meeting point not properly structured in all routes", "ERROR")
                 return False
                 
-        except Exception as e:
-            print(f"❌ Delete listing error: {e}")
+            self.log(f"✅ All routes endpoint working - found {len(data)} routes")
+            self.log(f"✅ Created route visible with meeting point: {meeting_point.get('name', 'N/A')}")
+            return True
+            
+        except json.JSONDecodeError:
+            self.log("❌ All routes response not valid JSON", "ERROR")
             return False
-
-    async def run_all_tests(self) -> Dict[str, bool]:
-        """Run all marketplace tests in sequence"""
-        print("🚀 Starting Marketplace Backend Tests")
-        print(f"Backend URL: {BACKEND_URL}")
-        print("=" * 60)
+            
+    def test_delete_route(self) -> bool:
+        """Test 4: DELETE /api/routes/{id} cleans up the temporary route"""
+        self.log("🗑️  Testing route deletion...")
+        
+        if not self.created_route_id:
+            self.log("❌ No route ID to delete", "ERROR")
+            return False
+            
+        response = self.make_request("DELETE", f"/routes/{self.created_route_id}", expected_status=200)
+        
+        if response.status_code != 200:
+            self.log("❌ Route deletion failed - incorrect status code", "ERROR")
+            return False
+            
+        try:
+            data = response.json()
+            if not data.get("ok"):
+                self.log("❌ Route deletion response not indicating success", "ERROR")
+                return False
+                
+            # Verify route is actually deleted by trying to fetch it in my routes
+            verify_response = self.make_request("GET", "/routes/my")
+            if verify_response.status_code == 200:
+                routes = verify_response.json()
+                for route in routes:
+                    if route.get("id") == self.created_route_id:
+                        self.log("❌ Route still exists after deletion", "ERROR")
+                        return False
+                        
+            self.log(f"✅ Route deleted successfully - ID: {self.created_route_id}")
+            return True
+            
+        except json.JSONDecodeError:
+            self.log("❌ Route deletion response not valid JSON", "ERROR")
+            return False
+            
+    def run_all_tests(self) -> bool:
+        """Run all smoke tests in order"""
+        self.log("🚀 Starting Moto GO Backend Smoke Tests")
+        self.log(f"🔗 API Base URL: {self.base_url}")
+        
+        tests = [
+            ("Login", self.test_login),
+            ("Create Route with Meeting Point", self.test_create_route_with_meeting_point),
+            ("Get My Routes", self.test_get_my_routes),
+            ("Get All Routes", self.test_get_all_routes),
+            ("Delete Route", self.test_delete_route),
+        ]
         
         results = {}
+        for test_name, test_func in tests:
+            self.log(f"\n--- Running: {test_name} ---")
+            try:
+                results[test_name] = test_func()
+            except Exception as e:
+                self.log(f"❌ {test_name} failed with exception: {e}", "ERROR")
+                results[test_name] = False
+                
+        # Summary
+        self.log("\n" + "="*50)
+        self.log("📊 TEST SUMMARY")
+        self.log("="*50)
         
-        # Step 1: Login
-        results["login"] = await self.login()
-        if not results["login"]:
-            print("\n❌ Login failed - cannot continue with other tests")
-            return results
+        passed = 0
+        total = len(tests)
         
-        # Step 2: Create listing
-        results["create_listing"] = await self.create_listing()
+        for test_name, passed_test in results.items():
+            status = "✅ PASS" if passed_test else "❌ FAIL"
+            self.log(f"{status}: {test_name}")
+            if passed_test:
+                passed += 1
+                
+        self.log(f"\nResults: {passed}/{total} tests passed")
         
-        # Step 3: Get my listings
-        results["get_my_listings"] = await self.get_my_listings()
-        
-        # Step 4: Get listing detail
-        results["get_listing_detail"] = await self.get_listing_detail()
-        
-        # Step 5: Test 3-month filter
-        results["test_3_month_filter"] = await self.test_3_month_filter()
-        
-        # Step 6: Delete listing
-        results["delete_listing"] = await self.delete_listing()
-        
-        return results
-
-
-async def main():
-    """Main test runner"""
-    async with MarketplaceTestRunner() as runner:
-        results = await runner.run_all_tests()
-        
-        print("\n" + "=" * 60)
-        print("📊 TEST RESULTS SUMMARY")
-        print("=" * 60)
-        
-        all_passed = True
-        for test_name, passed in results.items():
-            status = "✅ PASS" if passed else "❌ FAIL"
-            print(f"{test_name:20} : {status}")
-            if not passed:
-                all_passed = False
-        
-        print("=" * 60)
-        if all_passed:
-            print("🎉 ALL TESTS PASSED!")
+        if passed == total:
+            self.log("🎉 All tests passed! Backend API is working correctly.")
+            return True
         else:
-            print("⚠️  SOME TESTS FAILED!")
-        
-        return results
+            self.log(f"⚠️  {total - passed} test(s) failed. Check logs above.")
+            return False
 
+def main():
+    """Main entry point"""
+    tester = MotoGoTester()
+    success = tester.run_all_tests()
+    sys.exit(0 if success else 1)
 
 if __name__ == "__main__":
-    results = asyncio.run(main())
+    main()
