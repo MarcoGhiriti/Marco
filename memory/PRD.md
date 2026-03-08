@@ -95,6 +95,19 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
   - Added support@motogo.life email link (mailto:)
   - Cleaned up dead code (loadPrivacy, togglePrivacy, cycleRoutesVisibility, Switch)
 
+### Session 8 — Deployment Unblock + Meeting Point UI Complete (Mar 8, 2026)
+- **Deployment blocker fixed**: repaired missing component closure in `frontend/src/components/MapCanvas.native.tsx`; Expo web export now completes successfully again
+- **Meeting Point frontend complete**:
+  - `app/(tabs)/routes.tsx` now shows meeting point owner card in **My Routes** with name, address, radius chip, distance text, and `Navigate to meeting point`
+  - Start button is disabled when meeting point is missing, location is unavailable, rider is too far from meeting point, or participant minimum is not met
+  - User location now updates continuously (native watcher + browser geolocation watcher)
+- **Route detail page**: `app/route/[id].tsx` now renders a dedicated meeting point section with radius text and navigation button
+- **Backend API fix**: `GET /api/routes/my` now returns `meeting_point` and `start_radius_km`; `POST /api/routes` now returns **201 Created**
+- **Verification status**:
+  - Expo web export: PASS
+  - API smoke tests: PASS (`/api/routes`, `/api/routes/my`, create/delete route with meeting point)
+  - Testing agent iteration 12: PASS for meeting point flows and frontend load
+
 **Pending: Backend refactor** - server.py has 4460 lines / 70+ endpoints. Needs incremental migration to routers: marketplace, events, routes, rides, stories, groups, notifications, messages, users
 
 ---
@@ -102,6 +115,8 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 ## Pending Issues (Priority Order)
 
 ### P0 — Needs User Verification
+- **Deployment/build stability**: syntax blocker in `MapCanvas.native.tsx` fixed; user should verify the updated build on target devices
+- **Meeting Point ride start flow**: UI complete and tested with temporary routes; user should verify with their own routes after deploy/update
 - **Ecran negru Expo Go**: Fix aplicat (`useSafeTabBarHeight`). User trebuie să testeze pe mobil
 - **Badge mesaje necitite grup**: Fix implementat. User trebuie să testeze după deploy
 - **Map callout Android**: Custom overlay implementat. User trebuie să testeze tap marker prieten pe Android
@@ -111,6 +126,7 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 - **Eroare pauză traseu**: `PUT /api/routes/pause/{route_id}` — fix aplicat dar NETESTAT
   - Test: `curl -X PUT {API}/api/routes/pause/{route_id} -H "Authorization: Bearer {token}"`
 - ~~**MongoDB Atlas Index Conflict**~~: REZOLVAT — crearea indexului făcută idempotentă în `database.py`
+- **Date inconsistency on legacy routes**: multe rute vechi au `meeting_point: null`; pentru verificare completă UI este nevoie de rute noi/create cu meeting point setat
 
 ### P1 — 401 Unauthorized în Production (după un timp)
 - Pattern: primele request-uri reușesc (200), apoi TOATE devin 401
