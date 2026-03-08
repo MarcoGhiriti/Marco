@@ -183,8 +183,18 @@ export default function MapScreen() {
           try {
             const routes = await apiGet<any[]>(`/api/routes`, authHeader);
             setRouteMarkers((routes || []).filter(r => r.meeting_point).map(r => ({
-              id: r.id, type: "route", name: r.title, lat: r.meeting_point.lat, lng: r.meeting_point.lng,
-              distance_km: r.distance_km, start_date: r.start_date, difficulty: r.difficulty,
+              id: r.id,
+              route_id: r.id,
+              type: "route",
+              name: r.meeting_point?.name || r.title,
+              route_title: r.title,
+              address: r.meeting_point?.address || "",
+              lat: r.meeting_point.lat,
+              lng: r.meeting_point.lng,
+              distance_km: r.distance_km,
+              start_date: r.start_date,
+              difficulty: r.difficulty,
+              start_radius_km: r.start_radius_km,
             })));
           } catch { setRouteMarkers([]); }
         } else { setRouteMarkers([]); }
@@ -200,9 +210,18 @@ export default function MapScreen() {
                   const route = await apiGet<any>(`/api/routes/${ride.route_id}`, authHeader);
                   if (route?.meeting_point) {
                     rideItems.push({
-                      id: ride.id, type: "live_ride", name: route.title || "Live Ride",
-                      lat: route.meeting_point.lat, lng: route.meeting_point.lng,
+                      id: ride.id,
+                      route_id: ride.route_id,
+                      type: "live_ride",
+                      name: route.meeting_point?.name || route.title || "Live Ride",
+                      route_title: route.title || "Live Ride",
+                      address: route.meeting_point?.address || "",
+                      lat: route.meeting_point.lat,
+                      lng: route.meeting_point.lng,
                       start_time: ride.start_time,
+                      distance_km: route.distance_km,
+                      difficulty: route.difficulty,
+                      start_radius_km: route.start_radius_km,
                     });
                   }
                 } catch {}
@@ -217,8 +236,13 @@ export default function MapScreen() {
         setIsFetching(false);
       }
     },
-    [authHeader, showGas, showService]
+    [authHeader, showGas, showService, showRoutes, showLiveRides]
   );
+
+  useEffect(() => {
+    if (!authHeader || isWeb) return;
+    fetchMapData(region);
+  }, [fetchMapData, authHeader, isWeb]);
 
   const initMap = useCallback(async () => {
     const location = await requestLocation();

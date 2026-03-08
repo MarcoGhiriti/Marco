@@ -157,6 +157,7 @@ export default function CreateRouteScreen() {
 
   const [step, setStep] = useState<1 | 2>(1);
   const [startPoint, setStartPoint] = useState<PlaceDetails | null>(null);
+  const [meetingPoint, setMeetingPoint] = useState<PlaceDetails | null>(null);
   const [endPoint, setEndPoint] = useState<PlaceDetails | null>(null);
   const [waypoints, setWaypoints] = useState<PlaceDetails[]>([]);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
@@ -263,10 +264,13 @@ export default function CreateRouteScreen() {
     setRouteInfo(null);
   };
 
-  const canProceed = startPoint && endPoint && routeInfo && !loadingRoute;
+  const canProceed = startPoint && meetingPoint && endPoint && routeInfo && !loadingRoute;
 
   const handleCreate = async () => {
-    if (!headers || !routeInfo || !title.trim()) return;
+    if (!headers || !routeInfo || !title.trim() || !meetingPoint) {
+      setError("Meeting point is required before creating the route.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -280,10 +284,10 @@ export default function CreateRouteScreen() {
           difficulty,
           stops_count: waypoints.length,
           meeting_point: {
-            lat: startPoint!.lat,
-            lng: startPoint!.lng,
-            name: startPoint!.name || "",
-            address: startPoint!.address || "",
+            lat: meetingPoint.lat,
+            lng: meetingPoint.lng,
+            name: meetingPoint.name || "",
+            address: meetingPoint.address || "",
           },
           start_radius_km: 5.0,
           start_point: startPoint ? [startPoint.lat, startPoint.lng] : null,
@@ -411,11 +415,83 @@ export default function CreateRouteScreen() {
                   icon="flag"
                   iconColor={Colors.success}
                   onPlaceSelected={(place) => {
+                    const previousStartPlaceId = startPoint?.place_id;
                     setStartPoint(place);
+                    setMeetingPoint((current) => {
+                      if (!current || current.place_id === previousStartPlaceId) {
+                        return place;
+                      }
+                      return current;
+                    });
                     setRouteInfo(null);
+                  }}
+                  value={startPoint?.name}
+                  headers={headers}
+                />
+              </View>
+
+              {/* Meeting Point */}
+              <View style={styles.meetingPointSection} data-testid="create-route-meeting-point-section">
+                <View style={styles.meetingPointSectionHeader}>
+                  <View style={styles.meetingPointHeadingWrap}>
+                    <Text style={styles.meetingPointSectionTitle}>MEETING POINT *</Text>
+                    <Text style={styles.meetingPointSectionSubtext}>
+                      Set where riders gather before the route starts.
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => {
+                      if (startPoint) {
+                        setMeetingPoint(startPoint);
+                        setError(null);
+                      }
+                    }}
+                    disabled={!startPoint}
+                    style={[styles.meetingPointQuickBtn, !startPoint && styles.meetingPointQuickBtnDisabled]}
+                    data-testid="meeting-point-use-start-button"
+                  >
+                    <Ionicons name="flag" size={14} color={startPoint ? Colors.accent : Colors.muted} />
+                    <Text style={[styles.meetingPointQuickBtnText, !startPoint && styles.meetingPointQuickBtnTextDisabled]}>
+                      Use start point
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <PlaceSearchInput
+                  label="MEETING POINT"
+                  placeholder="Search for meeting point..."
+                  icon="people"
+                  iconColor={Colors.accent}
+                  value={meetingPoint?.name}
+                  onPlaceSelected={(place) => {
+                    setMeetingPoint(place);
+                    setError(null);
                   }}
                   headers={headers}
                 />
+
+                {meetingPoint ? (
+                  <View style={styles.meetingPointPreviewCard} data-testid="meeting-point-preview-card">
+                    <View style={styles.meetingPointPreviewIcon}>
+                      <Ionicons name="flag" size={18} color={Colors.accent} />
+                    </View>
+                    <View style={styles.meetingPointPreviewTextWrap}>
+                      <Text style={styles.meetingPointPreviewName} numberOfLines={1} data-testid="meeting-point-preview-name">
+                        {meetingPoint.name}
+                      </Text>
+                      <Text style={styles.meetingPointPreviewAddress} numberOfLines={2} data-testid="meeting-point-preview-address">
+                        {meetingPoint.address}
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.meetingPointMissingCard} data-testid="meeting-point-required-warning">
+                    <Ionicons name="warning-outline" size={18} color={Colors.warning} />
+                    <Text style={styles.meetingPointMissingText}>
+                      A meeting point is required before you can continue.
+                    </Text>
+                  </View>
+                )}
               </View>
 
               {/* Waypoints */}
@@ -548,6 +624,25 @@ export default function CreateRouteScreen() {
                       <Text style={styles.summaryText}>{waypoints.length} stops</Text>
                     </>
                   )}
+                </View>
+              </View>
+            )}
+
+            {meetingPoint && (
+              <View style={styles.formCard} data-testid="meeting-point-summary-card">
+                <Text style={styles.formLabel}>Meeting Point *</Text>
+                <View style={styles.meetingPointSummaryRow}>
+                  <View style={styles.meetingPointPreviewIcon}>
+                    <Ionicons name="flag" size={18} color={Colors.accent} />
+                  </View>
+                  <View style={styles.meetingPointPreviewTextWrap}>
+                    <Text style={styles.meetingPointPreviewName} numberOfLines={1}>
+                      {meetingPoint.name}
+                    </Text>
+                    <Text style={styles.meetingPointPreviewAddress} numberOfLines={2}>
+                      {meetingPoint.address}
+                    </Text>
+                  </View>
                 </View>
               </View>
             )}
@@ -745,6 +840,108 @@ const styles = StyleSheet.create({
   searchInputWrapper: {
     zIndex: 100,
   },
+  meetingPointSection: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 14,
+    gap: 12,
+  },
+  meetingPointSectionHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  meetingPointHeadingWrap: {
+    flex: 1,
+    gap: 6,
+  },
+  meetingPointSectionTitle: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.5,
+  },
+  meetingPointSectionSubtext: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 18,
+  },
+  meetingPointQuickBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  meetingPointQuickBtnDisabled: {
+    opacity: 0.5,
+  },
+  meetingPointQuickBtnText: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
+  meetingPointQuickBtnTextDisabled: {
+    color: Colors.muted,
+  },
+  meetingPointPreviewCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    padding: 12,
+  },
+  meetingPointPreviewIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: `${Colors.accent}15`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  meetingPointPreviewTextWrap: {
+    flex: 1,
+    gap: 4,
+  },
+  meetingPointPreviewName: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  meetingPointPreviewAddress: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 18,
+  },
+  meetingPointMissingCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: "rgba(255,193,7,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,193,7,0.35)",
+    borderRadius: 14,
+    padding: 12,
+  },
+  meetingPointMissingText: {
+    flex: 1,
+    color: Colors.warning,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+    lineHeight: 18,
+  },
 
   // Waypoints
   waypointItem: {
@@ -922,6 +1119,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+  },
+  meetingPointSummaryRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
   },
   summaryText: {
     color: Colors.text,

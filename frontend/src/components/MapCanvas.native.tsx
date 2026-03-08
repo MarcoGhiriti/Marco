@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import ClusteredMapView from "react-native-map-clustering";
 import { Callout, Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../theme/colors";
 
 const openDirections = (lat: number, lng: number, label: string) => {
@@ -60,6 +61,21 @@ type FriendMarker = {
   distance_km?: number | null;
 };
 
+type MeetingPointMarker = {
+  id: string;
+  route_id?: string;
+  type: "route" | "live_ride";
+  name: string;
+  route_title?: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  difficulty?: string;
+  distance_km?: number | null;
+  start_radius_km?: number;
+  start_time?: string;
+};
+
 type MapCanvasProps = {
   mapRef: React.RefObject<any>;
   region: MapRegion;
@@ -89,8 +105,8 @@ type MapCanvasProps = {
   onFriendProfilePress?: (friendId: string) => void;
   showRoutes?: boolean;
   showLiveRides?: boolean;
-  routeMarkers?: any[];
-  rideMarkers?: any[];
+  routeMarkers?: MeetingPointMarker[];
+  rideMarkers?: MeetingPointMarker[];
   onToggleRoutes?: () => void;
   onToggleLiveRides?: () => void;
   onRoutePress?: (routeId: string) => void;
@@ -176,6 +192,7 @@ const mpStyles = StyleSheet.create({
   card: {
     backgroundColor: Colors.card, borderRadius: 16, padding: 16, width: 280,
     borderWidth: 1, borderColor: Colors.border, gap: 8,
+    alignSelf: "center",
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   typeBadge: {
@@ -187,9 +204,70 @@ const mpStyles = StyleSheet.create({
   cardMeta: { color: Colors.muted, fontSize: 12, fontWeight: "600" },
   viewBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    backgroundColor: Colors.accent, borderRadius: 10, paddingVertical: 10, marginTop: 4,
+    backgroundColor: Colors.accent, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, marginTop: 4,
+    flexGrow: 1,
   },
   viewBtnText: { color: Colors.bg, fontSize: 13, fontWeight: "700" },
+  cardHandle: {
+    width: 44,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: Colors.border,
+    alignSelf: "center",
+    marginBottom: 4,
+  },
+  cardRouteTitle: {
+    color: Colors.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  cardAddress: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  metaBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: Colors.card2,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  metaBadgeText: {
+    color: Colors.text,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  actionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  directionsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: Colors.card2,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexGrow: 1,
+  },
+  directionsBtnText: {
+    color: Colors.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
 });
 
 const fmStyles = StyleSheet.create({
@@ -244,8 +322,13 @@ export default function MapCanvas({
   onRoutePress,
 }: MapCanvasProps) {
   const searchAnim = useRef(new Animated.Value(showSearchArea ? 1 : 0)).current;
+  const insets = useSafeAreaInsets();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [selectedFriend, setSelectedFriend] = useState<FriendMarker | null>(null);
-  const [selectedMP, setSelectedMP] = useState<any>(null);
+  const [selectedMP, setSelectedMP] = useState<MeetingPointMarker | null>(null);
+  const overlaySidePadding = Math.max(12, Math.round(screenWidth * 0.04));
+  const meetingPointBottomPadding = Math.max(insets.bottom + 88, Math.round(screenHeight * 0.14));
+  const meetingPointCardWidth = Math.min(screenWidth - overlaySidePadding * 2, 380);
 
   useEffect(() => {
     Animated.timing(searchAnim, {
@@ -430,7 +513,7 @@ export default function MapCanvas({
         ))}
 
         {/* Route Meeting Point Markers */}
-        {showRoutes && routeMarkers.map((rm: any) => (
+        {showRoutes && routeMarkers.map((rm) => (
           <Marker
             key={`route-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
@@ -444,7 +527,7 @@ export default function MapCanvas({
         ))}
 
         {/* Live Ride Meeting Point Markers */}
-        {showLiveRides && rideMarkers.map((rm: any) => (
+        {showLiveRides && rideMarkers.map((rm) => (
           <Marker
             key={`ride-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
@@ -602,27 +685,93 @@ export default function MapCanvas({
 
       {/* Meeting Point Mini Card */}
       {selectedMP && (
-        <Pressable style={styles.friendOverlayBackdrop} onPress={() => setSelectedMP(null)}>
-          <Pressable style={mpStyles.card} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={[
+            styles.meetingPointOverlayBackdrop,
+            {
+              paddingHorizontal: overlaySidePadding,
+              paddingBottom: meetingPointBottomPadding,
+              paddingTop: Math.max(insets.top + 12, 24),
+            },
+          ]}
+          onPress={() => setSelectedMP(null)}
+        >
+          <Pressable
+            style={[mpStyles.card, { width: meetingPointCardWidth }]}
+            onPress={(e) => e.stopPropagation()}
+            data-testid={`meeting-point-map-card-${selectedMP.type}-${selectedMP.id}`}
+          >
+            <View style={mpStyles.cardHandle} />
             <View style={mpStyles.cardHeader}>
               <View style={[mpStyles.typeBadge, { backgroundColor: selectedMP.type === "route" ? Colors.accent : "#FF6B35" }]}>
                 <Ionicons name={selectedMP.type === "route" ? "flag" : "bicycle"} size={12} color="#fff" />
                 <Text style={mpStyles.typeText}>{selectedMP.type === "route" ? "Route" : "Live Ride"}</Text>
               </View>
-              <Pressable onPress={() => setSelectedMP(null)}>
+              <Pressable onPress={() => setSelectedMP(null)} data-testid={`meeting-point-map-card-close-${selectedMP.id}`}>
                 <Ionicons name="close" size={20} color={Colors.muted} />
               </Pressable>
             </View>
-            <Text style={mpStyles.cardTitle} numberOfLines={2}>{selectedMP.name}</Text>
-            {selectedMP.difficulty && <Text style={mpStyles.cardMeta}>Difficulty: {selectedMP.difficulty}</Text>}
-            {selectedMP.distance_km && <Text style={mpStyles.cardMeta}>{selectedMP.distance_km.toFixed(1)} km</Text>}
-            <Pressable
-              style={mpStyles.viewBtn}
-              onPress={() => { onRoutePress?.(selectedMP.id); setSelectedMP(null); }}
-            >
-              <Text style={mpStyles.viewBtnText}>View details</Text>
-              <Ionicons name="chevron-forward" size={14} color={Colors.bg} />
-            </Pressable>
+            <Text style={mpStyles.cardTitle} numberOfLines={2} data-testid={`meeting-point-map-card-name-${selectedMP.id}`}>
+              {selectedMP.name}
+            </Text>
+
+            {selectedMP.route_title && selectedMP.route_title !== selectedMP.name ? (
+              <Text style={mpStyles.cardRouteTitle} numberOfLines={1} data-testid={`meeting-point-map-card-route-title-${selectedMP.id}`}>
+                {selectedMP.route_title}
+              </Text>
+            ) : null}
+
+            {selectedMP.address ? (
+              <Text style={mpStyles.cardAddress} numberOfLines={2} data-testid={`meeting-point-map-card-address-${selectedMP.id}`}>
+                {selectedMP.address}
+              </Text>
+            ) : null}
+
+            <View style={mpStyles.metaRow}>
+              {selectedMP.difficulty ? (
+                <View style={mpStyles.metaBadge}>
+                  <Ionicons name="speedometer-outline" size={12} color={Colors.accent} />
+                  <Text style={mpStyles.metaBadgeText}>Difficulty: {selectedMP.difficulty}</Text>
+                </View>
+              ) : null}
+              {selectedMP.distance_km != null ? (
+                <View style={mpStyles.metaBadge}>
+                  <Ionicons name="resize-outline" size={12} color={Colors.accent} />
+                  <Text style={mpStyles.metaBadgeText}>{selectedMP.distance_km.toFixed(1)} km</Text>
+                </View>
+              ) : null}
+              {selectedMP.start_radius_km != null ? (
+                <View style={mpStyles.metaBadge}>
+                  <Ionicons name="locate-outline" size={12} color={Colors.accent} />
+                  <Text style={mpStyles.metaBadgeText}>Start radius: {selectedMP.start_radius_km.toFixed(1)} km</Text>
+                </View>
+              ) : null}
+            </View>
+
+            <View style={mpStyles.actionRow}>
+              <Pressable
+                style={mpStyles.directionsBtn}
+                onPress={() => openDirections(selectedMP.lat, selectedMP.lng, selectedMP.name || selectedMP.route_title || "Meeting point")}
+                data-testid={`meeting-point-map-card-directions-${selectedMP.id}`}
+              >
+                <Ionicons name="navigate" size={14} color={Colors.text} />
+                <Text style={mpStyles.directionsBtnText}>Directions</Text>
+              </Pressable>
+              <Pressable
+                style={mpStyles.viewBtn}
+                onPress={() => {
+                  const targetRouteId = selectedMP.route_id ?? selectedMP.id;
+                  if (targetRouteId) {
+                    onRoutePress?.(targetRouteId);
+                  }
+                  setSelectedMP(null);
+                }}
+                data-testid={`meeting-point-map-card-view-details-${selectedMP.id}`}
+              >
+                <Text style={mpStyles.viewBtnText}>View details</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.bg} />
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       )}
@@ -911,6 +1060,13 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     paddingBottom: 24,
     paddingHorizontal: 16,
+  },
+  meetingPointOverlayBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "transparent",
+    zIndex: 55,
+    elevation: 55,
+    justifyContent: "flex-end",
   },
   friendPopupCard: {
     backgroundColor: Colors.card,
