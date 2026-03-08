@@ -2424,7 +2424,7 @@ async def group_send_rest(group_id: str, payload: MessageCreate, current_user: d
     return out
 
 
-@api_router.post("/routes", response_model=RouteOut)
+@api_router.post("/routes", response_model=RouteOut, status_code=201)
 async def create_route(payload: RouteCreate, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
     
