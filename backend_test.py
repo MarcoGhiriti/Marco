@@ -15,7 +15,7 @@ import httpx
 
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://mongo-401-errors.preview.emergentagent.com/api"
+BACKEND_URL = "https://ride-start-gating.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_EMAIL = "user1@example.com"

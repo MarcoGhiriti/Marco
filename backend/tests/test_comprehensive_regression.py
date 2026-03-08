@@ -13,7 +13,7 @@ import time
 BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
     # fallback for direct pytest run
-    BASE_URL = "https://mongo-401-errors.preview.emergentagent.com"
+    BASE_URL = "https://ride-start-gating.preview.emergentagent.com"
 
 # Test credentials
 USER1_EMAIL = "user1@example.com"
