@@ -11,6 +11,7 @@ import {
   View,
   Alert,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -29,6 +30,7 @@ export default function RoutesScreen() {
   const { t } = useTranslation();
   const { accessToken, me } = useAuthStore();
   const tabBarHeight = useSafeTabBarHeight();
+  const { width: screenWidth } = useWindowDimensions();
   
   const [routes, setRoutes] = useState<RouteOut[]>([]);
   const [myRoutes, setMyRoutes] = useState<RouteOut[]>([]);
@@ -39,6 +41,7 @@ export default function RoutesScreen() {
   const [activeRide, setActiveRide] = useState<ActiveRideForHomeOut | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const horizontalCardWidth = Math.min(340, Math.max(272, screenWidth * 0.82));
   
   // Minimum participants required to start a route
   const MIN_PARTICIPANTS_TO_START = 3;
@@ -275,6 +278,19 @@ export default function RoutesScreen() {
     return R * c;
   };
 
+  const getRouteReferencePoint = (route: RouteOut): { lat: number; lng: number } | null => {
+    if (route.meeting_point && typeof route.meeting_point.lat === "number" && typeof route.meeting_point.lng === "number") {
+      return { lat: route.meeting_point.lat, lng: route.meeting_point.lng };
+    }
+    if (route.start_point && route.start_point.length >= 2) {
+      return { lat: route.start_point[0], lng: route.start_point[1] };
+    }
+    if (route.polyline && route.polyline.length > 0) {
+      return { lat: route.polyline[0][0], lng: route.polyline[0][1] };
+    }
+    return null;
+  };
+
   const getMeetingPoint = (meetingPoint?: MeetingPointOut | null): MeetingPointOut | null => {
     if (
       meetingPoint &&
@@ -330,7 +346,34 @@ export default function RoutesScreen() {
     );
   }, [routes, myRoutes, activeTab, searchQuery]);
 
-  const renderRoute = ({ item }: { item: RouteOut }) => {
+  const nearbyUserCreatedRoutes = useMemo(() => {
+    if (!userLocation) return [];
+
+    return routes
+      .filter((route) => Boolean(route.created_by))
+      .map((route) => {
+        const referencePoint = getRouteReferencePoint(route);
+        const distanceFromUser = referencePoint
+          ? calculateDistance(userLocation.lat, userLocation.lng, referencePoint.lat, referencePoint.lng)
+          : Number.POSITIVE_INFINITY;
+
+        return {
+          route,
+          distanceFromUser,
+        };
+      })
+      .filter((entry) => Number.isFinite(entry.distanceFromUser) && entry.distanceFromUser <= 100)
+      .sort((a, b) => a.distanceFromUser - b.distanceFromUser)
+      .slice(0, 10)
+      .map((entry) => entry.route);
+  }, [routes, userLocation]);
+
+  const renderRouteCard = (
+    item: RouteOut,
+    options?: { layout?: "vertical" | "horizontal"; testIdPrefix?: string }
+  ) => {
+    const layout = options?.layout ?? "vertical";
+    const testIdPrefix = options?.testIdPrefix ?? "route-card-list";
     const isOwner = item.created_by === me?.id;
     const isInMyRoutesTab = activeTab === "my";
     const hasActiveRideOnThisRoute = activeRide?.route_id === item.id;
@@ -364,9 +407,15 @@ export default function RoutesScreen() {
     
     return (
       <Pressable
-        style={styles.routeCard}
+        style={[
+          styles.routeCard,
+          layout === "horizontal" && {
+            width: horizontalCardWidth,
+            marginRight: 14,
+          },
+        ]}
         onPress={() => router.push(`/route/${item.id}`)}
-        data-testid={`route-card-${item.id}`}
+        data-testid={`${testIdPrefix}-${item.id}`}
       >
         {/* Route Mini Map */}
         <View style={styles.routeMapContainer}>
@@ -604,6 +653,76 @@ export default function RoutesScreen() {
     );
   };
 
+  const renderRoute = ({ item }: { item: RouteOut }) => renderRouteCard(item, { testIdPrefix: "route-card-list" });
+
+  const renderExploreHeader = () => {
+    if (activeTab !== "explore") return null;
+
+    return (
+      <View style={styles.exploreHeaderSections}>
+        <View style={styles.sectionHeaderRow} data-testid="created-by-users-section-header">
+          <View>
+            <Text style={styles.sectionTitle}>Created by users</Text>
+            <Text style={styles.sectionSubtitle}>Routes within 100 km of your location</Text>
+          </View>
+        </View>
+
+        {userLocation ? (
+          nearbyUserCreatedRoutes.length > 0 ? (
+            <FlatList
+              data={nearbyUserCreatedRoutes}
+              horizontal
+              keyExtractor={(item) => `created-by-user-${item.id}`}
+              renderItem={({ item }) =>
+                renderRouteCard(item, {
+                  layout: "horizontal",
+                  testIdPrefix: "route-card-created-by-users",
+                })
+              }
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalRoutesContent}
+              data-testid="created-by-users-horizontal-list"
+            />
+          ) : (
+            <View style={styles.emptyExploreCard} data-testid="created-by-users-empty-state">
+              <Ionicons name="trail-sign-outline" size={22} color={Colors.accent} />
+              <Text style={styles.emptyExploreTitle}>No nearby user-created routes yet</Text>
+              <Text style={styles.emptyExploreText}>Move the map or create a new route to populate this section.</Text>
+            </View>
+          )
+        ) : (
+          <View style={styles.emptyExploreCard} data-testid="created-by-users-location-required">
+            <Ionicons name="locate-outline" size={22} color={Colors.accent} />
+            <Text style={styles.emptyExploreTitle}>Location needed</Text>
+            <Text style={styles.emptyExploreText}>Enable location to show routes created by users within 100 km.</Text>
+          </View>
+        )}
+
+        <View style={styles.sectionHeaderRow} data-testid="recommendation-of-the-day-section-header">
+          <View>
+            <Text style={styles.sectionTitle}>Recommendation of the day</Text>
+            <Text style={styles.sectionSubtitle}>Daily curated picks for premium riders</Text>
+          </View>
+        </View>
+
+        <View style={styles.premiumLockedCard} data-testid="routes-recommendation-premium-card">
+          <View style={styles.premiumGlow} />
+          <View style={styles.premiumBadge}>
+            <Ionicons name="sparkles" size={14} color={Colors.accent} />
+            <Text style={styles.premiumBadgeText}>Premium</Text>
+          </View>
+          <View style={styles.premiumLockedIconWrap}>
+            <Ionicons name="lock-closed" size={28} color={Colors.accent} />
+          </View>
+          <Text style={styles.premiumLockedTitle}>Available with Moto Go Premium</Text>
+          <Text style={styles.premiumLockedText}>
+            Unlock the daily ride recommendation, distance-aware picks, and premium curation.
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
@@ -680,6 +799,7 @@ export default function RoutesScreen() {
           data={filteredRoutes}
           keyExtractor={(item) => item.id}
           renderItem={renderRoute}
+          ListHeaderComponent={renderExploreHeader}
           contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 16 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -798,6 +918,117 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 20,
     gap: 12,
+  },
+  exploreHeaderSections: {
+    gap: 16,
+    paddingBottom: 18,
+  },
+  sectionHeaderRow: {
+    gap: 4,
+  },
+  sectionTitle: {
+    color: Colors.text,
+    fontSize: 20,
+    fontFamily: "Inter_900Black",
+  },
+  sectionSubtitle: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  horizontalRoutesContent: {
+    paddingRight: 4,
+  },
+  emptyExploreCard: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 18,
+    padding: 16,
+    gap: 8,
+  },
+  emptyExploreTitle: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  emptyExploreText: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 18,
+  },
+  premiumLockedCard: {
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "rgba(6, 10, 10, 0.92)",
+    borderWidth: 1,
+    borderColor: `${Colors.accent}55`,
+    borderRadius: 22,
+    padding: 20,
+    alignItems: "center",
+    gap: 12,
+    shadowColor: Colors.accent,
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 12,
+  },
+  premiumGlow: {
+    position: "absolute",
+    top: -20,
+    right: -20,
+    width: 120,
+    height: 120,
+    borderRadius: 999,
+    backgroundColor: `${Colors.accent}18`,
+  },
+  premiumBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(7, 13, 13, 0.75)",
+    borderWidth: 1,
+    borderColor: `${Colors.accent}35`,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    alignSelf: "stretch",
+    justifyContent: "center",
+  },
+  premiumBadgeText: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
+  premiumLockedIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: "rgba(18, 30, 25, 0.94)",
+    borderWidth: 1,
+    borderColor: `${Colors.accent}45`,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.accent,
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10,
+  },
+  premiumLockedTitle: {
+    color: Colors.text,
+    fontSize: 18,
+    fontFamily: "Inter_900Black",
+    textAlign: "center",
+  },
+  premiumLockedText: {
+    color: Colors.muted,
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 20,
+    textAlign: "center",
+    maxWidth: 320,
   },
   
   // Route Card
