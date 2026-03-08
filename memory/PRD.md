@@ -113,10 +113,11 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
   - Added explicit **Meeting Point** section in `app/create/route.tsx`
   - Meeting point is now clearly selectable, previewed, and required before proceeding
   - Added quick action `Use start point` to reuse the start location as meeting point
+  - Removed the full-screen license blocker; unverified riders now see the create UI with inline warning cards and disabled publish action instead of being fully blocked
 - **Map meeting point popup improved**:
-  - `MapCanvas.native.tsx` meeting point sheet is now dynamically sized using screen width + safe-area insets
-  - Overlay bottom spacing now avoids clipping behind bottom navigation on small screens
-  - Popup now shows name, route title, address, meta badges, directions action, and view details action in a more adaptive layout
+  - Reworked `MapCanvas.native.tsx` so **Meeting Point** and **Friends** use event-style marker popups (`Callout tooltip`) instead of bottom-sheet overlays
+  - Meeting Point popup now shows details + distance in km from the user location + details action
+  - Friends popup now shows distance in km and keeps a chat action in the popup
 - **Routes Explore redesign**:
   - Added `Created by users` section in Explore with horizontally scrollable normal route cards, filtered to routes within 100 km of user location
   - Added `Recommendation of the day` section with a premium-locked Moto GO styled card (`Available with Moto Go Premium`)
@@ -124,7 +125,8 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 - **Verification status**:
   - Expo web export: PASS after all UI changes
   - Route create API regression smoke test: PASS (`POST /api/routes` still returns 201 with meeting_point)
-  - Frontend automation on web preview is LIMITED by React Native Web pressable/login interaction behavior; code review confirms requested UI is present in source
+  - Manual screenshot verification: PASS for `Create Route` Meeting Point section and `Routes > Explore` two-section layout after restarting Expo preview service
+  - Frontend automation on web preview is still LIMITED for some route transitions / native map behavior, but visual checks confirm the requested UI is now present
 
 **Pending: Backend refactor** - server.py has 4460 lines / 70+ endpoints. Needs incremental migration to routers: marketplace, events, routes, rides, stories, groups, notifications, messages, users
 
