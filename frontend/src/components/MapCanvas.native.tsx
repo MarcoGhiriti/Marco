@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import ClusteredMapView from "react-native-map-clustering";
 import { Callout, Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../theme/colors";
 
 const openDirections = (lat: number, lng: number, label: string) => {
@@ -14,6 +13,18 @@ const openDirections = (lat: number, lng: number, label: string) => {
     default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
   });
   Linking.openURL(url as string);
+};
+
+const haversineDistanceKm = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+  const toRad = (val: number) => (val * Math.PI) / 180;
+  const radius = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return radius * c;
 };
 
 type MapRegion = {
@@ -322,13 +333,8 @@ export default function MapCanvas({
   onRoutePress,
 }: MapCanvasProps) {
   const searchAnim = useRef(new Animated.Value(showSearchArea ? 1 : 0)).current;
-  const insets = useSafeAreaInsets();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const [selectedFriend, setSelectedFriend] = useState<FriendMarker | null>(null);
-  const [selectedMP, setSelectedMP] = useState<MeetingPointMarker | null>(null);
-  const overlaySidePadding = Math.max(12, Math.round(screenWidth * 0.04));
-  const meetingPointBottomPadding = Math.max(insets.bottom + 88, Math.round(screenHeight * 0.14));
-  const meetingPointCardWidth = Math.min(screenWidth - overlaySidePadding * 2, 380);
+  const { width: screenWidth } = useWindowDimensions();
+  const popupWidth = Math.min(Math.max(screenWidth * 0.72, 220), 300);
 
   useEffect(() => {
     Animated.timing(searchAnim, {
@@ -359,10 +365,7 @@ export default function MapCanvas({
         style={StyleSheet.absoluteFill}
         ref={mapRef}
         region={region}
-        onPanDrag={() => {
-          setSelectedFriend(null);
-          onPanDrag();
-        }}
+        onPanDrag={onPanDrag}
         onRegionChangeComplete={onRegionChangeComplete}
         customMapStyle={MAP_STYLE}
         clusterColor={Colors.accent}
@@ -473,9 +476,54 @@ export default function MapCanvas({
               anchor={{ x: 0.5, y: 0.5 }}
               tracksViewChanges={false}
               cluster={false}
-              onPress={() => setSelectedFriend(friend)}
             >
               <FriendMarkerView friend={friend} />
+              <Callout tooltip>
+                <View style={[styles.friendCalloutCard, { width: popupWidth }]} data-testid={`friend-callout-card-${friend.id}`}>
+                  <View style={styles.friendCalloutHeader}>
+                    {friend.profile_photo_base64 ? (
+                      <Image
+                        source={{ uri: `data:image/jpeg;base64,${friend.profile_photo_base64}` }}
+                        style={styles.friendCalloutPhoto}
+                      />
+                    ) : (
+                      <View style={[styles.friendCalloutPhoto, styles.friendCalloutPhotoPlaceholder]}>
+                        <Ionicons name="person" size={20} color={Colors.text} />
+                      </View>
+                    )}
+                    <View style={styles.friendCalloutInfo}>
+                      <Text style={styles.friendCalloutName} numberOfLines={1} data-testid={`friend-callout-name-${friend.id}`}>
+                        {friend.username}
+                      </Text>
+                      {friend.active_ride ? (
+                        <View style={styles.friendRideStatus}>
+                          <Ionicons name="navigate" size={10} color={Colors.accent} />
+                          <Text style={styles.friendRideText} numberOfLines={1}>
+                            On route: {friend.active_ride.route_title}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  <View style={styles.friendCalloutFooter}>
+                    <View style={styles.friendDistanceBox}>
+                      <Ionicons name="location" size={14} color={Colors.accent} />
+                      <Text style={styles.friendDistanceText} data-testid={`friend-callout-distance-${friend.id}`}>
+                        {friend.distance_km != null ? `${friend.distance_km.toFixed(1)} km from you` : "Distance unavailable"}
+                      </Text>
+                    </View>
+                    <Pressable
+                      style={styles.friendMessageBtn}
+                      onPress={() => onFriendPress?.(friend.id)}
+                      data-testid={`friend-callout-message-${friend.id}`}
+                    >
+                      <Ionicons name="chatbubble" size={14} color={Colors.bg} />
+                      <Text style={styles.friendMessageBtnText}>Chat</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </Callout>
             </Marker>
           ))}
 
@@ -518,11 +566,45 @@ export default function MapCanvas({
             key={`route-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
-            onPress={() => { setSelectedMP(rm); setSelectedFriend(null); }}
           >
             <View style={mpStyles.routePin}>
               <Ionicons name="flag" size={14} color="#fff" />
             </View>
+            <Callout tooltip>
+              <View style={[styles.meetingPointCallout, { width: popupWidth }]} data-testid={`meeting-point-callout-${rm.id}`}>
+                <View style={styles.meetingPointCalloutHeader}>
+                  <View style={styles.meetingPointTypeBadge}>
+                    <Ionicons name="flag" size={12} color={Colors.bg} />
+                    <Text style={styles.meetingPointTypeText}>Route</Text>
+                  </View>
+                  {rm.difficulty ? <Text style={styles.meetingPointDifficultyText}>Difficulty: {rm.difficulty}</Text> : null}
+                </View>
+                <Text style={styles.meetingPointCalloutTitle} numberOfLines={2} data-testid={`meeting-point-callout-title-${rm.id}`}>
+                  {rm.name}
+                </Text>
+                {rm.route_title && rm.route_title !== rm.name ? (
+                  <Text style={styles.meetingPointCalloutSubtitle} numberOfLines={1}>
+                    {rm.route_title}
+                  </Text>
+                ) : null}
+                {rm.address ? (
+                  <Text style={styles.meetingPointCalloutMeta} numberOfLines={2} data-testid={`meeting-point-callout-address-${rm.id}`}>
+                    {rm.address}
+                  </Text>
+                ) : null}
+                <Text style={styles.meetingPointCalloutMeta} data-testid={`meeting-point-callout-distance-${rm.id}`}>
+                  {userLocation ? `${haversineDistanceKm(userLocation.lat, userLocation.lng, rm.lat, rm.lng).toFixed(1)} km from you` : "Enable location to see distance"}
+                </Text>
+                <Pressable
+                  style={styles.calloutPrimaryBtn}
+                  onPress={() => onRoutePress?.(rm.route_id ?? rm.id)}
+                  data-testid={`meeting-point-callout-details-${rm.id}`}
+                >
+                  <Ionicons name="eye" size={14} color={Colors.bg} />
+                  <Text style={styles.calloutPrimaryBtnText}>Details</Text>
+                </Pressable>
+              </View>
+            </Callout>
           </Marker>
         ))}
 
@@ -532,11 +614,45 @@ export default function MapCanvas({
             key={`ride-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
-            onPress={() => { setSelectedMP(rm); setSelectedFriend(null); }}
           >
             <View style={mpStyles.ridePin}>
               <Ionicons name="bicycle" size={14} color="#fff" />
             </View>
+            <Callout tooltip>
+              <View style={[styles.meetingPointCallout, { width: popupWidth }]} data-testid={`meeting-point-callout-${rm.id}`}>
+                <View style={styles.meetingPointCalloutHeader}>
+                  <View style={[styles.meetingPointTypeBadge, styles.liveRideTypeBadge]}>
+                    <Ionicons name="bicycle" size={12} color={Colors.bg} />
+                    <Text style={styles.meetingPointTypeText}>Live Ride</Text>
+                  </View>
+                  {rm.difficulty ? <Text style={styles.meetingPointDifficultyText}>Difficulty: {rm.difficulty}</Text> : null}
+                </View>
+                <Text style={styles.meetingPointCalloutTitle} numberOfLines={2} data-testid={`meeting-point-callout-title-${rm.id}`}>
+                  {rm.name}
+                </Text>
+                {rm.route_title && rm.route_title !== rm.name ? (
+                  <Text style={styles.meetingPointCalloutSubtitle} numberOfLines={1}>
+                    {rm.route_title}
+                  </Text>
+                ) : null}
+                {rm.address ? (
+                  <Text style={styles.meetingPointCalloutMeta} numberOfLines={2} data-testid={`meeting-point-callout-address-${rm.id}`}>
+                    {rm.address}
+                  </Text>
+                ) : null}
+                <Text style={styles.meetingPointCalloutMeta} data-testid={`meeting-point-callout-distance-${rm.id}`}>
+                  {userLocation ? `${haversineDistanceKm(userLocation.lat, userLocation.lng, rm.lat, rm.lng).toFixed(1)} km from you` : "Enable location to see distance"}
+                </Text>
+                <Pressable
+                  style={styles.calloutPrimaryBtn}
+                  onPress={() => onRoutePress?.(rm.route_id ?? rm.id)}
+                  data-testid={`meeting-point-callout-details-${rm.id}`}
+                >
+                  <Ionicons name="eye" size={14} color={Colors.bg} />
+                  <Text style={styles.calloutPrimaryBtnText}>Details</Text>
+                </Pressable>
+              </View>
+            </Callout>
           </Marker>
         ))}
       </ClusteredMapView>
@@ -610,171 +726,6 @@ export default function MapCanvas({
         </Pressable>
       </View>
 
-      {/* Friend popup overlay - state driven, no Callout bugs */}
-      {selectedFriend && (
-        <Pressable
-          style={styles.friendOverlayBackdrop}
-          onPress={() => setSelectedFriend(null)}
-        >
-          <Pressable
-            style={styles.friendPopupCard}
-            onPress={(e) => e.stopPropagation()}
-            data-testid={`friend-callout-card-${selectedFriend.id}`}
-          >
-            {/* Header: photo + info */}
-            <Pressable
-              style={styles.friendPopupHeader}
-              onPress={() => {
-                setSelectedFriend(null);
-                onFriendProfilePress?.(selectedFriend.id);
-              }}
-              data-testid={`friend-callout-profile-${selectedFriend.id}`}
-            >
-              {selectedFriend.profile_photo_base64 ? (
-                <Image
-                  source={{ uri: `data:image/jpeg;base64,${selectedFriend.profile_photo_base64}` }}
-                  style={styles.friendPopupPhoto}
-                />
-              ) : (
-                <View style={[styles.friendPopupPhoto, styles.friendPopupPhotoPlaceholder]}>
-                  <Ionicons name="person" size={24} color={Colors.text} />
-                </View>
-              )}
-              <View style={styles.friendPopupInfo}>
-                <Text style={styles.friendPopupName} data-testid={`friend-callout-name-${selectedFriend.id}`}>
-                  {selectedFriend.username}
-                </Text>
-                <Text style={styles.friendPopupHint}>Tap to view profile</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
-            </Pressable>
-
-            {/* Active ride badge */}
-            {selectedFriend.active_ride && (
-              <View style={styles.friendPopupRideRow}>
-                <Ionicons name="navigate" size={12} color={Colors.accent} />
-                <Text style={styles.friendPopupRideText} numberOfLines={1} data-testid={`friend-callout-ride-${selectedFriend.id}`}>
-                  On route: {selectedFriend.active_ride.route_title}
-                </Text>
-              </View>
-            )}
-
-            {/* Footer: distance + chat button */}
-            <View style={styles.friendPopupFooter}>
-              <View style={styles.friendPopupDistanceBox}>
-                <Ionicons name="location" size={14} color={Colors.accent} />
-                <Text style={styles.friendPopupDistanceText} data-testid={`friend-callout-distance-${selectedFriend.id}`}>
-                  {selectedFriend.distance_km != null ? `${selectedFriend.distance_km} km` : "-- km"}
-                </Text>
-              </View>
-              <Pressable
-                style={styles.friendPopupChatBtn}
-                onPress={() => {
-                  setSelectedFriend(null);
-                  onFriendPress?.(selectedFriend.id);
-                }}
-                data-testid={`friend-callout-message-${selectedFriend.id}`}
-              >
-                <Ionicons name="chatbubble" size={14} color={Colors.bg} />
-                <Text style={styles.friendPopupChatText}>Message</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      )}
-
-      {/* Meeting Point Mini Card */}
-      {selectedMP && (
-        <Pressable
-          style={[
-            styles.meetingPointOverlayBackdrop,
-            {
-              paddingHorizontal: overlaySidePadding,
-              paddingBottom: meetingPointBottomPadding,
-              paddingTop: Math.max(insets.top + 12, 24),
-            },
-          ]}
-          onPress={() => setSelectedMP(null)}
-        >
-          <Pressable
-            style={[mpStyles.card, { width: meetingPointCardWidth }]}
-            onPress={(e) => e.stopPropagation()}
-            data-testid={`meeting-point-map-card-${selectedMP.type}-${selectedMP.id}`}
-          >
-            <View style={mpStyles.cardHandle} />
-            <View style={mpStyles.cardHeader}>
-              <View style={[mpStyles.typeBadge, { backgroundColor: selectedMP.type === "route" ? Colors.accent : "#FF6B35" }]}>
-                <Ionicons name={selectedMP.type === "route" ? "flag" : "bicycle"} size={12} color="#fff" />
-                <Text style={mpStyles.typeText}>{selectedMP.type === "route" ? "Route" : "Live Ride"}</Text>
-              </View>
-              <Pressable onPress={() => setSelectedMP(null)} data-testid={`meeting-point-map-card-close-${selectedMP.id}`}>
-                <Ionicons name="close" size={20} color={Colors.muted} />
-              </Pressable>
-            </View>
-            <Text style={mpStyles.cardTitle} numberOfLines={2} data-testid={`meeting-point-map-card-name-${selectedMP.id}`}>
-              {selectedMP.name}
-            </Text>
-
-            {selectedMP.route_title && selectedMP.route_title !== selectedMP.name ? (
-              <Text style={mpStyles.cardRouteTitle} numberOfLines={1} data-testid={`meeting-point-map-card-route-title-${selectedMP.id}`}>
-                {selectedMP.route_title}
-              </Text>
-            ) : null}
-
-            {selectedMP.address ? (
-              <Text style={mpStyles.cardAddress} numberOfLines={2} data-testid={`meeting-point-map-card-address-${selectedMP.id}`}>
-                {selectedMP.address}
-              </Text>
-            ) : null}
-
-            <View style={mpStyles.metaRow}>
-              {selectedMP.difficulty ? (
-                <View style={mpStyles.metaBadge}>
-                  <Ionicons name="speedometer-outline" size={12} color={Colors.accent} />
-                  <Text style={mpStyles.metaBadgeText}>Difficulty: {selectedMP.difficulty}</Text>
-                </View>
-              ) : null}
-              {selectedMP.distance_km != null ? (
-                <View style={mpStyles.metaBadge}>
-                  <Ionicons name="resize-outline" size={12} color={Colors.accent} />
-                  <Text style={mpStyles.metaBadgeText}>{selectedMP.distance_km.toFixed(1)} km</Text>
-                </View>
-              ) : null}
-              {selectedMP.start_radius_km != null ? (
-                <View style={mpStyles.metaBadge}>
-                  <Ionicons name="locate-outline" size={12} color={Colors.accent} />
-                  <Text style={mpStyles.metaBadgeText}>Start radius: {selectedMP.start_radius_km.toFixed(1)} km</Text>
-                </View>
-              ) : null}
-            </View>
-
-            <View style={mpStyles.actionRow}>
-              <Pressable
-                style={mpStyles.directionsBtn}
-                onPress={() => openDirections(selectedMP.lat, selectedMP.lng, selectedMP.name || selectedMP.route_title || "Meeting point")}
-                data-testid={`meeting-point-map-card-directions-${selectedMP.id}`}
-              >
-                <Ionicons name="navigate" size={14} color={Colors.text} />
-                <Text style={mpStyles.directionsBtnText}>Directions</Text>
-              </Pressable>
-              <Pressable
-                style={mpStyles.viewBtn}
-                onPress={() => {
-                  const targetRouteId = selectedMP.route_id ?? selectedMP.id;
-                  if (targetRouteId) {
-                    onRoutePress?.(targetRouteId);
-                  }
-                  setSelectedMP(null);
-                }}
-                data-testid={`meeting-point-map-card-view-details-${selectedMP.id}`}
-              >
-                <Text style={mpStyles.viewBtnText}>View details</Text>
-                <Ionicons name="chevron-forward" size={14} color={Colors.bg} />
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      )}
     </View>
   );
 }
@@ -1043,12 +994,86 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
   friendMessageBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     backgroundColor: Colors.accent,
-    width: 32,
-    height: 32,
     borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  friendMessageBtnText: {
+    color: Colors.bg,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
+  meetingPointCallout: {
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 8,
+  },
+  meetingPointCalloutHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  meetingPointTypeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: Colors.accent,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  liveRideTypeBadge: {
+    backgroundColor: "#FF6B35",
+  },
+  meetingPointTypeText: {
+    color: Colors.bg,
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+  },
+  meetingPointDifficultyText: {
+    color: Colors.muted,
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+  },
+  meetingPointCalloutTitle: {
+    color: Colors.text,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+  },
+  meetingPointCalloutSubtitle: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
+  meetingPointCalloutMeta: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 18,
+  },
+  calloutPrimaryBtn: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
+    backgroundColor: Colors.accent,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginTop: 2,
+  },
+  calloutPrimaryBtnText: {
+    color: Colors.bg,
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
   },
 
   // Friend overlay popup styles (replacing Callout)

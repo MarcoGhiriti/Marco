@@ -272,6 +272,11 @@ export default function CreateRouteScreen() {
       return;
     }
 
+    if (!isLicenseVerified) {
+      setError("Verify your motorcycle license to publish this route.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -323,38 +328,6 @@ export default function CreateRouteScreen() {
     );
   }
 
-  // Show blocked screen if license not verified
-  if (!isLicenseVerified) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerBtn}>
-            <Ionicons name="close" size={22} color={Colors.text} />
-          </Pressable>
-          <Text style={styles.headerTitle}>New Route</Text>
-          <View style={{ width: 44 }} />
-        </View>
-        
-        <View style={styles.blockedContainer}>
-          <View style={styles.blockedIcon}>
-            <Ionicons name="shield-checkmark" size={64} color={Colors.warning} />
-          </View>
-          <Text style={styles.blockedTitle}>License Required</Text>
-          <Text style={styles.blockedText}>
-            To create routes and track kilometers, you need to verify your motorcycle license (A1, A2, or A).
-          </Text>
-          <Pressable 
-            onPress={() => router.push("/(tabs)/profile")}
-            style={styles.verifyBtn}
-          >
-            <Ionicons name="card" size={20} color={Colors.bg} />
-            <Text style={styles.verifyBtnText}>Verify License</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
@@ -380,8 +353,8 @@ export default function CreateRouteScreen() {
           ) : (
             <Pressable
               onPress={handleCreate}
-              disabled={loading || !title.trim()}
-              style={[styles.headerBtn, styles.nextBtn, (loading || !title.trim()) && styles.nextBtnDisabled]}
+              disabled={loading || !title.trim() || !isLicenseVerified}
+              style={[styles.headerBtn, styles.nextBtn, (loading || !title.trim() || !isLicenseVerified) && styles.nextBtnDisabled]}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={Colors.bg} />
@@ -397,6 +370,26 @@ export default function CreateRouteScreen() {
             contentContainerStyle={styles.step1Content}
             keyboardShouldPersistTaps="handled"
           >
+            {!isLicenseVerified && (
+              <View style={styles.inlineLicenseCard} data-testid="create-route-license-warning-card">
+                <View style={styles.inlineLicenseHeader}>
+                  <Ionicons name="shield-checkmark" size={18} color={Colors.warning} />
+                  <Text style={styles.inlineLicenseTitle}>License verification required to publish</Text>
+                </View>
+                <Text style={styles.inlineLicenseText}>
+                  You can still configure the route and the meeting point, but publishing is locked until your motorcycle license is verified.
+                </Text>
+                <Pressable
+                  onPress={() => router.push("/(tabs)/profile")}
+                  style={styles.inlineVerifyBtn}
+                  data-testid="create-route-verify-license-button"
+                >
+                  <Ionicons name="card" size={16} color={Colors.bg} />
+                  <Text style={styles.inlineVerifyBtnText}>Verify License</Text>
+                </Pressable>
+              </View>
+            )}
+
             {/* Map Preview */}
             <RoutePreviewMap 
               startPoint={startPoint}
@@ -610,6 +603,18 @@ export default function CreateRouteScreen() {
           </ScrollView>
         ) : (
           <ScrollView contentContainerStyle={styles.formContainer} keyboardShouldPersistTaps="handled">
+            {!isLicenseVerified && (
+              <View style={styles.inlineLicenseCard} data-testid="create-route-step2-license-warning-card">
+                <View style={styles.inlineLicenseHeader}>
+                  <Ionicons name="lock-closed" size={18} color={Colors.warning} />
+                  <Text style={styles.inlineLicenseTitle}>Publishing locked</Text>
+                </View>
+                <Text style={styles.inlineLicenseText}>
+                  Verify your motorcycle license to publish this route after setting the meeting point and all details.
+                </Text>
+              </View>
+            )}
+
             {/* Route Summary */}
             {routeInfo && (
               <View style={styles.summaryCard}>
@@ -759,48 +764,45 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
   
-  // Blocked screen
-  blockedContainer: {
+  inlineLicenseCard: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: "rgba(255,193,7,0.35)",
+    borderRadius: 16,
+    padding: 14,
+    gap: 10,
+  },
+  inlineLicenseHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  inlineLicenseTitle: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-    gap: 20,
-  },
-  blockedIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,193,7,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  blockedTitle: {
     color: Colors.warning,
-    fontSize: 24,
-    fontFamily: "Inter_900Black",
-  },
-  blockedText: {
-    color: Colors.muted,
     fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "center",
-    lineHeight: 22,
+    fontFamily: "Inter_700Bold",
   },
-  verifyBtn: {
+  inlineLicenseText: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 18,
+  },
+  inlineVerifyBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
     backgroundColor: Colors.accent,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    marginTop: 12,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    alignSelf: "flex-start",
   },
-  verifyBtnText: {
+  inlineVerifyBtnText: {
     color: Colors.bg,
-    fontSize: 16,
+    fontSize: 13,
     fontFamily: "Inter_700Bold",
   },
   

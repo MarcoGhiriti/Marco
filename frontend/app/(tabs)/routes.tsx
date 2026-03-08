@@ -655,10 +655,7 @@ export default function RoutesScreen() {
 
   const renderRoute = ({ item }: { item: RouteOut }) => renderRouteCard(item, { testIdPrefix: "route-card-list" });
 
-  const renderExploreHeader = () => {
-    if (activeTab !== "explore") return null;
-
-    return (
+  const exploreHeader = activeTab === "explore" ? (
       <View style={styles.exploreHeaderSections}>
         <View style={styles.sectionHeaderRow} data-testid="created-by-users-section-header">
           <View>
@@ -720,8 +717,7 @@ export default function RoutesScreen() {
           </Text>
         </View>
       </View>
-    );
-  };
+  ) : null;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -799,7 +795,7 @@ export default function RoutesScreen() {
           data={filteredRoutes}
           keyExtractor={(item) => item.id}
           renderItem={renderRoute}
-          ListHeaderComponent={renderExploreHeader}
+          ListHeaderComponent={exploreHeader}
           contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 16 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
