@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import * as WebBrowser from "expo-web-browser";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, API_BASE_URL } from "../../src/lib/api";
