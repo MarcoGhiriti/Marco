@@ -664,6 +664,33 @@ async def generate_route(body: GenerateRouteRequest, user=Depends(require_premiu
     diff_label = body.difficulty.capitalize()
     title = f"{diff_label} Loop - {distance_km} km"
 
+    # Analyze route details
+    cities_passed = set()
+    for leg in legs:
+        for step in leg.get("steps", []):
+            html = step.get("html_instructions", "")
+            # Detect city/town transitions
+            if "onto" in html.lower() or "toward" in html.lower():
+                pass  # basic detection
+    
+    # Count turns/curves from steps
+    total_steps = sum(len(leg.get("steps", [])) for leg in legs)
+    curves_estimate = max(0, total_steps - len(legs) * 2)  # subtract start/end per leg
+    
+    # Speed analysis
+    avg_speed_kmh = round(distance_km / (duration_min / 60)) if duration_min > 0 else 0
+    has_highways = any("highway" in step.get("html_instructions", "").lower() or "motorway" in step.get("html_instructions", "").lower() for leg in legs for step in leg.get("steps", []))
+    has_urban = any("city" in step.get("html_instructions", "").lower() or "town" in step.get("html_instructions", "").lower() or "urban" in step.get("html_instructions", "").lower() for leg in legs for step in leg.get("steps", []))
+    
+    # Extract waypoints for Google Maps navigation
+    waypoints_nav = []
+    sample_interval = max(1, len(polyline_points) // 8)
+    for i in range(sample_interval, len(polyline_points) - sample_interval, sample_interval):
+        pt = polyline_points[i]
+        waypoints_nav.append({"lat": pt[0], "lng": pt[1]})
+        if len(waypoints_nav) >= 6:
+            break
+
     return {
         "title": title,
         "distance_km": distance_km,
@@ -674,7 +701,174 @@ async def generate_route(body: GenerateRouteRequest, user=Depends(require_premiu
         "end_address": end_address,
         "overview_polyline": overview,
         "is_generated": True,
+        "is_round_trip": True,
+        "curves_count": curves_estimate,
+        "avg_speed_kmh": avg_speed_kmh,
+        "has_highways": has_highways,
+        "has_urban_areas": has_urban,
+        "total_steps": total_steps,
+        "waypoints_nav": waypoints_nav,
+        "start_lat": body.start_lat,
+        "start_lng": body.start_lng,
     }
+
+
+# ==========================================
+# SAVE GENERATED ROUTE
+# ==========================================
+
+class SaveGeneratedRoute(BaseModel):
+    title: str
+    distance_km: float
+    duration_min: int
+    difficulty: str = "medium"
+    polyline: List[List[float]] = []
+    overview_polyline: str = ""
+    start_address: str = ""
+    end_address: str = ""
+    start_lat: float = 0
+    start_lng: float = 0
+    curves_count: int = 0
+    avg_speed_kmh: int = 0
+    has_highways: bool = False
+    has_urban_areas: bool = False
+    waypoints_nav: List[dict] = []
+
+
+@router.post("/api/premium/saved-routes")
+async def save_generated_route(body: SaveGeneratedRoute, user=Depends(require_premium)):
+    """Save a generated route for later use."""
+    uid = user["id"]
+    now = datetime.now(timezone.utc)
+    doc = {
+        "user_id": uid,
+        "title": body.title,
+        "distance_km": body.distance_km,
+        "duration_min": body.duration_min,
+        "difficulty": body.difficulty,
+        "polyline": body.polyline,
+        "overview_polyline": body.overview_polyline,
+        "start_address": body.start_address,
+        "end_address": body.end_address,
+        "start_lat": body.start_lat,
+        "start_lng": body.start_lng,
+        "curves_count": body.curves_count,
+        "avg_speed_kmh": body.avg_speed_kmh,
+        "has_highways": body.has_highways,
+        "has_urban_areas": body.has_urban_areas,
+        "waypoints_nav": body.waypoints_nav,
+        "is_generated": True,
+        "is_round_trip": True,
+        "status": "saved",
+        "progress_pct": 0,
+        "created_at": now,
+    }
+    result = await db.saved_routes.insert_one(doc)
+    return {"id": str(result.inserted_id), "status": "saved"}
+
+
+@router.get("/api/premium/saved-routes")
+async def get_saved_routes(user=Depends(require_premium)):
+    """Get all saved generated routes."""
+    uid = user["id"]
+    routes = []
+    async for r in db.saved_routes.find({"user_id": uid}).sort("created_at", -1).limit(50):
+        routes.append({
+            "id": str(r["_id"]),
+            "title": r.get("title", ""),
+            "distance_km": r.get("distance_km", 0),
+            "duration_min": r.get("duration_min", 0),
+            "difficulty": r.get("difficulty", "medium"),
+            "start_address": r.get("start_address", ""),
+            "end_address": r.get("end_address", ""),
+            "start_lat": r.get("start_lat", 0),
+            "start_lng": r.get("start_lng", 0),
+            "curves_count": r.get("curves_count", 0),
+            "avg_speed_kmh": r.get("avg_speed_kmh", 0),
+            "has_highways": r.get("has_highways", False),
+            "has_urban_areas": r.get("has_urban_areas", False),
+            "waypoints_nav": r.get("waypoints_nav", []),
+            "polyline": r.get("polyline", []),
+            "overview_polyline": r.get("overview_polyline", ""),
+            "status": r.get("status", "saved"),
+            "progress_pct": r.get("progress_pct", 0),
+            "created_at": r["created_at"].isoformat() if isinstance(r.get("created_at"), datetime) else None,
+        })
+    return routes
+
+
+@router.get("/api/premium/saved-routes/{route_id}")
+async def get_saved_route_detail(route_id: str, user=Depends(require_premium)):
+    """Get full detail of a saved route."""
+    uid = user["id"]
+    r = await db.saved_routes.find_one({"_id": ObjectId(route_id), "user_id": uid})
+    if not r:
+        raise HTTPException(404, "Route not found")
+    return {
+        "id": str(r["_id"]),
+        "title": r.get("title", ""),
+        "distance_km": r.get("distance_km", 0),
+        "duration_min": r.get("duration_min", 0),
+        "difficulty": r.get("difficulty", "medium"),
+        "polyline": r.get("polyline", []),
+        "overview_polyline": r.get("overview_polyline", ""),
+        "start_address": r.get("start_address", ""),
+        "end_address": r.get("end_address", ""),
+        "start_lat": r.get("start_lat", 0),
+        "start_lng": r.get("start_lng", 0),
+        "curves_count": r.get("curves_count", 0),
+        "avg_speed_kmh": r.get("avg_speed_kmh", 0),
+        "has_highways": r.get("has_highways", False),
+        "has_urban_areas": r.get("has_urban_areas", False),
+        "waypoints_nav": r.get("waypoints_nav", []),
+        "is_round_trip": r.get("is_round_trip", True),
+        "status": r.get("status", "saved"),
+        "progress_pct": r.get("progress_pct", 0),
+    }
+
+
+@router.post("/api/premium/saved-routes/{route_id}/start")
+async def start_saved_route(route_id: str, user=Depends(require_premium)):
+    """Mark a saved route as started."""
+    uid = user["id"]
+    r = await db.saved_routes.find_one({"_id": ObjectId(route_id), "user_id": uid})
+    if not r:
+        raise HTTPException(404, "Route not found")
+    await db.saved_routes.update_one(
+        {"_id": ObjectId(route_id)},
+        {"$set": {"status": "active", "started_at": datetime.now(timezone.utc)}},
+    )
+    return {"status": "active"}
+
+
+@router.post("/api/premium/saved-routes/{route_id}/progress")
+async def update_route_progress(route_id: str, progress_pct: float = 0, user=Depends(require_premium)):
+    """Update completion percentage of a route."""
+    uid = user["id"]
+    await db.saved_routes.update_one(
+        {"_id": ObjectId(route_id), "user_id": uid},
+        {"$set": {"progress_pct": min(100, max(0, progress_pct))}},
+    )
+    return {"progress_pct": progress_pct}
+
+
+@router.post("/api/premium/saved-routes/{route_id}/complete")
+async def complete_saved_route(route_id: str, user=Depends(require_premium)):
+    """Mark a saved route as completed."""
+    uid = user["id"]
+    await db.saved_routes.update_one(
+        {"_id": ObjectId(route_id), "user_id": uid},
+        {"$set": {"status": "completed", "progress_pct": 100, "completed_at": datetime.now(timezone.utc)}},
+    )
+    return {"status": "completed"}
+
+
+@router.delete("/api/premium/saved-routes/{route_id}")
+async def delete_saved_route(route_id: str, user=Depends(require_premium)):
+    """Delete a saved route."""
+    uid = user["id"]
+    await db.saved_routes.delete_one({"_id": ObjectId(route_id), "user_id": uid})
+    return {"deleted": True}
 
 
 # ==========================================

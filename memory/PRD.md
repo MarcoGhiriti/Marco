@@ -1,45 +1,37 @@
-# MotoGO - PRD
+# MotoGO PRD - Updated Mar 17, 2026
 
-## Session 10-12 Premium System + Chat Route Sharing
+## Latest: AI Route Save/Start + Saved Routes Page
 
-### Latest Changes (Session 12)
+### Route Generator Enhanced
+- Returns: `curves_count`, `avg_speed_kmh`, `has_highways`, `has_urban_areas`, `waypoints_nav`
+- Round-trip routes (origin = destination) with 6 waypoint stops
+- Cards show: polyline map, difficulty badge, start/end cities, stats chips
 
-**Chat Route Sharing (Group Chat)**
-- "+" button added next to message input in group chat
-- Two options: "Create Route" (navigates to route creation) + "Share Route" (opens route picker modal)
-- Route picker loads user's routes from `/api/routes/my`, shows them as cards
-- Selecting a route sends a formatted message `[Route] Title - Start > End (X km)` to the group chat
-- Files: `frontend/app/community/group/[groupId].tsx`
+### Save + Start Buttons
+- **Save**: Saves generated route to `saved_routes` MongoDB collection
+- **Start**: Opens Google Maps with full waypoint navigation (round trip URL)
 
-**Premium Badge** - Expanded across app
-- `PremiumBadge` component (`/frontend/src/components/PremiumBadge.tsx`) - green circle with motorcycle icon
-- Added in:
-  - Profile page (next to username)
-  - Friends list (next to friend name)
-  - Group chat member list (via `GroupMember.premium` field)
-- Backend changes:
-  - `UserPublic` model: added `premium: bool = False`
-  - `UserSearchOut` model: added `premium: bool = False`
-  - `/api/friends` endpoint: now returns `premium` field
-  - `/api/me` endpoint: returns `premium` field
+### Saved Routes Page (`/premium/saved-routes`)
+- List all saved routes with difficulty, km, curves, progress%
+- Full-screen detail view with: polyline map, stats grid (km/min/avg speed/curves), Highway/Urban/Round Trip tags
+- Start in Google Maps button, Mark Complete button, Delete
+- Progress tracking (progress_pct field)
 
-### All Premium Features Implemented
-- Stripe Checkout (€4.99/mo)
-- Premium Dashboard with 5 feature cards
-- YourBike (insurance/ITP/service tracking)
-- Free Ride Mode (live map + stats + summary with polyline + stop checkpoints)
-- AI Route Generator (Google Directions API)
-- Ride History (route participations + free rides)
-- Maintenance Tips (8 tips)
-- Route Recommendations (3 picks + refresh)
-- Chat Route Sharing (+ button in group chat)
-- Premium Badge (profile, friends, chat)
+### New Backend Endpoints
+```
+POST   /api/premium/saved-routes           - Save generated route
+GET    /api/premium/saved-routes           - List saved routes  
+GET    /api/premium/saved-routes/{id}      - Route detail
+POST   /api/premium/saved-routes/{id}/start    - Mark as active
+POST   /api/premium/saved-routes/{id}/progress - Update %
+POST   /api/premium/saved-routes/{id}/complete - Mark complete
+DELETE /api/premium/saved-routes/{id}      - Delete route
+```
 
-### Pending
-- Backend refactor (server.py ~4500 lines)
-- Forgot Password flow
-- Location search autocomplete fix (from previous session)
-- Map Callout/Popup bugs (from previous session)
+### Files
+- `/app/backend/routers/premium.py` - 7 new endpoints + enhanced generate-route
+- `/app/frontend/app/premium/saved-routes.tsx` - NEW page
+- `/app/frontend/app/premium/index.tsx` - Added Saved Routes feature card
+- `/app/frontend/app/(tabs)/routes.tsx` - Save/Start/Refresh buttons on generated card
 
-### Test Credentials
-- User 1 (Premium Active): `user1@example.com` / `Password123`
+### Test: user1@example.com / Password123 (Premium Active)

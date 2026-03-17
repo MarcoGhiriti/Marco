@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
   Alert,
+  Linking,
   Platform,
   useWindowDimensions,
 } from "react-native";
@@ -769,25 +770,33 @@ export default function RoutesScreen() {
                     <Pressable
                       style={styles.genShareBtn}
                       onPress={async () => {
-                        const text = `Check out this ${generatedRoute.distance_km}km route: ${generatedRoute.title} (${generatedRoute.duration_min} min)`;
+                        if (!authHeader) return;
                         try {
-                          if (typeof navigator !== "undefined" && navigator.clipboard) {
-                            await navigator.clipboard.writeText(text);
-                          } else {
-                            await Clipboard.setStringAsync(text);
-                          }
-                          if (Platform.OS === "web") window.alert("Copied to clipboard!");
-                          else Alert.alert("Copied!", "Route info copied to clipboard");
+                          await apiPost("/api/premium/saved-routes", generatedRoute, authHeader);
+                          if (Platform.OS === "web") window.alert("Route saved!");
+                          else Alert.alert("Saved!", "Route saved to your Premium collection");
                         } catch { }
                       }}
-                      data-testid="share-generated-route-btn"
+                      data-testid="save-generated-route-btn"
                     >
-                      <Ionicons name="share-outline" size={16} color={Colors.accent} />
-                      <Text style={styles.genShareText}>Share</Text>
+                      <Ionicons name="bookmark" size={16} color={Colors.accent} />
+                      <Text style={styles.genShareText}>Save</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.genShareBtn, { backgroundColor: Colors.accent, borderColor: Colors.accent }]}
+                      onPress={() => {
+                        const origin = `${generatedRoute.start_lat},${generatedRoute.start_lng}`;
+                        const wps = (generatedRoute.waypoints_nav || []).map((w: any) => `${w.lat},${w.lng}`).join("|");
+                        const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${origin}&waypoints=${encodeURIComponent(wps)}&travelmode=driving`;
+                        Linking.openURL(url);
+                      }}
+                      data-testid="start-generated-route-btn"
+                    >
+                      <Ionicons name="navigate" size={16} color={Colors.bg} />
+                      <Text style={[styles.genShareText, { color: Colors.bg }]}>Start</Text>
                     </Pressable>
                     <Pressable style={styles.genRefreshBtn} onPress={() => setGeneratedRoute(null)}>
                       <Ionicons name="refresh" size={16} color={Colors.text} />
-                      <Text style={styles.genRefreshText}>New</Text>
                     </Pressable>
                   </View>
                 </View>

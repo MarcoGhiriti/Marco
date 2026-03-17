@@ -38,6 +38,12 @@ const FEATURES = [
     route: "/premium/free-ride",
   },
   {
+    icon: "bookmark" as const,
+    title: "Saved Routes",
+    desc: "Your saved AI-generated routes & progress",
+    route: "/premium/saved-routes",
+  },
+  {
     icon: "time" as const,
     title: "Ride History",
     desc: "Your route participations & free rides",
