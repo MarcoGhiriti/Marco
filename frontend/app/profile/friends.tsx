@@ -15,11 +15,13 @@ import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
+import { PremiumBadge } from "../../src/components/PremiumBadge";
 
 type Friend = {
   id: string;
   username: string;
   profile_photo_base64?: string | null;
+  premium?: boolean;
 };
 
 type SearchUser = {
@@ -124,7 +126,10 @@ export default function FriendsScreen() {
           )}
         </View>
         <View style={styles.friendInfo}>
-          <Text style={styles.friendName}>{item.username}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Text style={styles.friendName}>{item.username}</Text>
+            {item.premium && <PremiumBadge size="sm" />}
+          </View>
           <Text style={styles.friendSub}>Friend</Text>
         </View>
       </Pressable>

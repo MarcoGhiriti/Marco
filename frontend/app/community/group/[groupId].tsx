@@ -25,11 +25,14 @@ import { useAuthStore } from "../../../src/state/authStore";
 import { useUnreadStore } from "../../../src/state/unreadStore";
 import type { MessageOut } from "../../../src/types/community";
 
+import { PremiumBadge } from "../../../src/components/PremiumBadge";
+
 type GroupMember = {
   id: string;
   username: string;
   avatar?: string | null;
   level: number;
+  premium?: boolean;
 };
 
 type GroupInfo = {
@@ -71,6 +74,11 @@ export default function GroupChatScreen() {
   
   // Invite modal
   const [showInviteModal, setShowInviteModal] = useState(false);
+
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [myRoutes, setMyRoutes] = useState<any[]>([]);
+  const [showRoutesPicker, setShowRoutesPicker] = useState(false);
+  const [routesLoading, setRoutesLoading] = useState(false);
 
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
   const listRef = useRef<FlatList<MessageOut> | null>(null);
@@ -416,6 +424,22 @@ export default function GroupChatScreen() {
 
         {/* Composer */}
         <View style={styles.composer}>
+          <Pressable
+            style={styles.attachBtn}
+            onPress={() => {
+              setShowAttachMenu(!showAttachMenu);
+              if (!showAttachMenu && authHeader) {
+                setRoutesLoading(true);
+                apiGet<any[]>("/api/routes/my", authHeader)
+                  .then(setMyRoutes)
+                  .catch(console.error)
+                  .finally(() => setRoutesLoading(false));
+              }
+            }}
+            data-testid="chat-attach-btn"
+          >
+            <Ionicons name={showAttachMenu ? "close" : "add"} size={22} color={Colors.accent} />
+          </Pressable>
           <View style={styles.inputContainer}>
             <TextInput
               value={text}
@@ -434,6 +458,32 @@ export default function GroupChatScreen() {
             <Ionicons name="send" size={18} color={text.trim() ? Colors.bg : Colors.muted} />
           </Pressable>
         </View>
+
+        {/* Attach Menu - Route Sharing */}
+        {showAttachMenu && (
+          <View style={styles.attachMenu} data-testid="chat-attach-menu">
+            <Pressable
+              style={styles.attachOption}
+              onPress={() => { setShowAttachMenu(false); router.push("/create/route"); }}
+              data-testid="attach-create-route"
+            >
+              <View style={[styles.attachOptionIcon, { backgroundColor: `${Colors.accent}20` }]}>
+                <Ionicons name="map" size={20} color={Colors.accent} />
+              </View>
+              <Text style={styles.attachOptionText}>Create Route</Text>
+            </Pressable>
+            <Pressable
+              style={styles.attachOption}
+              onPress={() => { setShowAttachMenu(false); setShowRoutesPicker(true); }}
+              data-testid="attach-share-route"
+            >
+              <View style={[styles.attachOptionIcon, { backgroundColor: `${Colors.warning}20` }]}>
+                <Ionicons name="share" size={20} color={Colors.warning} />
+              </View>
+              <Text style={styles.attachOptionText}>Share Route</Text>
+            </Pressable>
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       {/* Members Modal */}
@@ -668,6 +718,63 @@ export default function GroupChatScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Route Picker Modal */}
+      <Modal
+        visible={showRoutesPicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowRoutesPicker(false)}
+      >
+        <View style={styles.inviteModalOverlay}>
+          <View style={styles.inviteModalContent}>
+            <View style={styles.editModalHeader}>
+              <Text style={styles.editModalTitle}>Share a Route</Text>
+              <Pressable onPress={() => setShowRoutesPicker(false)}>
+                <Ionicons name="close" size={24} color={Colors.text} />
+              </Pressable>
+            </View>
+            <ScrollView style={styles.inviteList}>
+              {routesLoading ? (
+                <ActivityIndicator color={Colors.accent} style={{ marginTop: 20 }} />
+              ) : myRoutes.length === 0 ? (
+                <View style={styles.emptyInvite}>
+                  <Ionicons name="map-outline" size={48} color={Colors.muted} />
+                  <Text style={styles.emptyInviteText}>No routes created yet</Text>
+                </View>
+              ) : (
+                myRoutes.map((r: any) => (
+                  <Pressable
+                    key={r.id}
+                    style={styles.inviteFriendRow}
+                    onPress={() => {
+                      const s = socketRef.current ?? getSocket(accessToken!);
+                      const shareText = `[Route] ${r.title || "Route"} - ${r.start_city || ""} > ${r.end_city || ""} (${r.distance_km?.toFixed(1) || 0} km)`;
+                      s.emit("group:send", { group_id: gid, text: shareText });
+                      setShowRoutesPicker(false);
+                      scrollToBottom();
+                    }}
+                    data-testid={`share-route-${r.id}`}
+                  >
+                    <View style={styles.memberInfo}>
+                      <View style={[styles.memberAvatar, { backgroundColor: `${Colors.accent}20` }]}>
+                        <Ionicons name="map" size={20} color={Colors.accent} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.memberName} numberOfLines={1}>{r.title || "Route"}</Text>
+                        <Text style={styles.memberLevel}>{r.start_city} {"\u2192"} {r.end_city}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.inviteBtn}>
+                      <Ionicons name="share" size={16} color="#FFF" />
+                    </View>
+                  </Pressable>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -833,6 +940,49 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  // Attach button & menu
+  attachBtn: {
+    height: 48,
+    width: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  attachMenu: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 12,
+  },
+  attachOption: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    padding: 12,
+  },
+  attachOptionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  attachOptionText: {
+    color: Colors.text,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
   },
 
   // Modal

@@ -566,6 +566,7 @@ class UserSearchOut(BaseModel):
     id: str
     username: str
     profile_photo_base64: Optional[str] = None
+    premium: bool = False
 
 
 class FriendRequestOut(BaseModel):
@@ -1646,7 +1647,7 @@ async def friends_list(current_user: dict = Depends(get_current_user)):
         return []
 
     oids = [_as_object_id(i) for i in ids]
-    cursor = db.users.find({"_id": {"$in": oids}}, {"username": 1, "profile_photo_base64": 1})
+    cursor = db.users.find({"_id": {"$in": oids}}, {"username": 1, "profile_photo_base64": 1, "premium": 1})
     docs = await cursor.to_list(length=200)
 
     # preserve insertion order
@@ -1655,7 +1656,7 @@ async def friends_list(current_user: dict = Depends(get_current_user)):
     for fid in ids:
         d = by_id.get(fid)
         if d:
-            out.append(UserSearchOut(id=fid, username=d.get("username", ""), profile_photo_base64=d.get("profile_photo_base64")))
+            out.append(UserSearchOut(id=fid, username=d.get("username", ""), profile_photo_base64=d.get("profile_photo_base64"), premium=bool(d.get("premium"))))
     return out
 
 
