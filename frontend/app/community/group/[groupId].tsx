@@ -838,15 +838,16 @@ export default function GroupChatScreen() {
         </View>
       </Modal>
 
-      {/* Poll Modal */}
+      {/* Poll Modal - positioned at top for keyboard visibility */}
       <Modal visible={showPollModal} animationType="slide" transparent onRequestClose={() => setShowPollModal(false)}>
-        <View style={styles.inviteModalOverlay}>
-          <View style={styles.inviteModalContent}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-start", paddingTop: 60 }}>
+          <View style={{ backgroundColor: Colors.bg, borderRadius: 24, marginHorizontal: 12, maxHeight: "75%", overflow: "hidden" }}>
             <View style={styles.editModalHeader}>
               <Text style={styles.editModalTitle}>Create Poll</Text>
               <Pressable onPress={() => setShowPollModal(false)}><Ionicons name="close" size={24} color={Colors.text} /></Pressable>
             </View>
-            <ScrollView style={styles.inviteList} contentContainerStyle={{ gap: 12, padding: 16 }}>
+            <ScrollView style={{ paddingHorizontal: 16 }} contentContainerStyle={{ gap: 12, paddingVertical: 16 }} keyboardShouldPersistTaps="handled">
               <TextInput
                 style={[styles.editInput, { marginBottom: 4 }]}
                 value={pollQuestion}
@@ -883,7 +884,6 @@ export default function GroupChatScreen() {
                 onPress={() => {
                   const s = socketRef.current ?? getSocket(accessToken!);
                   const opts = pollOptions.filter(o => o.trim());
-                  // Create poll via API, then share poll ID in chat
                   apiPost<{ id: string }>("/api/polls", {
                     group_id: gid,
                     question: pollQuestion.trim(),
@@ -904,6 +904,7 @@ export default function GroupChatScreen() {
             </ScrollView>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Route Picker Modal */}
@@ -1461,7 +1462,7 @@ const styles = StyleSheet.create({
   },
   // Route card in chat
   routeCard: {
-    maxWidth: "85%",
+    width: "80%",
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: `${Colors.accent}44`,
