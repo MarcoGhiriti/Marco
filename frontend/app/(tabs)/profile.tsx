@@ -731,8 +731,10 @@ export default function ProfileScreen() {
             title={t("profile.logout")}
             leftIcon="log-out-outline"
             onPress={async () => {
-              await logout();
-              router.replace("/auth/login");
+              try {
+                await logout();
+              } catch {}
+              setTimeout(() => router.replace("/auth/welcome"), 100);
             }}
           />
         </View>
