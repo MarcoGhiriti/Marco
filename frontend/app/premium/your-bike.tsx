@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPut } from "../../src/lib/api";
@@ -72,6 +73,7 @@ const QUICK_ACTIONS = [
 
 export default function YourBikeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { accessToken } = useAuthStore();
   const [bike, setBike] = useState<BikeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -257,45 +259,24 @@ export default function YourBikeScreen() {
               </Pressable>
             </View>
 
-            {/* Quick Actions */}
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <View style={styles.actionsGrid}>
-              {QUICK_ACTIONS.map((a) => (
-                <Pressable
-                  key={a.action}
-                  style={[styles.actionCard, { backgroundColor: a.color }]}
-                  onPress={() => {
-                    if (a.action === "insurance" || a.action === "docs") setShowEditModal(true);
-                    else if (a.action === "service") router.push("/premium/maintenance");
-                    else if (a.action === "reminder") setShowEditModal(true);
-                  }}
-                  data-testid={`quick-action-${a.action}`}
-                >
-                  <Ionicons name={a.icon} size={28} color="#fff" />
-                  <Text style={styles.actionLabel}>{a.label}</Text>
+            {/* Next Service Card */}
+            {bike?.next_service_km && (
+              <View style={styles.nextServiceCard}>
+                <View style={styles.nextServiceIconBox}>
+                  <Ionicons name="construct" size={22} color={Colors.accent} />
+                </View>
+                <View style={styles.nextServiceInfo}>
+                  <Text style={styles.nextServiceTitle}>{t("premium.bike.nextService")}</Text>
+                  <Text style={styles.nextServiceValue}>
+                    {t("premium.bike.nextServiceAt", { km: bike.next_service_km.toLocaleString() })}
+                    {bike.current_km ? ` (${t("premium.bike.kmLeft", { km: (bike.next_service_km - bike.current_km).toLocaleString() })})` : ""}
+                  </Text>
+                </View>
+                <Pressable onPress={() => setShowEditModal(true)}>
+                  <Ionicons name="create-outline" size={18} color={Colors.muted} />
                 </Pressable>
-              ))}
-            </View>
-
-            {/* Services */}
-            <View style={styles.sectionRow}>
-              <Text style={styles.sectionTitle}>Services</Text>
-              <Pressable onPress={() => router.push("/premium/maintenance")}>
-                <Text style={styles.sectionLink}>See All</Text>
-              </Pressable>
-            </View>
-            <View style={styles.servicesRow}>
-              <Pressable style={styles.serviceCard} onPress={() => setShowEditModal(true)}>
-                <Ionicons name="document-text" size={22} color={Colors.text} />
-                <Text style={styles.serviceText}>Registration</Text>
-                <Ionicons name="add" size={20} color={Colors.accent} />
-              </Pressable>
-              <Pressable style={styles.serviceCard} onPress={() => setShowEditModal(true)}>
-                <Ionicons name="notifications" size={22} color={Colors.text} />
-                <Text style={styles.serviceText}>Reminder</Text>
-                <Ionicons name="add" size={20} color={Colors.accent} />
-              </Pressable>
-            </View>
+              </View>
+            )}
 
             {/* Expenses */}
             <View style={styles.sectionRow}>
@@ -503,6 +484,20 @@ const styles = StyleSheet.create({
   servicesRow: { flexDirection: "row", gap: 10 },
   serviceCard: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.border, borderRadius: 16, padding: 14 },
   serviceText: { color: Colors.text, fontSize: 13, fontFamily: "Inter_700Bold", flex: 1 },
+
+  // Next Service
+  nextServiceCard: {
+    flexDirection: "row", alignItems: "center", gap: 14,
+    backgroundColor: Colors.card, borderWidth: 1, borderColor: `${Colors.accent}30`,
+    borderRadius: 18, padding: 16,
+  },
+  nextServiceIconBox: {
+    width: 48, height: 48, borderRadius: 16,
+    backgroundColor: `${Colors.accent}15`, alignItems: "center", justifyContent: "center",
+  },
+  nextServiceInfo: { flex: 1, gap: 2 },
+  nextServiceTitle: { color: Colors.text, fontSize: 14, fontFamily: "Inter_700Bold" },
+  nextServiceValue: { color: Colors.accent, fontSize: 13, fontFamily: "Inter_600SemiBold" },
 
   // Expenses
   expenseCard: { backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.border, borderRadius: 18, padding: 16, gap: 12 },
