@@ -92,56 +92,75 @@ async def require_premium(user=Depends(get_current_user)):
 @router.post("/api/premium/checkout")
 async def create_checkout(body: CheckoutRequest, request: Request, user=Depends(get_current_user)):
     """Create a Stripe checkout session for premium subscription."""
-    from emergentintegrations.payments.stripe.checkout import (
-        StripeCheckout, CheckoutSessionRequest,
-    )
+    import stripe
+    stripe.api_key = STRIPE_API_KEY
 
     uid = user["id"]
     origin = body.origin_url.rstrip("/")
     success_url = f"{origin}/premium/success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin}/premium"
 
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
+    try:
+        # Create a standard (non-metered) subscription price
+        # First check if we already have our price
+        prices = stripe.Price.list(
+            lookup_keys=["motogo_premium_standard"],
+            limit=1,
+        )
 
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+        if prices.data:
+            price_id = prices.data[0].id
+        else:
+            # Create product and standard monthly price
+            product = stripe.Product.create(name="MotoGO Premium")
+            price = stripe.Price.create(
+                product=product.id,
+                unit_amount=499,  # €4.99 in cents
+                currency="eur",
+                recurring={"interval": "month"},
+                lookup_key="motogo_premium_standard",
+            )
+            price_id = price.id
 
-    checkout_req = CheckoutSessionRequest(
-        amount=PREMIUM_PRICE_EUR,
-        currency="eur",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"quantity": 1, "price": price_id}],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "user_id": uid,
+                "plan": PREMIUM_PLAN_ID,
+                "username": user.get("username", ""),
+            },
+        )
+
+        # Create payment transaction record
+        now = datetime.now(timezone.utc)
+        await db.payment_transactions.insert_one({
+            "session_id": session.id,
             "user_id": uid,
+            "amount": PREMIUM_PRICE_EUR,
+            "currency": "eur",
             "plan": PREMIUM_PLAN_ID,
-            "username": user.get("username", ""),
-        },
-    )
+            "status": "initiated",
+            "payment_status": "pending",
+            "metadata": {"username": user.get("username", "")},
+            "created_at": now,
+            "updated_at": now,
+        })
 
-    session = await stripe_checkout.create_checkout_session(checkout_req)
+        return {"url": session.url, "session_id": session.id}
 
-    # Create payment transaction record
-    now = datetime.now(timezone.utc)
-    await db.payment_transactions.insert_one({
-        "session_id": session.session_id,
-        "user_id": uid,
-        "amount": PREMIUM_PRICE_EUR,
-        "currency": "eur",
-        "plan": PREMIUM_PLAN_ID,
-        "status": "initiated",
-        "payment_status": "pending",
-        "metadata": {"username": user.get("username", "")},
-        "created_at": now,
-        "updated_at": now,
-    })
-
-    return {"url": session.url, "session_id": session.session_id}
+    except Exception as e:
+        logger.error(f"Stripe checkout error: {e}")
+        raise HTTPException(500, f"Checkout failed: {str(e)}")
 
 
 @router.get("/api/premium/checkout/status/{session_id}")
 async def check_checkout_status(session_id: str, user=Depends(get_current_user)):
     """Check the status of a checkout session and activate premium if paid."""
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
+    import stripe
+    stripe.api_key = STRIPE_API_KEY
 
     uid = user["id"]
 
@@ -153,20 +172,19 @@ async def check_checkout_status(session_id: str, user=Depends(get_current_user))
     if txn.get("payment_status") == "paid":
         return {"status": "complete", "payment_status": "paid", "already_processed": True}
 
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
-    status = await stripe_checkout.get_checkout_status(session_id)
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception:
+        raise HTTPException(404, "Session not found")
 
     now = datetime.now(timezone.utc)
     update_data = {
-        "status": status.status,
-        "payment_status": status.payment_status,
+        "status": session.status,
+        "payment_status": session.payment_status,
         "updated_at": now,
     }
 
-    if status.payment_status == "paid" and txn.get("payment_status") != "paid":
-        # Activate premium - 30 days from now
-        premium_until = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
-        premium_until = premium_until.replace(day=min(now.day, 28))
+    if session.payment_status == "paid" and txn.get("payment_status") != "paid":
         from datetime import timedelta
         premium_until = now + timedelta(days=30)
 
@@ -182,39 +200,46 @@ async def check_checkout_status(session_id: str, user=Depends(get_current_user))
     )
 
     return {
-        "status": status.status,
-        "payment_status": status.payment_status,
-        "amount_total": status.amount_total,
-        "currency": status.currency,
+        "status": session.status,
+        "payment_status": session.payment_status,
+        "amount_total": session.amount_total,
+        "currency": session.currency,
     }
 
 
 @router.post("/api/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhook events."""
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
+    """Handle Stripe webhook events for subscriptions."""
+    import stripe
+    stripe.api_key = STRIPE_API_KEY
 
     body = await request.body()
     sig = request.headers.get("Stripe-Signature", "")
 
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
-
     try:
-        event = await stripe_checkout.handle_webhook(body, sig)
+        event = stripe.Event.construct_from(
+            stripe.util.convert_to_stripe_object(
+                __import__("json").loads(body)
+            ),
+            stripe.api_key,
+        )
     except Exception as e:
-        logger.error(f"Webhook error: {e}")
-        raise HTTPException(400, "Webhook verification failed")
+        logger.error(f"Webhook parse error: {e}")
+        raise HTTPException(400, "Webhook parse failed")
 
-    if event.payment_status == "paid":
-        session_id = event.session_id
-        user_id = event.metadata.get("user_id")
+    event_type = event.type
+    data_object = event.data.object if hasattr(event, "data") else {}
+
+    if event_type == "checkout.session.completed":
+        session_id = data_object.get("id", "")
+        metadata = data_object.get("metadata", {})
+        user_id = metadata.get("user_id")
 
         if user_id and session_id:
             now = datetime.now(timezone.utc)
             from datetime import timedelta
             premium_until = now + timedelta(days=30)
 
-            # Update transaction
             await db.payment_transactions.update_one(
                 {"session_id": session_id},
                 {"$set": {
@@ -224,15 +249,19 @@ async def stripe_webhook(request: Request):
                     "premium_activated_at": now,
                 }},
             )
-
-            # Activate premium
             await db.users.update_one(
                 {"_id": ObjectId(user_id)},
                 {"$set": {"premium": True, "premium_until": premium_until}},
             )
             logger.info(f"Premium activated for user {user_id} via webhook")
 
-    return {"received": True}
+    elif event_type == "customer.subscription.deleted":
+        logger.info(f"Subscription deleted: {data_object.get('id', '')}")
+
+    elif event_type == "customer.subscription.updated":
+        logger.info(f"Subscription updated: {data_object.get('id', '')}")
+
+    return {"status": "success"}
 
 
 # ==========================================
