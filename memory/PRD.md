@@ -1,23 +1,41 @@
-# MotoGO PRD - Final Update Mar 17, 2026
+# MotoGO PRD - Final Mar 17, 2026
 
-## Backend API Tests (All Passed)
-1. Login: OK
-2. Me: premium=True
-3. Premium Status: is_premium=True  
-4. Bike: name=Yamaha MT-07, plate=MM-01-ABC, km=5350
-5. Tips: 8 tips
-6. Generate Route: Easy Loop 62.7km, 26 curves
-7. Saved Routes: 1 saved
-8. History: 0 participated, 3 free rides
-9. Checkout: cs_live (LIVE mode)
-10. Friends: premium field present
-11. Google Auth: endpoint exists
+## Full API Health Check (18/18 PASSED)
+1. Auth/Me: OK (user1, premium=True)
+2. Premium Status: OK (is_premium=True)
+3. Bike Data: OK (Yamaha MT-07, 5350km)
+4. Maintenance Tips: OK (8 tips)
+5. AI Route Generator: OK (63.3km, 116min, 39 curves)
+6. Saved Routes: OK (2 saved)
+7. Ride History: OK (4 free rides)
+8. Stripe Checkout: OK (LIVE mode)
+9. Leaderboard: OK (5 riders, top=user1:3000km)
+10. Friends: OK (1 friend, premium field)
+11. Routes: OK (19 routes)
+12. Events: OK (19 events)
+13. Groups: OK (10 groups)
+14. Polls: OK (create + vote + view voters)
+15. Push Notifications: OK (endpoint active)
+16. Stories: OK
+17. Marketplace: OK (5 listings)
+18. Google Auth: OK (endpoint exists)
 
-## i18n Status
-- en.json: 120+ premium keys added
-- ro.json: 120+ premium keys added (full Romanian translation)
-- useTranslation applied: your-bike.tsx, premium/index.tsx
-- Remaining: free-ride, history, saved-routes, recommendations, maintenance need `t()` calls in JSX
+## Session Summary - All Features Built
+- Stripe Premium (€4.99/mo LIVE)
+- YourBike dashboard (insurance/ITP/service/expenses)
+- Free Ride Mode (live map + summary)
+- AI Route Generator (click-to-detail, hours format)
+- Saved Routes with Google Maps navigation
+- Ride History (routes + free rides)
+- Polls in group chat (backend, single vote, voter names, 14-day TTL)
+- Push Notifications (Expo, local bike alerts)
+- Google + Apple Login (welcome + login pages)
+- Premium Badge (profile, friends)
+- Chat Route Sharing (rich cards)
+- i18n EN + RO (120+ keys)
+- Leaderboard sync with Free Ride km
 
-## Test Credentials
-- User 1 (Premium): user1@example.com / Password123
+## Pending
+- Backend refactor (server.py 4600 lines)
+- Forgot Password (needs email service)
+- Full i18n t() calls on all premium pages
