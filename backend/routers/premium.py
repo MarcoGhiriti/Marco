@@ -487,11 +487,18 @@ async def end_free_ride(ride_id: str, body: FreeRideEnd, user=Depends(require_pr
         }},
     )
 
-    # Update user total km + monthly km
+    # Update user total km + monthly km + stats for leaderboard
     if body.distance_km > 0:
         await db.users.update_one(
             {"_id": ObjectId(uid)},
             {"$inc": {"km_total": body.distance_km, "km_month": body.distance_km}},
+        )
+        # Also update stats collection for leaderboard
+        await db.stats.update_one(
+            {"user_id": uid},
+            {"$inc": {"km_total": body.distance_km, "km_month": body.distance_km},
+             "$setOnInsert": {"user_id": uid}},
+            upsert=True,
         )
 
     return {
