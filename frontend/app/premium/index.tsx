@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPost, API_BASE_URL } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
@@ -88,9 +89,7 @@ export default function PremiumDashboard() {
     if (!headers) return;
     setCheckoutLoading(true);
     try {
-      const origin = Platform.OS === "web"
-        ? window.location.origin
-        : API_BASE_URL;
+      const origin = API_BASE_URL;
 
       const data = await apiPost<{ url: string; session_id: string }>(
         "/api/premium/checkout",
@@ -99,10 +98,30 @@ export default function PremiumDashboard() {
       );
 
       if (data.url) {
-        if (Platform.OS === "web") {
-          window.location.href = data.url;
-        } else {
-          await Linking.openURL(data.url);
+        // Open Stripe checkout in-app browser (not Safari)
+        const result = await WebBrowser.openBrowserAsync(data.url, {
+          dismissButtonStyle: "close",
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+        });
+
+        // When user comes back from in-app browser, poll for payment status
+        if (result.type === "cancel" || result.type === "dismiss") {
+          // Poll payment status a few times
+          for (let i = 0; i < 8; i++) {
+            await new Promise((r) => setTimeout(r, 2000));
+            try {
+              const statusData = await apiGet<{ payment_status: string }>(
+                `/api/premium/checkout/status/${data.session_id}`,
+                headers,
+              );
+              if (statusData.payment_status === "paid") {
+                await loadStatus();
+                break;
+              }
+            } catch { break; }
+          }
+          // Reload status regardless
+          await loadStatus();
         }
       }
     } catch (e) {
