@@ -22,6 +22,8 @@ class VoteRequest(BaseModel):
 
 async def ensure_poll_indexes():
     await _safe_create_index(db.polls, "group_id", background=True)
+    # Auto-delete polls after 14 days
+    await _safe_create_index(db.polls, "created_at", expireAfterSeconds=14 * 24 * 3600, background=True)
     logger.info("Poll indexes ensured")
 
 
@@ -89,7 +91,13 @@ async def get_poll(poll_id: str, user=Depends(get_current_user)):
     for i, o in enumerate(poll["options"]):
         if uid in o.get("votes", []):
             my_vote = i
-        options.append({"text": o["text"], "count": o.get("count", 0)})
+        # Get voter usernames
+        voter_names = []
+        for vid in o.get("votes", []):
+            u = await db.users.find_one({"_id": ObjectId(vid)}, {"username": 1})
+            if u:
+                voter_names.append(u.get("username", "Unknown"))
+        options.append({"text": o["text"], "count": o.get("count", 0), "voters": voter_names})
 
     return {
         "id": str(poll["_id"]),

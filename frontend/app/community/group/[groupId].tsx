@@ -90,6 +90,7 @@ export default function GroupChatScreen() {
   const PollCard = ({ pollId, mine, senderName, authHeader: ah, userId }: { pollId: string; mine: boolean; senderName?: string; authHeader: any; userId?: string }) => {
     const [poll, setPoll] = React.useState<any>(null);
     const [voting, setVoting] = React.useState(false);
+    const [showVoters, setShowVoters] = React.useState(-1);
     React.useEffect(() => {
       if (ah) apiGet(`/api/polls/${pollId}`, ah).then(setPoll).catch(() => {});
     }, [pollId, ah]);
@@ -103,32 +104,42 @@ export default function GroupChatScreen() {
             <Ionicons name="stats-chart" size={18} color={Colors.success} />
             <Text style={styles.routeCardTitle}>{poll.question}</Text>
           </View>
-          <Text style={{ color: Colors.muted, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>{total} vote{total !== 1 ? "s" : ""}</Text>
+          <Text style={{ color: Colors.muted, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>{total} vote{total !== 1 ? "s" : ""}{poll.has_voted ? " \u2022 Voted" : ""}</Text>
           {poll.options.map((opt: any, i: number) => {
             const pct = total > 0 ? Math.round((opt.count / total) * 100) : 0;
             const isMyVote = poll.my_vote === i;
             const color = POLL_COLORS[i % POLL_COLORS.length];
             return (
-              <Pressable
-                key={i}
-                style={styles.pollOption}
-                disabled={poll.has_voted || voting}
-                onPress={async () => {
-                  if (!ah || poll.has_voted) return;
-                  setVoting(true);
-                  try {
-                    await apiPost(`/api/polls/${pollId}/vote`, { option_index: i }, ah);
-                    const updated = await apiGet(`/api/polls/${pollId}`, ah);
-                    setPoll(updated);
-                  } catch {} finally { setVoting(false); }
-                }}
-                data-testid={`poll-vote-${i}`}
-              >
-                <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, backgroundColor: color, borderRadius: 10, opacity: 0.25 } as any} />
-                <View style={[styles.pollOptionDot, isMyVote && { backgroundColor: color, borderColor: color }]} />
-                <Text style={[styles.pollOptionText, isMyVote && { color: color }]}>{opt.text}</Text>
-                <Text style={{ color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" }}>{opt.count}</Text>
-              </Pressable>
+              <View key={i}>
+                <Pressable
+                  style={styles.pollOption}
+                  disabled={poll.has_voted || voting}
+                  onPress={async () => {
+                    if (!ah || poll.has_voted) return;
+                    setVoting(true);
+                    try {
+                      await apiPost(`/api/polls/${pollId}/vote`, { option_index: i }, ah);
+                      const updated = await apiGet(`/api/polls/${pollId}`, ah);
+                      setPoll(updated);
+                    } catch {} finally { setVoting(false); }
+                  }}
+                  data-testid={`poll-vote-${i}`}
+                >
+                  <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, backgroundColor: color, borderRadius: 10, opacity: 0.25 } as any} />
+                  <View style={[styles.pollOptionDot, isMyVote && { backgroundColor: color, borderColor: color }]} />
+                  <Text style={[styles.pollOptionText, isMyVote && { color: color }]}>{opt.text}</Text>
+                  <Pressable onPress={() => setShowVoters(showVoters === i ? -1 : i)} hitSlop={8}>
+                    <Text style={{ color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" }}>{opt.count}</Text>
+                  </Pressable>
+                </Pressable>
+                {showVoters === i && opt.voters && opt.voters.length > 0 && (
+                  <View style={{ paddingLeft: 30, paddingVertical: 4, gap: 2 }}>
+                    {opt.voters.map((name: string, j: number) => (
+                      <Text key={j} style={{ color: Colors.muted, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>{name}</Text>
+                    ))}
+                  </View>
+                )}
+              </View>
             );
           })}
         </View>
