@@ -47,7 +47,16 @@ export default function RoutesScreen() {
   const [generatedRoute, setGeneratedRoute] = useState<any>(null);
   const [genLoading, setGenLoading] = useState(false);
   const [desiredKm, setDesiredKm] = useState("50");
+  const [showGenDetail, setShowGenDetail] = useState(false);
   const isPremium = me?.premium === true;
+
+  const fmtDuration = (min: number) => {
+    if (!min) return "0 min";
+    if (min < 60) return `${min} min`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  };
   const horizontalCardWidth = Math.min(340, Math.max(272, screenWidth * 0.82));
   
   // Minimum participants required to start a route
@@ -750,8 +759,8 @@ export default function RoutesScreen() {
             </View>
             {!userLocation && <Text style={styles.genHint}>Enable location to generate routes</Text>}
 
-            {generatedRoute && (
-              <View style={styles.genResultCard} data-testid="generated-route-card">
+            {generatedRoute && !showGenDetail && (
+              <Pressable style={styles.genResultCard} onPress={() => setShowGenDetail(true)} data-testid="generated-route-card">
                 <RouteMiniMap polyline={generatedRoute.polyline} startCity={generatedRoute.start_address?.split(",")[0]} endCity={generatedRoute.end_address?.split(",")[0]} height={140} />
                 <View style={styles.genResultBody}>
                   <View style={styles.genResultTitleRow}>
@@ -763,9 +772,38 @@ export default function RoutesScreen() {
                   <Text style={styles.genResultRoute} numberOfLines={1}>{generatedRoute.start_address?.split(",")[0] || "Start"} {"\u2192"} {generatedRoute.end_address?.split(",")[0] || "End"}</Text>
                   <View style={styles.genResultStats}>
                     <View style={styles.genStatChip}><Ionicons name="navigate" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{generatedRoute.distance_km} km</Text></View>
-                    <View style={styles.genStatChip}><Ionicons name="time" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{generatedRoute.duration_min} min</Text></View>
-                    <View style={styles.genStatChip}><Ionicons name="trail-sign" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{generatedRoute.polyline?.length || 0} pts</Text></View>
+                    <View style={styles.genStatChip}><Ionicons name="time" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{fmtDuration(generatedRoute.duration_min)}</Text></View>
                   </View>
+                </View>
+              </Pressable>
+            )}
+
+            {generatedRoute && showGenDetail && (
+              <View style={styles.genResultCard} data-testid="generated-route-detail">
+                <RouteMiniMap polyline={generatedRoute.polyline} startCity={generatedRoute.start_address?.split(",")[0]} endCity={generatedRoute.end_address?.split(",")[0]} height={180} />
+                <View style={styles.genResultBody}>
+                  <View style={styles.genResultTitleRow}>
+                    <Text style={styles.genResultTitle}>{generatedRoute.title}</Text>
+                    <View style={[styles.genDiffBadge, { backgroundColor: generatedRoute.difficulty === "easy" ? Colors.success : generatedRoute.difficulty === "hard" ? Colors.danger : Colors.warning }]}>
+                      <Text style={styles.genDiffText}>{generatedRoute.difficulty}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.genResultRoute}>{generatedRoute.start_address || "Start"} {"\u2192"} {generatedRoute.end_address || "End"}</Text>
+                  <Text style={{ color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>Round Trip</Text>
+
+                  <View style={styles.genResultStats}>
+                    <View style={styles.genStatChip}><Ionicons name="navigate" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{generatedRoute.distance_km} km</Text></View>
+                    <View style={styles.genStatChip}><Ionicons name="time" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{fmtDuration(generatedRoute.duration_min)}</Text></View>
+                    <View style={styles.genStatChip}><Ionicons name="speedometer" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{generatedRoute.avg_speed_kmh || 0} avg km/h</Text></View>
+                    <View style={styles.genStatChip}><Ionicons name="git-branch" size={13} color={Colors.warning} /><Text style={styles.genStatText}>{generatedRoute.curves_count || 0} curves</Text></View>
+                  </View>
+
+                  <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                    {generatedRoute.has_highways && <View style={styles.genStatChip}><Ionicons name="car" size={12} color={Colors.text} /><Text style={styles.genStatText}>Highway</Text></View>}
+                    {generatedRoute.has_urban_areas && <View style={styles.genStatChip}><Ionicons name="business" size={12} color={Colors.text} /><Text style={styles.genStatText}>Urban</Text></View>}
+                    <View style={styles.genStatChip}><Ionicons name="repeat" size={12} color={Colors.accent} /><Text style={styles.genStatText}>Round Trip</Text></View>
+                  </View>
+
                   <View style={styles.genResultActions}>
                     <Pressable
                       style={styles.genShareBtn}
@@ -795,10 +833,13 @@ export default function RoutesScreen() {
                       <Ionicons name="navigate" size={16} color={Colors.bg} />
                       <Text style={[styles.genShareText, { color: Colors.bg }]}>Start</Text>
                     </Pressable>
-                    <Pressable style={styles.genRefreshBtn} onPress={() => setGeneratedRoute(null)}>
+                    <Pressable style={styles.genRefreshBtn} onPress={() => { setGeneratedRoute(null); setShowGenDetail(false); }}>
                       <Ionicons name="refresh" size={16} color={Colors.text} />
                     </Pressable>
                   </View>
+                  <Pressable onPress={() => setShowGenDetail(false)} style={{ alignItems: "center", paddingTop: 4 }}>
+                    <Text style={{ color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>Collapse</Text>
+                  </Pressable>
                 </View>
               </View>
             )}
