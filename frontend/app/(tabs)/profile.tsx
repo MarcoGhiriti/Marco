@@ -633,36 +633,25 @@ export default function ProfileScreen() {
         </View>
 
         {/* PREMIUM */}
-        <View style={styles.section}>
-          <View style={styles.premiumHeader}>
-            <Ionicons name="lock-closed-outline" size={18} color={Colors.accent} />
-            <Text style={styles.sectionTitle}>{t("profile.premium")}</Text>
-            <View style={styles.premiumPill}>
-              <Text style={styles.premiumPillText}>COMING SOON</Text>
-            </View>
+        <Pressable
+          style={styles.premiumGoCard}
+          onPress={() => router.push("/premium")}
+          data-testid="go-premium-btn"
+        >
+          <View style={styles.premiumGoGlow} />
+          <View style={styles.premiumGoIconBox}>
+            <Ionicons name="diamond" size={28} color={Colors.accent} />
           </View>
-
-          <View style={styles.premiumCard}>
-            <Text style={styles.premiumTitle}>MotoGO Premium</Text>
-            <Text style={styles.premiumSub}>{t("profile.premiumFeatures")}</Text>
-            {[
-              "Private routes",
-              "Group-only rides",
-              "Personal stats",
-              "Smart reminders",
-              "Advanced groups",
-            ].map((t) => (
-              <View key={t} style={styles.bulletRow}>
-                <View style={styles.bullet} />
-                <Text style={styles.bulletText}>{t}</Text>
-              </View>
-            ))}
-
-            <Pressable disabled style={styles.subscribeBtnDisabled}>
-              <Text style={styles.subscribeBtnText}>{t("profile.subscribeSoon")}</Text>
-            </Pressable>
+          <View style={styles.premiumGoInfo}>
+            <Text style={styles.premiumGoTitle}>MotoGO Premium</Text>
+            <Text style={styles.premiumGoSub}>Your Bike, Free Ride, Tips & more</Text>
           </View>
-        </View>
+          <View style={styles.premiumGoPriceBox}>
+            <Text style={styles.premiumGoPrice}>{"\u20AC"}4.99</Text>
+            <Text style={styles.premiumGoPricePer}>/mo</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
+        </Pressable>
 
         {/* SETTINGS */}
         <View style={styles.section}>
@@ -1151,40 +1140,64 @@ const styles = StyleSheet.create({
   statsNote: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
 
   premiumHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
-  premiumPill: {
-    marginLeft: "auto",
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card2,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  premiumPillText: { color: Colors.muted, fontSize: 10, fontFamily: "Inter_700Bold" },
-  premiumCard: {
+  premiumGoCard: {
+    marginTop: 16,
+    position: "relative",
+    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
     backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: `${Colors.accent}44`,
     borderRadius: 18,
     padding: 16,
   },
-  premiumTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
-  premiumSub: { marginTop: 10, color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
-  bulletRow: { flexDirection: "row", gap: 10, marginTop: 8, alignItems: "center" },
-  bullet: { height: 6, width: 6, borderRadius: 3, backgroundColor: Colors.accent },
-  bulletText: { flex: 1, color: Colors.text, fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  subscribeBtnDisabled: {
-    marginTop: 14,
-    height: 48,
-    borderRadius: 14,
+  premiumGoGlow: {
+    position: "absolute",
+    top: -20,
+    right: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 999,
+    backgroundColor: `${Colors.accent}10`,
+  },
+  premiumGoIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: `${Colors.accent}15`,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card2,
+    borderColor: `${Colors.accent}35`,
     alignItems: "center",
     justifyContent: "center",
-    opacity: 0.65,
   },
-  subscribeBtnText: { color: Colors.text, fontSize: 13, fontFamily: "Inter_900Black" },
+  premiumGoInfo: { flex: 1, gap: 2 },
+  premiumGoTitle: {
+    color: Colors.text,
+    fontSize: 16,
+    fontFamily: "Inter_900Black",
+  },
+  premiumGoSub: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  premiumGoPriceBox: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 1,
+  },
+  premiumGoPrice: {
+    color: Colors.accent,
+    fontSize: 18,
+    fontFamily: "Inter_900Black",
+  },
+  premiumGoPricePer: {
+    color: Colors.muted,
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+  },
 
   row: {
     minHeight: 52,

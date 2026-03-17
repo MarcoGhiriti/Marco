@@ -4468,12 +4468,14 @@ async def get_static_map_image(
 from routers import friends as friends_router
 from routers import location as location_router
 from routers import listing_chat as listing_chat_router
+from routers import premium as premium_router
 
 # Include routers
 fastapi_app.include_router(api_router)
 fastapi_app.include_router(friends_router.router, prefix="/api")
 fastapi_app.include_router(location_router.router, prefix="/api")
 fastapi_app.include_router(listing_chat_router.router)
+fastapi_app.include_router(premium_router.router)
 
 fastapi_app.add_middleware(
     CORSMiddleware,
@@ -4493,6 +4495,8 @@ async def startup_ensure_indexes():
     asyncio.create_task(ensure_indexes())
     from routers.listing_chat import ensure_listing_chat_indexes
     asyncio.create_task(ensure_listing_chat_indexes())
+    from routers.premium import ensure_premium_indexes
+    asyncio.create_task(ensure_premium_indexes())
 
 
 @fastapi_app.get("/api/realtime/health")
