@@ -24,6 +24,7 @@ import { useAuthStore } from "../../src/state/authStore";
 import type { MeetingPointOut, RouteOut, ActiveRideForHomeOut } from "../../src/types/api";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 import { formatDuration, openDirectionsInGoogleMaps, openDirectionsToPoint } from "../../src/lib/utils";
+import * as Clipboard from "expo-clipboard";
 
 export default function RoutesScreen() {
   const router = useRouter();
@@ -41,6 +42,10 @@ export default function RoutesScreen() {
   const [activeRide, setActiveRide] = useState<ActiveRideForHomeOut | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [generatedRoute, setGeneratedRoute] = useState<any>(null);
+  const [genLoading, setGenLoading] = useState(false);
+  const [desiredKm, setDesiredKm] = useState("50");
+  const isPremium = me?.premium === true;
   const horizontalCardWidth = Math.min(340, Math.max(272, screenWidth * 0.82));
   
   // Minimum participants required to start a route
@@ -697,25 +702,106 @@ export default function RoutesScreen() {
 
         <View style={styles.sectionHeaderRow} data-testid="recommendation-of-the-day-section-header">
           <View>
-            <Text style={styles.sectionTitle}>Recommendation of the day</Text>
-            <Text style={styles.sectionSubtitle}>Daily curated picks for premium riders</Text>
+            <Text style={styles.sectionTitle}>AI Route Generator</Text>
+            <Text style={styles.sectionSubtitle}>{isPremium ? "Generate a route based on your desired km" : "Premium feature"}</Text>
           </View>
         </View>
 
-        <View style={styles.premiumLockedCard} data-testid="routes-recommendation-premium-card">
-          <View style={styles.premiumGlow} />
-          <View style={styles.premiumBadge}>
-            <Ionicons name="sparkles" size={14} color={Colors.accent} />
-            <Text style={styles.premiumBadgeText}>Premium</Text>
+        {isPremium ? (
+          <View style={styles.genCard} data-testid="ai-route-generator">
+            <View style={styles.genInputRow}>
+              <TextInput
+                style={styles.genInput}
+                value={desiredKm}
+                onChangeText={setDesiredKm}
+                placeholder="50"
+                placeholderTextColor={Colors.muted}
+                keyboardType="number-pad"
+              />
+              <Text style={styles.genKmLabel}>km</Text>
+              <Pressable
+                style={[styles.genBtn, genLoading && { opacity: 0.6 }]}
+                disabled={genLoading || !userLocation}
+                onPress={async () => {
+                  if (!authHeader || !userLocation) return;
+                  setGenLoading(true);
+                  try {
+                    const data = await apiPost<any>("/api/premium/generate-route", {
+                      desired_km: parseFloat(desiredKm) || 50,
+                      start_lat: userLocation.lat,
+                      start_lng: userLocation.lng,
+                      difficulty: "medium",
+                    }, authHeader);
+                    setGeneratedRoute(data);
+                  } catch (e) { console.error(e); }
+                  finally { setGenLoading(false); }
+                }}
+                data-testid="generate-route-btn"
+              >
+                {genLoading ? <ActivityIndicator size="small" color={Colors.bg} /> : (
+                  <>
+                    <Ionicons name="sparkles" size={16} color={Colors.bg} />
+                    <Text style={styles.genBtnText}>Generate</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+            {!userLocation && <Text style={styles.genHint}>Enable location to generate routes</Text>}
+
+            {generatedRoute && (
+              <View style={styles.genResultCard}>
+                <Text style={styles.genResultTitle}>{generatedRoute.title}</Text>
+                <View style={styles.genResultMeta}>
+                  <Text style={styles.genResultMetaItem}>{generatedRoute.distance_km} km</Text>
+                  <Text style={styles.genResultMetaItem}>{generatedRoute.duration_min} min</Text>
+                </View>
+                <View style={styles.genResultActions}>
+                  <Pressable
+                    style={styles.genShareBtn}
+                    onPress={async () => {
+                      const text = `Check out this ${generatedRoute.distance_km}km route: ${generatedRoute.title} (${generatedRoute.duration_min} min)`;
+                      try {
+                        if (typeof navigator !== "undefined" && navigator.clipboard) {
+                          await navigator.clipboard.writeText(text);
+                        } else {
+                          await Clipboard.setStringAsync(text);
+                        }
+                        if (Platform.OS === "web") window.alert("Copied to clipboard!");
+                        else Alert.alert("Copied!", "Route info copied to clipboard");
+                      } catch { }
+                    }}
+                    data-testid="share-generated-route-btn"
+                  >
+                    <Ionicons name="share-outline" size={16} color={Colors.accent} />
+                    <Text style={styles.genShareText}>Share</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.genRefreshBtn}
+                    onPress={() => setGeneratedRoute(null)}
+                  >
+                    <Ionicons name="refresh" size={16} color={Colors.text} />
+                    <Text style={styles.genRefreshText}>New</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
           </View>
-          <View style={styles.premiumLockedIconWrap}>
-            <Ionicons name="lock-closed" size={28} color={Colors.accent} />
+        ) : (
+          <View style={styles.premiumLockedCard} data-testid="routes-recommendation-premium-card">
+            <View style={styles.premiumGlow} />
+            <View style={styles.premiumBadge}>
+              <Ionicons name="sparkles" size={14} color={Colors.accent} />
+              <Text style={styles.premiumBadgeText}>Premium</Text>
+            </View>
+            <View style={styles.premiumLockedIconWrap}>
+              <Ionicons name="lock-closed" size={28} color={Colors.accent} />
+            </View>
+            <Text style={styles.premiumLockedTitle}>Available with Moto Go Premium</Text>
+            <Text style={styles.premiumLockedText}>
+              AI route generation, distance-aware picks, and premium curation.
+            </Text>
           </View>
-          <Text style={styles.premiumLockedTitle}>Available with Moto Go Premium</Text>
-          <Text style={styles.premiumLockedText}>
-            Unlock the daily ride recommendation, distance-aware picks, and premium curation.
-          </Text>
-        </View>
+        )}
       </View>
   ) : null;
 
@@ -1025,6 +1111,118 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: "center",
     maxWidth: 320,
+  },
+  // AI Generator styles
+  genCard: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: `${Colors.accent}44`,
+    borderRadius: 18,
+    padding: 16,
+    gap: 12,
+  },
+  genInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  genInput: {
+    flex: 1,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: Colors.text,
+    fontSize: 18,
+    fontFamily: "Inter_900Black",
+    textAlign: "center",
+  },
+  genKmLabel: {
+    color: Colors.muted,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  genBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: Colors.accent,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  genBtnText: {
+    color: Colors.bg,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+  genHint: {
+    color: Colors.muted,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  genResultCard: {
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    padding: 14,
+    gap: 8,
+  },
+  genResultTitle: {
+    color: Colors.text,
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+  },
+  genResultMeta: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  genResultMetaItem: {
+    color: Colors.accent,
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  genResultActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  genShareBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    borderRadius: 10,
+    paddingVertical: 10,
+  },
+  genShareText: {
+    color: Colors.accent,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+  genRefreshBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingVertical: 10,
+  },
+  genRefreshText: {
+    color: Colors.text,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
   },
   
   // Route Card

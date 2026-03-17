@@ -1,40 +1,35 @@
-# MotoGO - Product Requirements Document
+# MotoGO - PRD (Updated Mar 17, 2026)
 
-## Original Problem Statement
-Social-mapping application for motorcyclists with features for route planning, live location sharing, events, friend management, police reporting, real-time map interactions, group chats, DMs, leaderboard, badges, marketplace, and premium subscription.
+## Session 10-11 Updates
 
-## Tech Stack
-- **Frontend**: React Native / Expo SDK 54 (TypeScript)
-- **Backend**: FastAPI (Python) - server.py + /routers/
-- **Database**: MongoDB
-- **Payments**: Stripe (via emergentintegrations)
-- **Map**: Google Maps Platform
-- **Real-time**: Socket.IO
-- **AI**: OpenAI GPT-4o
+### AI Route Generator (Routes Page)
+- Premium users see "AI Route Generator" in Explore tab (replaces locked card)
+- Input: desired km + current location -> Google Directions API generates loop route
+- Share button copies route info to clipboard
+- Non-premium users see locked premium card
 
-## What's Been Implemented
+### Free Ride km -> Stats
+- `km_total` + `km_month` updated on free ride end (was only `total_km` before)
 
-### Session 10 — Premium System (Mar 17, 2026)
-- **Stripe Integration**: Checkout €4.99/mo, payment polling, webhook, payment_transactions collection
-- **Backend Router** (`/app/backend/routers/premium.py`): 14 endpoints for checkout, status, bike CRUD, free ride, tips, recommendations
-- **6 Frontend Screens**: Premium dashboard, YourBike (smart alerts, insurance/ITP/service), Free Ride (speed/distance/timer), Recommendations (3 cards + refresh), Maintenance Tips (8), Payment Success
-- **Profile Integration**: "MotoGO Premium" card with €4.99/mo price, links to /premium
-- **Premium Badge**: `PremiumBadge` component (motorcycle icon) shown next to username in Profile
-- **UserPublic model**: Added `premium` boolean field to `/api/me` response
-- **Bug fix**: timezone-aware vs naive datetime comparison
+### Ride History (Premium)
+- `/premium/history` page with 2 tabs: Routes + Free Rides
+- Routes tab: participated route rides with km tracked
+- Free Rides tab: free rides with distance, max speed, duration, stops
+- Added to Premium Dashboard feature list
 
-## Pending
-- Chat Route Sharing (+ button in group chat)
-- Premium badge in more places (friends list, map, chat)
-- Backend refactor (server.py ~4500 lines)
-- Forgot Password flow
+### Backend New Endpoints
+- `POST /api/premium/generate-route` - AI route generation via Google Directions
+- `GET /api/premium/history/routes` - Route participation history
+- `GET /api/premium/history/free-rides` - Detailed free ride history with polylines
+- `POST /api/premium/free-ride/{id}/location` - Live location update during ride
 
-## Test Credentials
-- User 1 (Premium): `user1@example.com` / `Password123`
+### Files Modified
+- `/app/backend/routers/premium.py` - Added 5 new endpoints
+- `/app/frontend/app/(tabs)/routes.tsx` - AI route generator for premium, share button
+- `/app/frontend/app/premium/index.tsx` - Added Ride History to feature list
+- `/app/frontend/app/premium/history.tsx` - NEW: History page
 
-## Key Premium Endpoints
-- `POST /api/premium/checkout` | `GET /api/premium/status`
-- `GET /api/premium/checkout/status/{id}` | `POST /api/webhook/stripe`
-- `GET|PUT /api/premium/bike` | `GET /api/premium/maintenance-tips`
-- `POST /api/premium/free-ride/start|{id}/pause|{id}/resume|{id}/end`
-- `GET /api/premium/recommendations` | `POST /api/premium/recommendations/refresh`
+### Pending for next session
+- Free Ride live map tracking (Google Maps tracking API on map during ride)
+- Free ride final summary with polyline + stop checkpoints on map
+- Chat Route Sharing

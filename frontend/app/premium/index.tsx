@@ -37,6 +37,12 @@ const FEATURES = [
     route: "/premium/free-ride",
   },
   {
+    icon: "time" as const,
+    title: "Ride History",
+    desc: "Your route participations & free rides",
+    route: "/premium/history",
+  },
+  {
     icon: "compass" as const,
     title: "Route Recommendations",
     desc: "3 curated route picks, refreshable daily",
