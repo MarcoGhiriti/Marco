@@ -4551,6 +4551,7 @@ from routers import location as location_router
 from routers import listing_chat as listing_chat_router
 from routers import premium as premium_router
 from routers import push_notifications as push_router
+from routers import polls as polls_router
 
 # Include routers
 fastapi_app.include_router(api_router)
@@ -4559,6 +4560,7 @@ fastapi_app.include_router(location_router.router, prefix="/api")
 fastapi_app.include_router(listing_chat_router.router)
 fastapi_app.include_router(premium_router.router)
 fastapi_app.include_router(push_router.router)
+fastapi_app.include_router(polls_router.router)
 
 fastapi_app.add_middleware(
     CORSMiddleware,

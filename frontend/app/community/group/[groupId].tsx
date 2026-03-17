@@ -85,6 +85,57 @@ export default function GroupChatScreen() {
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const isPremiumUser = me?.premium === true;
 
+  // Poll Card Component
+  const POLL_COLORS = ["#4A6CF7", "#36F19A", "#F5C542", "#FF3B30", "#7B61FF", "#FF9800"];
+  const PollCard = ({ pollId, mine, senderName, authHeader: ah, userId }: { pollId: string; mine: boolean; senderName?: string; authHeader: any; userId?: string }) => {
+    const [poll, setPoll] = React.useState<any>(null);
+    const [voting, setVoting] = React.useState(false);
+    React.useEffect(() => {
+      if (ah) apiGet(`/api/polls/${pollId}`, ah).then(setPoll).catch(() => {});
+    }, [pollId, ah]);
+    if (!poll) return null;
+    const total = poll.total_votes || 0;
+    return (
+      <View style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
+        <View style={styles.routeCard} data-testid="poll-card-message">
+          {!mine && senderName && <Text style={styles.bubbleSender}>{senderName}</Text>}
+          <View style={styles.routeCardHeader}>
+            <Ionicons name="stats-chart" size={18} color={Colors.success} />
+            <Text style={styles.routeCardTitle}>{poll.question}</Text>
+          </View>
+          <Text style={{ color: Colors.muted, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>{total} vote{total !== 1 ? "s" : ""}</Text>
+          {poll.options.map((opt: any, i: number) => {
+            const pct = total > 0 ? Math.round((opt.count / total) * 100) : 0;
+            const isMyVote = poll.my_vote === i;
+            const color = POLL_COLORS[i % POLL_COLORS.length];
+            return (
+              <Pressable
+                key={i}
+                style={styles.pollOption}
+                disabled={poll.has_voted || voting}
+                onPress={async () => {
+                  if (!ah || poll.has_voted) return;
+                  setVoting(true);
+                  try {
+                    await apiPost(`/api/polls/${pollId}/vote`, { option_index: i }, ah);
+                    const updated = await apiGet(`/api/polls/${pollId}`, ah);
+                    setPoll(updated);
+                  } catch {} finally { setVoting(false); }
+                }}
+                data-testid={`poll-vote-${i}`}
+              >
+                <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, backgroundColor: color, borderRadius: 10, opacity: 0.25 } as any} />
+                <View style={[styles.pollOptionDot, isMyVote && { backgroundColor: color, borderColor: color }]} />
+                <Text style={[styles.pollOptionText, isMyVote && { color: color }]}>{opt.text}</Text>
+                <Text style={{ color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" }}>{opt.count}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
+
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
   const listRef = useRef<FlatList<MessageOut> | null>(null);
 
@@ -325,33 +376,13 @@ export default function GroupChatScreen() {
   const renderMessage = ({ item: m }: { item: MessageOut }) => {
     const mine = m.from_user_id === me?.id;
     const isRouteMsg = m.text?.startsWith("[Route]");
-    const isPollMsg = m.text?.startsWith("[Poll]");
+    const isPollMsg = m.text?.startsWith("[Poll:") || m.text?.startsWith("[Poll]");
 
     if (isPollMsg) {
-      const parts = m.text.replace("[Poll] ", "").split(" | ");
-      const question = parts[0] || "Poll";
-      const opts = parts.slice(1);
-      return (
-        <View style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
-          <View style={styles.routeCard} data-testid="poll-card-message">
-            {!mine && m.from_username && <Text style={styles.bubbleSender}>{m.from_username}</Text>}
-            <View style={styles.routeCardHeader}>
-              <Ionicons name="stats-chart" size={18} color={Colors.success} />
-              <Text style={styles.routeCardTitle}>{question}</Text>
-            </View>
-            {opts.map((opt, i) => (
-              <Pressable key={i} style={styles.pollOption} onPress={() => {
-                const s = socketRef.current ?? getSocket(accessToken!);
-                s.emit("group:send", { group_id: gid, text: `Voted: "${opt}" on "${question}"` });
-                scrollToBottom();
-              }}>
-                <View style={styles.pollOptionDot} />
-                <Text style={styles.pollOptionText}>{opt}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      );
+      const pollMatch = m.text.match(/\[Poll:([a-f0-9]+)\]/);
+      if (!pollMatch) return null;
+      const pollId = pollMatch[1];
+      return <PollCard key={m.id || pollId} pollId={pollId} mine={mine} senderName={m.from_username} authHeader={authHeader} userId={me?.id} />;
     }
 
     if (isRouteMsg) {
@@ -852,12 +883,18 @@ export default function GroupChatScreen() {
                 onPress={() => {
                   const s = socketRef.current ?? getSocket(accessToken!);
                   const opts = pollOptions.filter(o => o.trim());
-                  const pollMsg = `[Poll] ${pollQuestion.trim()} | ${opts.join(" | ")}`;
-                  s.emit("group:send", { group_id: gid, text: pollMsg });
-                  setShowPollModal(false);
-                  setPollQuestion("");
-                  setPollOptions(["", ""]);
-                  scrollToBottom();
+                  // Create poll via API, then share poll ID in chat
+                  apiPost<{ id: string }>("/api/polls", {
+                    group_id: gid,
+                    question: pollQuestion.trim(),
+                    options: opts,
+                  }, authHeader!).then((res) => {
+                    s.emit("group:send", { group_id: gid, text: `[Poll:${res.id}]` });
+                    setShowPollModal(false);
+                    setPollQuestion("");
+                    setPollOptions(["", ""]);
+                    scrollToBottom();
+                  }).catch(console.error);
                 }}
                 data-testid="send-poll-btn"
               >
