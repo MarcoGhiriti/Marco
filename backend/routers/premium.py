@@ -34,6 +34,11 @@ class BikeDataUpdate(BaseModel):
     next_service_date: Optional[str] = None
     next_service_km: Optional[int] = None
     current_km: Optional[int] = None
+    bike_name: Optional[str] = None
+    plate_number: Optional[str] = None
+    fuel_cost: Optional[float] = None
+    service_cost: Optional[float] = None
+    other_cost: Optional[float] = None
 
 
 class FreeRideEnd(BaseModel):
@@ -295,7 +300,8 @@ async def update_bike_data(body: BikeDataUpdate, user=Depends(require_premium)):
 
     update = {"user_id": uid, "updated_at": now}
     for field in ["insurance_expiry", "itp_expiry", "last_service_date",
-                   "last_service_notes", "next_service_date", "next_service_km", "current_km"]:
+                   "last_service_notes", "next_service_date", "next_service_km", "current_km",
+                   "bike_name", "plate_number", "fuel_cost", "service_cost", "other_cost"]:
         val = getattr(body, field, None)
         if val is not None:
             update[field] = val
