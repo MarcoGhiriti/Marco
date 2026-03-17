@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -13,17 +14,21 @@ import {
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { Ionicons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
 import { Colors } from "../../src/theme/colors";
 import { useAuthStore } from "../../src/state/authStore";
+import { apiPost, API_BASE_URL } from "../../src/lib/api";
 
 export default function LoginScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { login } = useAuthStore();
+  const { login, loginWithToken } = useAuthStore();
 
-  const [email, setEmail] = useState("user1@example.com");
-  const [password, setPassword] = useState("Password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const disabled = useMemo(() => !email.trim() || !password.trim() || loading, [email, password, loading]);
@@ -49,30 +54,92 @@ export default function LoginScreen() {
     }
   };
 
+  const onGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setError(null);
+    try {
+      // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+      const redirectUrl = `${API_BASE_URL}/api/auth/google-callback`;
+      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+
+      const result = await WebBrowser.openBrowserAsync(authUrl, {
+        dismissButtonStyle: "close",
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+      });
+
+      // After returning from browser, check if there's a pending session
+      if (result.type === "cancel" || result.type === "dismiss") {
+        // Poll for pending Google auth session
+        for (let i = 0; i < 5; i++) {
+          await new Promise(r => setTimeout(r, 1500));
+          try {
+            const stored = await fetch(`${API_BASE_URL}/api/auth/google-pending`, {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            });
+            if (stored.ok) {
+              const data = await stored.json();
+              if (data.access_token) {
+                setToken(data.access_token);
+                router.replace("/(tabs)/home");
+                return;
+              }
+            }
+          } catch { }
+        }
+      }
+    } catch (e) {
+      console.error("Google login error:", e);
+      setError("Google login failed. Please try again.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <Text style={styles.h1}>{t("auth.signIn")}</Text>
             <Text style={styles.sub}>{t("auth.welcomeBack")}</Text>
           </View>
 
-          <View style={styles.notice}>
-            <Text style={styles.noticeText}>
-              Right now, our main focus is on building solid core features and a great riding experience.
-              {"\n\n"}
-              Some communication and social features are still evolving — and that’s intentional.
-              {"\n\n"}
-              We’re improving MotoGO step by step, with frequent updates that will make everything smoother, faster, and more powerful over time.
-              {"\n\n"}
-              Thanks for riding with us from the beginning 🏍️
-            </Text>
+          {/* Social Login Buttons */}
+          <View style={styles.socialSection}>
+            <Pressable
+              style={styles.googleBtn}
+              onPress={onGoogleLogin}
+              disabled={googleLoading}
+              data-testid="google-login-btn"
+            >
+              {googleLoading ? (
+                <ActivityIndicator color={Colors.text} />
+              ) : (
+                <>
+                  <Ionicons name="logo-google" size={20} color="#EA4335" />
+                  <Text style={styles.socialBtnText}>Continue with Google</Text>
+                </>
+              )}
+            </Pressable>
+
+            <Pressable style={styles.appleBtn} data-testid="apple-login-btn">
+              <Ionicons name="logo-apple" size={20} color={Colors.text} />
+              <Text style={styles.socialBtnText}>Continue with Apple</Text>
+            </Pressable>
           </View>
 
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Email/Password Form */}
           <View style={styles.form}>
             <Text style={styles.label}>{t("auth.email")}</Text>
             <TextInput
@@ -90,13 +157,12 @@ export default function LoginScreen() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
+              placeholder="your password"
               placeholderTextColor={Colors.muted}
               secureTextEntry
               style={styles.input}
             />
 
-            {/* Forgot Password Link */}
             <Link href="/auth/forgot-password" asChild>
               <Pressable style={styles.forgotPasswordRow}>
                 <Text style={styles.forgotPasswordText}>{t("auth.forgotPassword")}</Text>
@@ -108,10 +174,7 @@ export default function LoginScreen() {
             <Pressable
               onPress={onSubmit}
               disabled={disabled}
-              style={[
-                styles.primaryBtn,
-                disabled && styles.primaryBtnDisabled,
-              ]}
+              style={[styles.primaryBtn, disabled && styles.primaryBtnDisabled]}
               data-testid="login-submit-btn"
             >
               {loading ? (
@@ -120,17 +183,25 @@ export default function LoginScreen() {
                 <Text style={styles.primaryBtnText}>{t("auth.continue")}</Text>
               )}
             </Pressable>
+          </View>
 
+          {/* Bottom section */}
+          <View style={styles.bottomSection}>
             <View style={styles.row}>
               <Text style={styles.muted}>{t("auth.noAccount")}</Text>
               <Link href="/auth/register" asChild>
-                <Pressable>
-                  <Text style={styles.link}>{t("auth.createOne")}</Text>
-                </Pressable>
+                <Pressable><Text style={styles.link}>{t("auth.createOne")}</Text></Pressable>
               </Link>
             </View>
+
+            <View style={styles.notice}>
+              <Text style={styles.noticeText}>
+                Right now, our main focus is on building solid core features and a great riding experience.
+                Some communication and social features are still evolving. We're improving MotoGO step by step.
+              </Text>
+            </View>
           </View>
-        </Pressable>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -138,73 +209,61 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  container: { flex: 1, backgroundColor: Colors.bg, paddingHorizontal: 16 },
+  container: { flex: 1, backgroundColor: Colors.bg },
+  scroll: { paddingHorizontal: 16, paddingBottom: 40 },
   header: { paddingTop: 18, paddingBottom: 14, gap: 6 },
   h1: { color: Colors.text, fontSize: 26, fontFamily: "Inter_900Black" },
   sub: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+
+  // Social Buttons
+  socialSection: { gap: 10, marginTop: 8 },
+  googleBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12,
+    height: 52, borderRadius: 16, backgroundColor: Colors.card,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  appleBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12,
+    height: 52, borderRadius: 16, backgroundColor: Colors.card,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  socialBtnText: { color: Colors.text, fontSize: 15, fontFamily: "Inter_700Bold" },
+
+  // Divider
+  divider: { flexDirection: "row", alignItems: "center", gap: 14, marginVertical: 20 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  dividerText: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+
+  // Form
   form: {
-    marginTop: 8,
     backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 18,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.5,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 10,
+    borderWidth: 1, borderColor: Colors.border,
+    borderRadius: 18, padding: 16,
   },
   label: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
   input: {
-    marginTop: 8,
-    height: 48,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card2,
-    paddingHorizontal: 14,
-    color: Colors.text,
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
+    marginTop: 8, height: 48, borderRadius: 14,
+    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card2,
+    paddingHorizontal: 14, color: Colors.text, fontSize: 14, fontFamily: "Inter_600SemiBold",
   },
   error: { marginTop: 10, color: Colors.danger, fontSize: 12, fontWeight: "700" },
-  forgotPasswordRow: {
-    marginTop: 12,
-    alignSelf: "flex-end",
-  },
-  forgotPasswordText: {
-    color: Colors.accent,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
-  notice: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card2,
-  },
-  noticeText: {
-    color: Colors.muted,
-    fontSize: 12,
-    lineHeight: 18,
-    fontFamily: "Inter_500Medium",
-  },
+  forgotPasswordRow: { marginTop: 12, alignSelf: "flex-end" },
+  forgotPasswordText: { color: Colors.accent, fontSize: 12, fontFamily: "Inter_600SemiBold" },
   primaryBtn: {
-    marginTop: 16,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: Colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
+    marginTop: 16, height: 48, borderRadius: 14,
+    backgroundColor: Colors.accent, alignItems: "center", justifyContent: "center",
   },
-  primaryBtnDisabled: {
-    opacity: 0.6,
-  },
+  primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnText: { color: Colors.bg, fontSize: 14, fontFamily: "Inter_900Black" },
-  row: { marginTop: 14, flexDirection: "row", gap: 8, alignItems: "center" },
+
+  // Bottom
+  bottomSection: { marginTop: 20, gap: 16 },
+  row: { flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" },
   muted: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_700Bold" },
   link: { color: Colors.accent, fontSize: 12, fontFamily: "Inter_900Black" },
+  notice: {
+    padding: 14, borderRadius: 14,
+    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card2,
+  },
+  noticeText: { color: Colors.muted, fontSize: 11, lineHeight: 17, fontFamily: "Inter_500Medium", textAlign: "center" },
 });

@@ -25,6 +25,7 @@ type AuthState = {
   bootstrap: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
 };
@@ -74,6 +75,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
     await setToken(resp.access_token);
     set({ accessToken: resp.access_token });
+    await get().refreshMe();
+  },
+
+  loginWithToken: async (token: string) => {
+    await setToken(token);
+    set({ accessToken: token });
     await get().refreshMe();
   },
 

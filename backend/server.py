@@ -1103,6 +1103,84 @@ async def auth_login(payload: AuthLogin):
     return AuthToken(access_token=token)
 
 
+
+class GoogleAuthRequest(BaseModel):
+    session_id: str
+
+
+@api_router.post("/auth/google", response_model=AuthToken)
+async def auth_google(payload: GoogleAuthRequest):
+    """Exchange Emergent Auth session_id for app JWT token."""
+    import httpx
+
+    # Get user data from Emergent Auth
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get(
+            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+            headers={"X-Session-ID": payload.session_id},
+        )
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=401, detail="Google auth failed")
+
+    data = resp.json()
+    email = data.get("email", "").lower().strip()
+    name = data.get("name", "")
+    picture = data.get("picture", "")
+
+    if not email:
+        raise HTTPException(status_code=400, detail="No email from Google")
+
+    # Find or create user
+    existing = await db.users.find_one({"email": email})
+
+    if existing:
+        # Update profile photo if not set
+        update = {}
+        if picture and not existing.get("profile_photo_base64"):
+            update["google_picture"] = picture
+        if not existing.get("google_id"):
+            update["google_id"] = data.get("id", "")
+        if update:
+            await db.users.update_one({"_id": existing["_id"]}, {"$set": update})
+        token = create_access_token(oid_str(existing["_id"]))
+    else:
+        # Create new user with Google data
+        username = name.replace(" ", "").lower()[:15] or email.split("@")[0]
+        # Ensure unique username
+        base_username = username
+        counter = 1
+        while await db.users.find_one({"username": username}):
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        now = datetime.utcnow()
+        doc = {
+            "email": email,
+            "username": username,
+            "password_hash": "",
+            "google_id": data.get("id", ""),
+            "google_picture": picture,
+            "profile_photo_base64": None,
+            "bio": "",
+            "bike": None,
+            "country": None,
+            "privacy": {"location_visible": False, "routes_visible": "public"},
+            "level": 1,
+            "km_total": 0.0,
+            "km_month": 0.0,
+            "created_at": now,
+            "friends": [],
+            "friend_requests_in": [],
+            "friend_requests_out": [],
+        }
+        res = await db.users.insert_one(doc)
+        token = create_access_token(oid_str(res.inserted_id))
+
+    return AuthToken(access_token=token)
+
+
+
 @api_router.patch("/me", response_model=UserPublic)
 async def update_me(payload: MeUpdate, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
