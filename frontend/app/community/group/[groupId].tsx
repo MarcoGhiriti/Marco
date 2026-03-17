@@ -19,10 +19,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Colors } from "../../../src/theme/colors";
-import { apiGet, apiPost, apiPut } from "../../../src/lib/api";
+import { apiGet, apiPost, apiPut, API_BASE_URL } from "../../../src/lib/api";
 import { getSocket } from "../../../src/lib/realtime";
 import { useAuthStore } from "../../../src/state/authStore";
 import { useUnreadStore } from "../../../src/state/unreadStore";
+import { RouteMiniMap } from "../../../src/components/RouteMiniMap";
 import type { MessageOut } from "../../../src/types/community";
 
 import { PremiumBadge } from "../../../src/components/PremiumBadge";
@@ -319,6 +320,37 @@ export default function GroupChatScreen() {
 
   const renderMessage = ({ item: m }: { item: MessageOut }) => {
     const mine = m.from_user_id === me?.id;
+    const isRouteMsg = m.text?.startsWith("[Route]");
+
+    if (isRouteMsg) {
+      const parts = m.text.replace("[Route] ", "").split(" | ");
+      const title = parts[0] || "Route";
+      const cities = parts[1] || "";
+      const km = parts[2] || "";
+      const routeId = parts[3] || "";
+      return (
+        <View style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
+          <View style={styles.routeCard} data-testid="route-card-message">
+            {!mine && m.from_username && <Text style={styles.bubbleSender}>{m.from_username}</Text>}
+            <View style={styles.routeCardHeader}>
+              <Ionicons name="map" size={18} color={Colors.accent} />
+              <Text style={styles.routeCardTitle} numberOfLines={1}>{title}</Text>
+            </View>
+            {cities ? <Text style={styles.routeCardCities}>{cities}</Text> : null}
+            <View style={styles.routeCardMeta}>
+              {km ? <View style={styles.routeCardChip}><Ionicons name="navigate" size={12} color={Colors.accent} /><Text style={styles.routeCardChipText}>{km}</Text></View> : null}
+            </View>
+            {routeId ? (
+              <Pressable style={styles.routeCardJoinBtn} onPress={() => router.push(`/route/${routeId}`)}>
+                <Ionicons name="enter" size={16} color={Colors.bg} />
+                <Text style={styles.routeCardJoinText}>View Route</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
         {!mine && (
@@ -749,7 +781,7 @@ export default function GroupChatScreen() {
                     style={styles.inviteFriendRow}
                     onPress={() => {
                       const s = socketRef.current ?? getSocket(accessToken!);
-                      const shareText = `[Route] ${r.title || "Route"} - ${r.start_city || ""} > ${r.end_city || ""} (${r.distance_km?.toFixed(1) || 0} km)`;
+                      const shareText = `[Route] ${r.title || "Route"} | ${r.start_city || ""} > ${r.end_city || ""} | ${r.distance_km?.toFixed(1) || 0} km | ${r.id}`;
                       s.emit("group:send", { group_id: gid, text: shareText });
                       setShowRoutesPicker(false);
                       scrollToBottom();
@@ -1269,6 +1301,66 @@ const styles = StyleSheet.create({
   },
   inviteBtnText: {
     color: "#FFF",
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+  // Route card in chat
+  routeCard: {
+    maxWidth: "85%",
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: `${Colors.accent}44`,
+    borderRadius: 16,
+    overflow: "hidden",
+    padding: 12,
+    gap: 8,
+  },
+  routeCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  routeCardTitle: {
+    color: Colors.text,
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+    flex: 1,
+  },
+  routeCardCities: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  routeCardMeta: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  routeCardChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.card2,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  routeCardChipText: {
+    color: Colors.text,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  routeCardJoinBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: Colors.accent,
+    borderRadius: 10,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  routeCardJoinText: {
+    color: Colors.bg,
     fontSize: 13,
     fontFamily: "Inter_700Bold",
   },

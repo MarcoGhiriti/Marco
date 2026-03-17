@@ -25,6 +25,7 @@ import type { MeetingPointOut, RouteOut, ActiveRideForHomeOut } from "../../src/
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
 import { formatDuration, openDirectionsInGoogleMaps, openDirectionsToPoint } from "../../src/lib/utils";
 import * as Clipboard from "expo-clipboard";
+import { PremiumBadge } from "../../src/components/PremiumBadge";
 
 export default function RoutesScreen() {
   const router = useRouter();
@@ -749,39 +750,46 @@ export default function RoutesScreen() {
             {!userLocation && <Text style={styles.genHint}>Enable location to generate routes</Text>}
 
             {generatedRoute && (
-              <View style={styles.genResultCard}>
-                <Text style={styles.genResultTitle}>{generatedRoute.title}</Text>
-                <View style={styles.genResultMeta}>
-                  <Text style={styles.genResultMetaItem}>{generatedRoute.distance_km} km</Text>
-                  <Text style={styles.genResultMetaItem}>{generatedRoute.duration_min} min</Text>
-                </View>
-                <View style={styles.genResultActions}>
-                  <Pressable
-                    style={styles.genShareBtn}
-                    onPress={async () => {
-                      const text = `Check out this ${generatedRoute.distance_km}km route: ${generatedRoute.title} (${generatedRoute.duration_min} min)`;
-                      try {
-                        if (typeof navigator !== "undefined" && navigator.clipboard) {
-                          await navigator.clipboard.writeText(text);
-                        } else {
-                          await Clipboard.setStringAsync(text);
-                        }
-                        if (Platform.OS === "web") window.alert("Copied to clipboard!");
-                        else Alert.alert("Copied!", "Route info copied to clipboard");
-                      } catch { }
-                    }}
-                    data-testid="share-generated-route-btn"
-                  >
-                    <Ionicons name="share-outline" size={16} color={Colors.accent} />
-                    <Text style={styles.genShareText}>Share</Text>
-                  </Pressable>
-                  <Pressable
-                    style={styles.genRefreshBtn}
-                    onPress={() => setGeneratedRoute(null)}
-                  >
-                    <Ionicons name="refresh" size={16} color={Colors.text} />
-                    <Text style={styles.genRefreshText}>New</Text>
-                  </Pressable>
+              <View style={styles.genResultCard} data-testid="generated-route-card">
+                <RouteMiniMap polyline={generatedRoute.polyline} startCity={generatedRoute.start_address?.split(",")[0]} endCity={generatedRoute.end_address?.split(",")[0]} height={140} />
+                <View style={styles.genResultBody}>
+                  <View style={styles.genResultTitleRow}>
+                    <Text style={styles.genResultTitle} numberOfLines={1}>{generatedRoute.title}</Text>
+                    <View style={[styles.genDiffBadge, { backgroundColor: generatedRoute.difficulty === "easy" ? Colors.success : generatedRoute.difficulty === "hard" ? Colors.danger : Colors.warning }]}>
+                      <Text style={styles.genDiffText}>{generatedRoute.difficulty}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.genResultRoute} numberOfLines={1}>{generatedRoute.start_address?.split(",")[0] || "Start"} {"\u2192"} {generatedRoute.end_address?.split(",")[0] || "End"}</Text>
+                  <View style={styles.genResultStats}>
+                    <View style={styles.genStatChip}><Ionicons name="navigate" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{generatedRoute.distance_km} km</Text></View>
+                    <View style={styles.genStatChip}><Ionicons name="time" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{generatedRoute.duration_min} min</Text></View>
+                    <View style={styles.genStatChip}><Ionicons name="trail-sign" size={13} color={Colors.accent} /><Text style={styles.genStatText}>{generatedRoute.polyline?.length || 0} pts</Text></View>
+                  </View>
+                  <View style={styles.genResultActions}>
+                    <Pressable
+                      style={styles.genShareBtn}
+                      onPress={async () => {
+                        const text = `Check out this ${generatedRoute.distance_km}km route: ${generatedRoute.title} (${generatedRoute.duration_min} min)`;
+                        try {
+                          if (typeof navigator !== "undefined" && navigator.clipboard) {
+                            await navigator.clipboard.writeText(text);
+                          } else {
+                            await Clipboard.setStringAsync(text);
+                          }
+                          if (Platform.OS === "web") window.alert("Copied to clipboard!");
+                          else Alert.alert("Copied!", "Route info copied to clipboard");
+                        } catch { }
+                      }}
+                      data-testid="share-generated-route-btn"
+                    >
+                      <Ionicons name="share-outline" size={16} color={Colors.accent} />
+                      <Text style={styles.genShareText}>Share</Text>
+                    </Pressable>
+                    <Pressable style={styles.genRefreshBtn} onPress={() => setGeneratedRoute(null)}>
+                      <Ionicons name="refresh" size={16} color={Colors.text} />
+                      <Text style={styles.genRefreshText}>New</Text>
+                    </Pressable>
+                  </View>
                 </View>
               </View>
             )}
@@ -1164,25 +1172,60 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
   genResultCard: {
-    backgroundColor: Colors.card2,
+    backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 14,
-    padding: 14,
+    borderColor: `${Colors.accent}44`,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  genResultBody: {
+    padding: 12,
     gap: 8,
+  },
+  genResultTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   genResultTitle: {
     color: Colors.text,
     fontSize: 16,
     fontFamily: "Inter_700Bold",
+    flex: 1,
   },
-  genResultMeta: {
-    flexDirection: "row",
-    gap: 16,
+  genDiffBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  genResultMetaItem: {
+  genDiffText: {
+    color: "#fff",
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    textTransform: "capitalize",
+  },
+  genResultRoute: {
     color: Colors.accent,
-    fontSize: 13,
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  genResultStats: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  genStatChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.card2,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  genStatText: {
+    color: Colors.text,
+    fontSize: 12,
     fontFamily: "Inter_600SemiBold",
   },
   genResultActions: {
