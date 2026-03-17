@@ -80,6 +80,10 @@ export default function GroupChatScreen() {
   const [myRoutes, setMyRoutes] = useState<any[]>([]);
   const [showRoutesPicker, setShowRoutesPicker] = useState(false);
   const [routesLoading, setRoutesLoading] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
+  const isPremiumUser = me?.premium === true;
 
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
   const listRef = useRef<FlatList<MessageOut> | null>(null);
@@ -321,6 +325,34 @@ export default function GroupChatScreen() {
   const renderMessage = ({ item: m }: { item: MessageOut }) => {
     const mine = m.from_user_id === me?.id;
     const isRouteMsg = m.text?.startsWith("[Route]");
+    const isPollMsg = m.text?.startsWith("[Poll]");
+
+    if (isPollMsg) {
+      const parts = m.text.replace("[Poll] ", "").split(" | ");
+      const question = parts[0] || "Poll";
+      const opts = parts.slice(1);
+      return (
+        <View style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
+          <View style={styles.routeCard} data-testid="poll-card-message">
+            {!mine && m.from_username && <Text style={styles.bubbleSender}>{m.from_username}</Text>}
+            <View style={styles.routeCardHeader}>
+              <Ionicons name="stats-chart" size={18} color={Colors.success} />
+              <Text style={styles.routeCardTitle}>{question}</Text>
+            </View>
+            {opts.map((opt, i) => (
+              <Pressable key={i} style={styles.pollOption} onPress={() => {
+                const s = socketRef.current ?? getSocket(accessToken!);
+                s.emit("group:send", { group_id: gid, text: `Voted: "${opt}" on "${question}"` });
+                scrollToBottom();
+              }}>
+                <View style={styles.pollOptionDot} />
+                <Text style={styles.pollOptionText}>{opt}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      );
+    }
 
     if (isRouteMsg) {
       const parts = m.text.replace("[Route] ", "").split(" | ");
@@ -491,29 +523,53 @@ export default function GroupChatScreen() {
           </Pressable>
         </View>
 
-        {/* Attach Menu - Route Sharing */}
+        {/* Attach Menu - Route Sharing + Polls */}
         {showAttachMenu && (
           <View style={styles.attachMenu} data-testid="chat-attach-menu">
+            {/* Poll - available to all users */}
             <Pressable
               style={styles.attachOption}
-              onPress={() => { setShowAttachMenu(false); router.push("/create/route"); }}
-              data-testid="attach-create-route"
+              onPress={() => { setShowAttachMenu(false); setShowPollModal(true); }}
+              data-testid="attach-create-poll"
             >
-              <View style={[styles.attachOptionIcon, { backgroundColor: `${Colors.accent}20` }]}>
-                <Ionicons name="map" size={20} color={Colors.accent} />
+              <View style={[styles.attachOptionIcon, { backgroundColor: `${Colors.success}20` }]}>
+                <Ionicons name="stats-chart" size={20} color={Colors.success} />
               </View>
-              <Text style={styles.attachOptionText}>Create Route</Text>
+              <Text style={styles.attachOptionText}>Poll</Text>
             </Pressable>
-            <Pressable
-              style={styles.attachOption}
-              onPress={() => { setShowAttachMenu(false); setShowRoutesPicker(true); }}
-              data-testid="attach-share-route"
-            >
-              <View style={[styles.attachOptionIcon, { backgroundColor: `${Colors.warning}20` }]}>
-                <Ionicons name="share" size={20} color={Colors.warning} />
-              </View>
-              <Text style={styles.attachOptionText}>Share Route</Text>
-            </Pressable>
+            {/* Create Route - premium only */}
+            {isPremiumUser ? (
+              <Pressable
+                style={styles.attachOption}
+                onPress={() => { setShowAttachMenu(false); router.push("/create/route"); }}
+                data-testid="attach-create-route"
+              >
+                <View style={[styles.attachOptionIcon, { backgroundColor: `${Colors.accent}20` }]}>
+                  <Ionicons name="map" size={20} color={Colors.accent} />
+                </View>
+                <Text style={styles.attachOptionText}>Route</Text>
+              </Pressable>
+            ) : (
+              <Pressable style={[styles.attachOption, { opacity: 0.5 }]} data-testid="attach-route-locked">
+                <View style={[styles.attachOptionIcon, { backgroundColor: `${Colors.muted}15` }]}>
+                  <Ionicons name="lock-closed" size={18} color={Colors.muted} />
+                </View>
+                <Text style={[styles.attachOptionText, { color: Colors.muted }]}>Route</Text>
+              </Pressable>
+            )}
+            {/* Share Route - premium only */}
+            {isPremiumUser && (
+              <Pressable
+                style={styles.attachOption}
+                onPress={() => { setShowAttachMenu(false); setShowRoutesPicker(true); }}
+                data-testid="attach-share-route"
+              >
+                <View style={[styles.attachOptionIcon, { backgroundColor: `${Colors.warning}20` }]}>
+                  <Ionicons name="share" size={20} color={Colors.warning} />
+                </View>
+                <Text style={styles.attachOptionText}>Share</Text>
+              </Pressable>
+            )}
           </View>
         )}
       </KeyboardAvoidingView>
@@ -746,6 +802,68 @@ export default function GroupChatScreen() {
                   </View>
                 ))
               )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Poll Modal */}
+      <Modal visible={showPollModal} animationType="slide" transparent onRequestClose={() => setShowPollModal(false)}>
+        <View style={styles.inviteModalOverlay}>
+          <View style={styles.inviteModalContent}>
+            <View style={styles.editModalHeader}>
+              <Text style={styles.editModalTitle}>Create Poll</Text>
+              <Pressable onPress={() => setShowPollModal(false)}><Ionicons name="close" size={24} color={Colors.text} /></Pressable>
+            </View>
+            <ScrollView style={styles.inviteList} contentContainerStyle={{ gap: 12, padding: 16 }}>
+              <TextInput
+                style={[styles.editInput, { marginBottom: 4 }]}
+                value={pollQuestion}
+                onChangeText={setPollQuestion}
+                placeholder="What's your question?"
+                placeholderTextColor={Colors.muted}
+                data-testid="poll-question-input"
+              />
+              {pollOptions.map((opt, i) => (
+                <View key={i} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+                  <TextInput
+                    style={[styles.editInput, { flex: 1 }]}
+                    value={opt}
+                    onChangeText={(v) => { const n = [...pollOptions]; n[i] = v; setPollOptions(n); }}
+                    placeholder={`Option ${i + 1}`}
+                    placeholderTextColor={Colors.muted}
+                  />
+                  {pollOptions.length > 2 && (
+                    <Pressable onPress={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}>
+                      <Ionicons name="close-circle" size={22} color={Colors.danger} />
+                    </Pressable>
+                  )}
+                </View>
+              ))}
+              {pollOptions.length < 6 && (
+                <Pressable style={{ flexDirection: "row", alignItems: "center", gap: 6 }} onPress={() => setPollOptions([...pollOptions, ""])}>
+                  <Ionicons name="add-circle" size={20} color={Colors.accent} />
+                  <Text style={{ color: Colors.accent, fontSize: 13, fontFamily: "Inter_700Bold" }}>Add Option</Text>
+                </Pressable>
+              )}
+              <Pressable
+                style={[styles.inviteBtn, { marginTop: 8, paddingVertical: 14, paddingHorizontal: 20, borderRadius: 14 }]}
+                disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
+                onPress={() => {
+                  const s = socketRef.current ?? getSocket(accessToken!);
+                  const opts = pollOptions.filter(o => o.trim());
+                  const pollMsg = `[Poll] ${pollQuestion.trim()} | ${opts.join(" | ")}`;
+                  s.emit("group:send", { group_id: gid, text: pollMsg });
+                  setShowPollModal(false);
+                  setPollQuestion("");
+                  setPollOptions(["", ""]);
+                  scrollToBottom();
+                }}
+                data-testid="send-poll-btn"
+              >
+                <Ionicons name="stats-chart" size={16} color="#FFF" />
+                <Text style={styles.inviteBtnText}>Send Poll</Text>
+              </Pressable>
             </ScrollView>
           </View>
         </View>
@@ -1363,5 +1481,30 @@ const styles = StyleSheet.create({
     color: Colors.bg,
     fontSize: 13,
     fontFamily: "Inter_700Bold",
+  },
+  // Poll styles
+  pollOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.card2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  pollOptionDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.accent,
+  },
+  pollOptionText: {
+    color: Colors.text,
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    flex: 1,
   },
 });

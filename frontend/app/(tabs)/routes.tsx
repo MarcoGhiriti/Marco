@@ -81,11 +81,11 @@ export default function RoutesScreen() {
     const meetingPoint = getMeetingPoint(route.meeting_point);
     const startRadiusKm = route.start_radius_km ?? 5;
 
-    // Validation 1: Check minimum participants
-    if (route.participants_count < MIN_PARTICIPANTS_TO_START) {
+    // Validation 1: Check minimum participants (premium users can start solo)
+    if (!isPremium && route.participants_count < MIN_PARTICIPANTS_TO_START) {
       showAlert(
         t("routes.cannotStart"),
-        "Dacă vrei ture singur sau de 2 persoane, cumpără abonamentul pentru rute private"
+        "Premium users can start routes with any number of riders. Subscribe to MotoGO Premium!"
       );
       return;
     }
