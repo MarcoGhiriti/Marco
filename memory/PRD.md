@@ -193,7 +193,7 @@ Romanian motorcyclists who want to plan routes, share locations with riding budd
 - Register fresh user: `testuser_gen@example.com` / `TestPass123!`
 
 ## API Base URL (production preview)
-- `https://ride-start-gating.preview.emergentagent.com`
+- `https://search-suggestions.preview.emergentagent.com`
 
 ## Environment Notes
 - Backend port: 8001 (internal), all routes prefixed `/api`
