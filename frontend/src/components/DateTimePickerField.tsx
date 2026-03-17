@@ -39,7 +39,35 @@ export function DateTimePickerField({
     mode === "date" ? "calendar-outline" : "time-outline";
 
   const handlePress = () => {
-    if (Platform.OS === "android") {
+    if (Platform.OS === "web") {
+      // Web fallback - use native HTML input
+      const input = document.createElement("input");
+      input.type = mode === "date" ? "date" : "time";
+      if (mode === "date") {
+        input.value = value.toISOString().split("T")[0];
+      } else {
+        input.value = `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+      }
+      input.style.position = "fixed";
+      input.style.top = "-100px";
+      document.body.appendChild(input);
+      input.addEventListener("change", () => {
+        if (mode === "date") {
+          const parts = input.value.split("-");
+          const d = new Date(value);
+          d.setFullYear(+parts[0], +parts[1] - 1, +parts[2]);
+          onChange(d);
+        } else {
+          const [h, m] = input.value.split(":").map(Number);
+          const d = new Date(value);
+          d.setHours(h, m);
+          onChange(d);
+        }
+        document.body.removeChild(input);
+      });
+      input.showPicker?.();
+      input.click();
+    } else if (Platform.OS === "android") {
       if (mode === "date") {
         DateTimePickerAndroid.open({
           mode: "date",
