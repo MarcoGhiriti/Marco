@@ -482,6 +482,8 @@ class UserPublic(BaseModel):
     license_type: Optional[str] = None  # A1, A2, A, or None
     license_verified: bool = False
     license_photo_base64: Optional[str] = None
+    # Premium fields
+    premium: bool = False
     created_at: datetime
 
 

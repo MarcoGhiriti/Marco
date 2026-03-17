@@ -23,6 +23,7 @@ import { apiGet, apiPost, apiDelete } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 import type { RouteOut, RideSessionOut, EventOut } from "../../src/types/api";
 import { RouteMiniMap } from "../../src/components/RouteMiniMap";
+import { PremiumBadge } from "../../src/components/PremiumBadge";
 
 type Stats = {
   km_total: number;
@@ -278,7 +279,10 @@ export default function ProfileScreen() {
             </View>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.username}>{me?.username ?? ""}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text style={styles.username}>{me?.username ?? ""}</Text>
+              {me?.premium && <PremiumBadge size="md" />}
+            </View>
             <Text style={styles.levelTitle}>{levelInfo.title}</Text>
             <Text style={styles.meta}>{motoLine}</Text>
             <Text style={styles.meta}>{country}</Text>
