@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Linking,
   Platform,
   Pressable,
@@ -10,10 +11,47 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { Colors } from "../../src/theme/colors";
+import { apiPost, API_BASE_URL } from "../../src/lib/api";
+import { useAuthStore } from "../../src/state/authStore";
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { loginWithToken } = useAuthStore();
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const onGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      const redirectUrl = `${API_BASE_URL}/api/auth/google-callback`;
+      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+      const result = await WebBrowser.openBrowserAsync(authUrl, {
+        dismissButtonStyle: "close",
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+      });
+      if (result.type === "cancel" || result.type === "dismiss") {
+        for (let i = 0; i < 5; i++) {
+          await new Promise(r => setTimeout(r, 1500));
+          try {
+            const resp = await fetch(`${API_BASE_URL}/api/auth/google-pending`);
+            if (resp.ok) {
+              const data = await resp.json();
+              if (data.access_token) {
+                await loginWithToken(data.access_token);
+                router.replace("/(tabs)/home");
+                return;
+              }
+            }
+          } catch {}
+        }
+      }
+    } catch (e) {
+      console.error("Google login error:", e);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={s.safe}>
@@ -61,30 +99,35 @@ export default function WelcomeScreen() {
 
           {/* Social buttons */}
           <View style={s.socialRow}>
-            <Pressable style={s.socialBtn} data-testid="welcome-google-btn">
-              <View style={s.socialIcon}>
-                <Text style={s.googleG}>G</Text>
-              </View>
-              <Text style={s.socialBtnText}>Google</Text>
+            <Pressable
+              style={s.socialBtn}
+              onPress={onGoogleLogin}
+              disabled={googleLoading}
+              data-testid="welcome-google-btn"
+            >
+              {googleLoading ? (
+                <ActivityIndicator size="small" color={Colors.text} />
+              ) : (
+                <>
+                  <View style={s.socialIcon}>
+                    <Text style={s.googleG}>G</Text>
+                  </View>
+                  <Text style={s.socialBtnText}>Google</Text>
+                </>
+              )}
             </Pressable>
 
-            {Platform.OS === "ios" && (
-              <Pressable style={s.socialBtn} data-testid="welcome-apple-btn">
-                <View style={s.socialIcon}>
-                  <Ionicons name="logo-apple" size={18} color={Colors.text} />
-                </View>
-                <Text style={s.socialBtnText}>Apple</Text>
-              </Pressable>
-            )}
-
-            {Platform.OS !== "ios" && (
-              <Pressable style={s.socialBtn} data-testid="welcome-apple-btn">
-                <View style={s.socialIcon}>
-                  <Ionicons name="logo-apple" size={18} color={Colors.text} />
-                </View>
-                <Text style={s.socialBtnText}>Apple</Text>
-              </Pressable>
-            )}
+            <Pressable
+              style={s.socialBtn}
+              onPress={onGoogleLogin}
+              disabled={googleLoading}
+              data-testid="welcome-apple-btn"
+            >
+              <View style={s.socialIcon}>
+                <Ionicons name="logo-apple" size={18} color={Colors.text} />
+              </View>
+              <Text style={s.socialBtnText}>Apple</Text>
+            </Pressable>
           </View>
 
           {/* Terms */}
