@@ -1,129 +1,119 @@
+import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import { Platform } from "react-native";
-import Constants from "expo-constants";
+import { apiPost } from "./api";
 
-// Configure notification behavior
+// Configure notification handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
   }),
 });
 
-export async function registerForPushNotificationsAsync(): Promise<string | null> {
-  let token: string | null = null;
+export function useNotifications(accessToken: string | null) {
+  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription>();
 
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#39FF88",
-    });
-  }
+  useEffect(() => {
+    if (!accessToken) return;
 
-  if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+    const register = async () => {
+      if (Platform.OS === "web") return;
+      if (!Device.isDevice) return;
 
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== "granted") {
-      console.log("Failed to get push token for push notification!");
-      return null;
-    }
-
-    try {
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-      if (projectId) {
-        token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-      } else {
-        token = (await Notifications.getExpoPushTokenAsync()).data;
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "Default",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#36F19A",
+        });
       }
-    } catch (e) {
-      console.log("Error getting push token:", e);
+
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      let finalStatus = existing;
+      if (existing !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== "granted") return;
+
+      try {
+        const tokenData = await Notifications.getExpoPushTokenAsync();
+        await apiPost("/api/push/register", {
+          token: tokenData.data,
+          platform: Platform.OS,
+        }, { Authorization: `Bearer ${accessToken}` });
+      } catch (e) {
+        console.log("Push token registration skipped:", e);
+      }
+    };
+
+    register();
+
+    notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {});
+
+    return () => {
+      if (notificationListener.current) Notifications.removeNotificationSubscription(notificationListener.current);
+      if (responseListener.current) Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, [accessToken]);
+}
+
+export async function scheduleLocalBikeAlerts(bikeData: {
+  insurance_expiry?: string | null;
+  itp_expiry?: string | null;
+  next_service_km?: number | null;
+  current_km?: number | null;
+}) {
+  if (Platform.OS === "web") return;
+
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  for (const n of scheduled) {
+    if (n.identifier.startsWith("bike-")) {
+      await Notifications.cancelScheduledNotificationAsync(n.identifier);
     }
-  } else {
-    console.log("Must use physical device for Push Notifications");
   }
 
-  return token;
-}
+  const now = new Date();
 
-// Badge notification types
-type BadgeNotification = {
-  badgeType: string;
-  badgeName: string;
-  badgeDescription: string;
-  badgeIcon: string;
-};
-
-export async function showBadgeNotification(badge: BadgeNotification) {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "🏆 New Badge Earned!",
-      body: `${badge.badgeName}: ${badge.badgeDescription}`,
-      data: { type: "badge", badgeType: badge.badgeType },
-      sound: true,
-    },
-    trigger: null, // Show immediately
-  });
-}
-
-export async function showRideCompleteNotification(kmTracked: number, isValidated: boolean) {
-  if (isValidated) {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "🏍️ Ride Complete!",
-        body: `Great ride! ${kmTracked.toFixed(1)} km has been added to your stats.`,
-        data: { type: "ride_complete", km: kmTracked },
-        sound: true,
-      },
-      trigger: null,
-    });
+  if (bikeData.insurance_expiry) {
+    const expiry = new Date(bikeData.insurance_expiry);
+    const rem = new Date(expiry.getTime() - 7 * 86400000);
+    if (rem > now) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: "bike-insurance",
+        content: { title: "Insurance Expiring Soon", body: `Expires ${expiry.toLocaleDateString()}. Renew now!`, sound: true },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: rem },
+      });
+    }
   }
-}
 
-export async function showFriendRequestNotification(username: string) {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "👋 New Friend Request",
-      body: `${username} wants to be your friend!`,
-      data: { type: "friend_request", username },
-      sound: true,
-    },
-    trigger: null,
-  });
-}
+  if (bikeData.itp_expiry) {
+    const expiry = new Date(bikeData.itp_expiry);
+    const rem = new Date(expiry.getTime() - 7 * 86400000);
+    if (rem > now) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: "bike-itp",
+        content: { title: "ITP Inspection Expiring", body: `Expires ${expiry.toLocaleDateString()}. Schedule now!`, sound: true },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: rem },
+      });
+    }
+  }
 
-export async function showNewMessageNotification(fromUsername: string, preview: string) {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: `💬 ${fromUsername}`,
-      body: preview.length > 50 ? preview.substring(0, 50) + "..." : preview,
-      data: { type: "message", from: fromUsername },
-      sound: true,
-    },
-    trigger: null,
-  });
-}
-
-// Hook for listening to notifications
-export function addNotificationReceivedListener(
-  callback: (notification: Notifications.Notification) => void
-) {
-  return Notifications.addNotificationReceivedListener(callback);
-}
-
-export function addNotificationResponseReceivedListener(
-  callback: (response: Notifications.NotificationResponse) => void
-) {
-  return Notifications.addNotificationResponseReceivedListener(callback);
+  if (bikeData.next_service_km && bikeData.current_km) {
+    const kmLeft = bikeData.next_service_km - bikeData.current_km;
+    if (kmLeft <= 500 && kmLeft > 0) {
+      const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(9, 0, 0, 0);
+      await Notifications.scheduleNotificationAsync({
+        identifier: "bike-service",
+        content: { title: "Service Due Soon", body: `${kmLeft} km until next service.`, sound: true },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: tomorrow },
+      });
+    }
+  }
 }

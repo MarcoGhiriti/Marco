@@ -3,6 +3,8 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View, StyleSheet, Platform, Animated, Easing } from "react-native";
 import { Colors } from "../../src/theme/colors";
+import { useAuthStore } from "../../src/state/authStore";
+import { useNotifications } from "../../src/lib/notifications";
 
 const CENTER_BUTTON_SIZE = 58;
 
@@ -174,6 +176,9 @@ function AnimatedTabIcon({
 }
 
 export default function TabsLayout() {
+  const { accessToken } = useAuthStore();
+  useNotifications(accessToken);
+
   return (
     <Tabs
       screenOptions={{
