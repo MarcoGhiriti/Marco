@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
-  Image,
   Platform,
   Pressable,
   SafeAreaView,
@@ -14,8 +13,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import { Colors } from "../../src/theme/colors";
-import { apiGet, apiPost, API_BASE_URL } from "../../src/lib/api";
+import { apiGet, apiPost } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
+import { InteractiveRouteMap } from "../../src/components/InteractiveRouteMap";
 
 type FreeRideState = {
   id: string;
@@ -31,53 +31,6 @@ type RideSummary = {
   polyline: number[][];
   stop_checkpoints: number[][];
 };
-
-function encodeValue(v: number): string {
-  let val = v < 0 ? ~(v << 1) : v << 1;
-  let out = "";
-  while (val >= 0x20) {
-    out += String.fromCharCode((0x20 | (val & 0x1f)) + 63);
-    val >>= 5;
-  }
-  out += String.fromCharCode(val + 63);
-  return out;
-}
-
-function encodePolyline(coords: number[][]): string {
-  let prevLat = 0, prevLng = 0, encoded = "";
-  for (const [lat, lng] of coords) {
-    const latR = Math.round(lat * 1e5), lngR = Math.round(lng * 1e5);
-    encoded += encodeValue(latR - prevLat);
-    encoded += encodeValue(lngR - prevLng);
-    prevLat = latR;
-    prevLng = lngR;
-  }
-  return encoded;
-}
-
-function buildLiveMapUrl(lat: number, lng: number, polyline: number[][]): string {
-  const params = new URLSearchParams({ lat: String(lat), lng: String(lng), zoom: "15" });
-  if (polyline.length >= 2) {
-    params.set("polyline_str", encodePolyline(polyline));
-    params.set("start_lat", String(polyline[0][0]));
-    params.set("start_lng", String(polyline[0][1]));
-    params.set("end_lat", String(lat));
-    params.set("end_lng", String(lng));
-  }
-  return `${API_BASE_URL}/api/map/static-image?${params.toString()}`;
-}
-
-function buildSummaryMapUrl(polyline: number[][], stops: number[][]): string {
-  if (polyline.length < 2) return "";
-  const enc = encodePolyline(polyline);
-  const start = polyline[0], end = polyline[polyline.length - 1];
-  let url = `${API_BASE_URL}/api/map/static-image?polyline_str=${encodeURIComponent(enc)}&start_lat=${start[0]}&start_lng=${start[1]}&end_lat=${end[0]}&end_lng=${end[1]}`;
-  if (stops.length > 0) {
-    const stopMarkers = stops.map(s => `${s[0]},${s[1]}`).join("|");
-    url += `&stop_markers=${encodeURIComponent(stopMarkers)}`;
-  }
-  return url;
-}
 
 const haversine = (lat1: number, lng1: number, lat2: number, lng2: number) => {
   const R = 6371;
@@ -108,11 +61,9 @@ export default function FreeRideScreen() {
   const [stops, setStops] = useState(0);
   const [stopCheckpoints, setStopCheckpoints] = useState<number[][]>([]);
   const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null);
-  const [mapKey, setMapKey] = useState(0);
 
   const lastPos = useRef<{ lat: number; lng: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const mapRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTime = useRef<Date | null>(null);
   const pausedElapsed = useRef(0);
 
@@ -123,7 +74,10 @@ export default function FreeRideScreen() {
 
   // Check for active ride
   useEffect(() => {
-    if (!headers) return;
+    if (!headers) {
+      setLoading(false);
+      return;
+    }
     apiGet<{ active: boolean; id?: string; status?: string; started_at?: string }>(
       "/api/premium/free-ride/active", headers,
     ).then((data) => {
@@ -147,16 +101,6 @@ export default function FreeRideScreen() {
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [ride?.status]);
-
-  // Refresh map image every 10s during active ride
-  useEffect(() => {
-    if (ride?.status === "active" && currentPos) {
-      mapRefreshRef.current = setInterval(() => setMapKey(k => k + 1), 10000);
-    } else {
-      if (mapRefreshRef.current) clearInterval(mapRefreshRef.current);
-    }
-    return () => { if (mapRefreshRef.current) clearInterval(mapRefreshRef.current); };
-  }, [ride?.status, currentPos]);
 
   // Location tracking
   useEffect(() => {
@@ -284,10 +228,6 @@ export default function FreeRideScreen() {
   // SUMMARY VIEW (after ride ends)
   // ========================
   if (summary) {
-    const mapUrl = summary.polyline.length >= 2
-      ? buildSummaryMapUrl(summary.polyline, summary.stop_checkpoints)
-      : "";
-
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
@@ -298,9 +238,14 @@ export default function FreeRideScreen() {
           <View style={{ width: 44 }} />
         </View>
         <ScrollView contentContainerStyle={styles.summaryContent}>
-          {mapUrl ? (
+          {summary.polyline.length >= 2 ? (
             <View style={styles.summaryMapWrap} data-testid="ride-summary-map">
-              <Image source={{ uri: mapUrl }} style={styles.summaryMapImg} resizeMode="cover" />
+              <InteractiveRouteMap
+                polyline={summary.polyline}
+                stopPoints={summary.stop_checkpoints}
+                height={240}
+                dataTestId="ride-summary-map-interactive"
+              />
               {summary.stop_checkpoints.length > 0 && (
                 <View style={styles.summaryMapLegend}>
                   <View style={styles.legendItem}>
@@ -390,21 +335,17 @@ export default function FreeRideScreen() {
   // ========================
   // ACTIVE RIDE VIEW (with live map)
   // ========================
-  const liveMapUrl = currentPos
-    ? buildLiveMapUrl(currentPos.lat, currentPos.lng, polyline)
-    : "";
-
   return (
     <SafeAreaView style={styles.safe}>
       {/* Live Map */}
       <View style={styles.liveMapContainer}>
-        {liveMapUrl ? (
-          <Image
-            key={`map-${mapKey}`}
-            source={{ uri: liveMapUrl }}
-            style={styles.liveMapImg}
-            resizeMode="cover"
-            data-testid="live-ride-map"
+        {currentPos ? (
+          <InteractiveRouteMap
+            polyline={polyline}
+            currentPoint={currentPos}
+            stopPoints={stopCheckpoints}
+            height={Platform.OS === "web" ? 320 : 360}
+            dataTestId="live-ride-map"
           />
         ) : (
           <View style={styles.liveMapPlaceholder}>
@@ -494,8 +435,7 @@ const styles = StyleSheet.create({
   startBtnText: { color: Colors.bg, fontSize: 18, fontFamily: "Inter_900Black" },
 
   // Live Map
-  liveMapContainer: { flex: 1, backgroundColor: Colors.card2, position: "relative" },
-  liveMapImg: { width: "100%", height: "100%" },
+  liveMapContainer: { backgroundColor: Colors.bg, position: "relative", padding: 16, paddingBottom: 0 },
   liveMapPlaceholder: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   liveMapPlaceholderText: { color: Colors.muted, fontSize: 13, fontFamily: "Inter_600SemiBold" },
   statusBadge: {

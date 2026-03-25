@@ -83,7 +83,10 @@ export default function PremiumDashboard() {
   }, [accessToken]);
 
   const loadStatus = useCallback(async () => {
-    if (!headers) return;
+    if (!headers) {
+      setLoading(false);
+      return;
+    }
     try {
       const [premiumData, paymentsData] = await Promise.all([
         apiGet<PremiumStatus>("/api/premium/status", headers),

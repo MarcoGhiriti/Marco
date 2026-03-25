@@ -1,15 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Colors } from "../../src/theme/colors";
 import { apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
+import { RouteMiniMap } from "../../src/components/RouteMiniMap";
+import { InteractiveRouteMap } from "../../src/components/InteractiveRouteMap";
 
 type RouteRide = {
   id: string;
   route_id: string | null;
-  route: { id: string; title: string; start_city: string; end_city: string; distance_km: number; difficulty: string } | null;
+  route: { id: string; title: string; start_city: string; end_city: string; distance_km: number; difficulty: string; polyline: number[][] } | null;
   started_at: string | null;
   ended_at: string | null;
   km_tracked: number;
@@ -21,6 +23,8 @@ type FreeRide = {
   max_speed_kmh: number;
   duration_seconds: number;
   stops_count: number;
+  stop_checkpoints: number[][];
+  polyline: number[][];
   started_at: string | null;
   ended_at: string | null;
 };
@@ -42,6 +46,7 @@ export default function HistoryScreen() {
   const [tab, setTab] = useState<"routes" | "free">("routes");
   const [routeRides, setRouteRides] = useState<RouteRide[]>([]);
   const [freeRides, setFreeRides] = useState<FreeRide[]>([]);
+  const [selectedFreeRide, setSelectedFreeRide] = useState<FreeRide | null>(null);
   const [loading, setLoading] = useState(true);
 
   const headers = useMemo(() => {
@@ -50,7 +55,10 @@ export default function HistoryScreen() {
   }, [accessToken]);
 
   useEffect(() => {
-    if (!headers) return;
+    if (!headers) {
+      setLoading(false);
+      return;
+    }
     Promise.all([
       apiGet<RouteRide[]>("/api/premium/history/routes", headers).catch(() => []),
       apiGet<FreeRide[]>("/api/premium/history/free-rides", headers).catch(() => []),
@@ -95,33 +103,40 @@ export default function HistoryScreen() {
               <Text style={styles.emptyDesc}>Complete a route ride to see it here.</Text>
             </View>
           ) : (
-            routeRides.map((r) => (
-              <Pressable
-                key={r.id}
-                style={styles.card}
-                onPress={() => r.route?.id && router.push(`/route/${r.route.id}`)}
-                data-testid={`history-route-${r.id}`}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={styles.cardIconBox}>
-                    <Ionicons name="map" size={20} color={Colors.accent} />
-                  </View>
-                  <View style={styles.cardInfo}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>{r.route?.title || "Route"}</Text>
-                    {r.route && <Text style={styles.cardRoute}>{r.route.start_city} {"\u2192"} {r.route.end_city}</Text>}
-                  </View>
-                  {r.route?.difficulty && (
-                    <View style={[styles.diffBadge, { backgroundColor: diffColor(r.route.difficulty) }]}>
-                      <Text style={styles.diffText}>{r.route.difficulty}</Text>
+            routeRides.map((r) => {
+              const route = r.route;
+              return (
+                <Pressable
+                  key={r.id}
+                  style={styles.card}
+                  onPress={() => route?.id && router.push(`/route/${route.id}`)}
+                  data-testid={`history-route-${r.id}`}
+                >
+                  {route && route.polyline.length >= 2 ? (
+                    <RouteMiniMap polyline={route.polyline} startCity={route.start_city} endCity={route.end_city} height={120} />
+                  ) : null}
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardIconBox}>
+                      <Ionicons name="map" size={20} color={Colors.accent} />
                     </View>
-                  )}
-                </View>
-                <View style={styles.cardMeta}>
-                  <Text style={styles.metaItem}>{r.km_tracked?.toFixed(1) || "0"} km</Text>
-                  <Text style={styles.metaItem}>{formatDate(r.started_at)}</Text>
-                </View>
-              </Pressable>
-            ))
+                    <View style={styles.cardInfo}>
+                      <Text style={styles.cardTitle} numberOfLines={1}>{route?.title || "Route"}</Text>
+                      {route ? <Text style={styles.cardRoute}>{route.start_city} {"\u2192"} {route.end_city}</Text> : null}
+                    </View>
+                    {route?.difficulty ? (
+                      <View style={[styles.diffBadge, { backgroundColor: diffColor(route.difficulty) }]}>
+                        <Text style={styles.diffText}>{route.difficulty}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <View style={styles.cardMeta}>
+                    <Text style={styles.metaItem}>{r.km_tracked?.toFixed(1) || "0"} km</Text>
+                    <Text style={styles.metaItem}>{formatDate(r.started_at)}</Text>
+                  </View>
+                  <Text style={styles.tapHint}>Tap for route details and map</Text>
+                </Pressable>
+              );
+            })
           )
         ) : (
           freeRides.length === 0 ? (
@@ -132,7 +147,10 @@ export default function HistoryScreen() {
             </View>
           ) : (
             freeRides.map((r) => (
-              <View key={r.id} style={styles.card} data-testid={`history-free-${r.id}`}>
+              <Pressable key={r.id} style={styles.card} data-testid={`history-free-${r.id}`} onPress={() => setSelectedFreeRide(r)}>
+                {r.polyline?.length >= 2 ? (
+                  <RouteMiniMap polyline={r.polyline} height={120} />
+                ) : null}
                 <View style={styles.cardHeader}>
                   <View style={[styles.cardIconBox, { backgroundColor: `${Colors.warning}15` }]}>
                     <Ionicons name="speedometer" size={20} color={Colors.warning} />
@@ -162,11 +180,57 @@ export default function HistoryScreen() {
                     </View>
                   )}
                 </View>
-              </View>
+                <Text style={styles.tapHint}>Tap to see route details and map</Text>
+              </Pressable>
             ))
           )
         )}
       </ScrollView>
+
+      <Modal visible={!!selectedFreeRide} transparent animationType="slide" onRequestClose={() => setSelectedFreeRide(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard} data-testid="history-free-ride-detail-modal">
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>Free Ride Details</Text>
+                <Text style={styles.modalSubtitle}>{formatDate(selectedFreeRide?.started_at || null)}</Text>
+              </View>
+              <Pressable onPress={() => setSelectedFreeRide(null)} style={styles.modalCloseBtn} data-testid="history-free-ride-detail-close">
+                <Ionicons name="close" size={20} color={Colors.text} />
+              </Pressable>
+            </View>
+
+            {selectedFreeRide ? (
+              <>
+                <InteractiveRouteMap
+                  polyline={selectedFreeRide.polyline}
+                  stopPoints={selectedFreeRide.stop_checkpoints}
+                  height={240}
+                  dataTestId="history-free-ride-detail-map"
+                />
+                <View style={styles.detailStatsGrid}>
+                  <View style={styles.detailStatCard}>
+                    <Text style={styles.detailStatLabel}>Distance</Text>
+                    <Text style={styles.detailStatValue}>{selectedFreeRide.distance_km.toFixed(1)} km</Text>
+                  </View>
+                  <View style={styles.detailStatCard}>
+                    <Text style={styles.detailStatLabel}>Max speed</Text>
+                    <Text style={styles.detailStatValue}>{selectedFreeRide.max_speed_kmh.toFixed(0)} km/h</Text>
+                  </View>
+                  <View style={styles.detailStatCard}>
+                    <Text style={styles.detailStatLabel}>Duration</Text>
+                    <Text style={styles.detailStatValue}>{formatDur(selectedFreeRide.duration_seconds)}</Text>
+                  </View>
+                  <View style={styles.detailStatCard}>
+                    <Text style={styles.detailStatLabel}>Stops</Text>
+                    <Text style={styles.detailStatValue}>{selectedFreeRide.stops_count}</Text>
+                  </View>
+                </View>
+              </>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -222,4 +286,40 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card2, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
   },
   statValue: { color: Colors.text, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  tapHint: { color: Colors.accent, fontSize: 12, fontFamily: "Inter_700Bold" },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
+    padding: 12,
+  },
+  modalCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+    gap: 16,
+  },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  modalTitle: { color: Colors.text, fontSize: 18, fontFamily: "Inter_900Black" },
+  modalSubtitle: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold", marginTop: 2 },
+  modalCloseBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.card2,
+  },
+  detailStatsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  detailStatCard: {
+    width: "48%",
+    backgroundColor: Colors.card2,
+    borderRadius: 16,
+    padding: 12,
+    gap: 4,
+  },
+  detailStatLabel: { color: Colors.muted, fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  detailStatValue: { color: Colors.text, fontSize: 14, fontFamily: "Inter_900Black" },
 });

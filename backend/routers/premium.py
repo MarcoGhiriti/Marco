@@ -804,7 +804,7 @@ async def get_route_participation_history(limit: int = 30, user=Depends(require_
         if route_id:
             route_doc = await db.routes.find_one(
                 {"_id": ObjectId(route_id)},
-                {"title": 1, "start_city": 1, "end_city": 1, "distance_km": 1, "difficulty": 1},
+                {"title": 1, "start_city": 1, "end_city": 1, "distance_km": 1, "difficulty": 1, "polyline": 1},
             )
             if route_doc:
                 route_info = {
@@ -814,6 +814,7 @@ async def get_route_participation_history(limit: int = 30, user=Depends(require_
                     "end_city": route_doc.get("end_city", ""),
                     "distance_km": route_doc.get("distance_km", 0),
                     "difficulty": route_doc.get("difficulty", "medium"),
+                    "polyline": route_doc.get("polyline", []),
                 }
 
         rides.append({

@@ -18,6 +18,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Colors } from "../../src/theme/colors";
 import { apiGet, apiPut } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
+import { BikeProfilePreview } from "../../src/components/BikeProfilePreview";
 
 type BikeData = {
   insurance_expiry: string | null;
@@ -103,7 +104,10 @@ export default function YourBikeScreen() {
   const headers = useMemo(() => accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined, [accessToken]);
 
   const loadBike = useCallback(async () => {
-    if (!headers) return;
+    if (!headers) {
+      setLoading(false);
+      return;
+    }
     try {
       const data = await apiGet<BikeData>("/api/premium/bike", headers);
       setBike(data);
@@ -172,8 +176,8 @@ export default function YourBikeScreen() {
     finally { setSaving(false); }
   };
 
-  const insStatus = getStatus(bike?.insurance_expiry);
-  const itpStatus = getStatus(bike?.itp_expiry);
+  const insStatus = getStatus(bike?.insurance_expiry ?? null);
+  const itpStatus = getStatus(bike?.itp_expiry ?? null);
   const svcStatus = bike?.last_service_date ? "ok" : "unknown";
   const sc = (s: string) => STATUS_COLORS[s as keyof typeof STATUS_COLORS] || STATUS_COLORS.unknown;
 
@@ -218,13 +222,21 @@ export default function YourBikeScreen() {
               <Text style={styles.bikeName}>{bike?.bike_name || "My Motorcycle"}</Text>
             </View>
 
+            <BikeProfilePreview
+              bikeName={bike?.bike_name || "My Motorcycle"}
+              plateNumber={bike?.plate_number || "Plate not set"}
+              currentKm={bike?.current_km || 0}
+              nextServiceKm={bike?.next_service_km || null}
+              totalExpenses={totalExpenses}
+            />
+
             {/* 3 Status Cards */}
             <View style={styles.statusRow}>
               <Pressable style={[styles.statusCard, { backgroundColor: sc(insStatus).bg, borderColor: sc(insStatus).border }]} onPress={() => { setShowEditModal(true); }}>
                 <Ionicons name={insStatus === "ok" ? "checkmark-circle" : insStatus === "warning" ? "warning" : insStatus === "expired" ? "alert-circle" : "help-circle"} size={28} color={sc(insStatus).icon} />
                 <Text style={styles.statusTitle}>Insurance</Text>
                 <View style={[styles.statusBadge, { backgroundColor: sc(insStatus).border + "22" }]}>
-                  <Text style={[styles.statusBadgeText, { color: sc(insStatus).text }]}>{formatDate(bike?.insurance_expiry)}</Text>
+                  <Text style={[styles.statusBadgeText, { color: sc(insStatus).text }]}>{formatDate(bike?.insurance_expiry ?? null)}</Text>
                 </View>
               </Pressable>
 
@@ -232,7 +244,7 @@ export default function YourBikeScreen() {
                 <Ionicons name={itpStatus === "ok" ? "checkmark-circle" : itpStatus === "warning" ? "warning" : itpStatus === "expired" ? "alert-circle" : "help-circle"} size={28} color={sc(itpStatus).icon} />
                 <Text style={styles.statusTitle}>Inspection</Text>
                 <View style={[styles.statusBadge, { backgroundColor: sc(itpStatus).border + "22" }]}>
-                  <Text style={[styles.statusBadgeText, { color: sc(itpStatus).text }]}>{formatDate(bike?.itp_expiry)}</Text>
+                  <Text style={[styles.statusBadgeText, { color: sc(itpStatus).text }]}>{formatDate(bike?.itp_expiry ?? null)}</Text>
                 </View>
               </Pressable>
 
