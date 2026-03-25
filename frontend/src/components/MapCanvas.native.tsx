@@ -1,14 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import ClusteredMapView from "react-native-map-clustering";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../theme/colors";
-
-// CRITICAL: Only load clustering on iOS. Importing on Android causes ANR crashes.
-const ClusteredMapView = Platform.OS === "ios"
-  ? require("react-native-map-clustering").default
-  : MapView;
 
 const openDirections = (lat: number, lng: number, label: string) => {
   const encoded = encodeURIComponent(label);
