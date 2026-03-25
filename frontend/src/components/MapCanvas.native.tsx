@@ -436,7 +436,6 @@ export default function MapCanvas({
         ref={mapRef}
         {...mapRegionProps}
         onPanDrag={() => {
-          clearSelections();
           onPanDrag();
         }}
         onPress={clearSelections}

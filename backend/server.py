@@ -1249,24 +1249,77 @@ async def auth_google_start(request: Request, redirect_uri: str):
     if not allowed:
         raise HTTPException(status_code=400, detail="Invalid redirect URI")
 
-    request.session["google_mobile_redirect"] = redirect_uri
-    # REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+    # Build Google OAuth URL manually, store state in MongoDB (not session cookies)
+    import secrets
+    state = secrets.token_urlsafe(32)
     callback_url = str(request.url_for("auth_google_direct_callback"))
-    # Behind proxy/ingress, url_for generates http:// but Google requires https://
     if request.headers.get("x-forwarded-proto") == "https" and callback_url.startswith("http://"):
         callback_url = "https://" + callback_url[7:]
-    return await oauth.google.authorize_redirect(request, callback_url)
+
+    # Store state + mobile_redirect in DB (expires after 10 min)
+    await db.google_oauth_states.insert_one({
+        "state": state,
+        "mobile_redirect": redirect_uri,
+        "callback_url": callback_url,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    from urllib.parse import quote as url_quote
+    google_auth_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth?"
+        f"response_type=code"
+        f"&client_id={GOOGLE_OAUTH_CLIENT_ID}"
+        f"&redirect_uri={url_quote(callback_url, safe='')}"
+        f"&scope=openid+email+profile"
+        f"&state={state}"
+        f"&access_type=offline"
+        f"&prompt=select_account"
+    )
+    return RedirectResponse(google_auth_url)
 
 
 @api_router.get("/auth/google/direct-callback")
-async def auth_google_direct_callback(request: Request):
+async def auth_google_direct_callback(request: Request, code: str = "", state: str = ""):
     if not GOOGLE_OAUTH_CLIENT_ID or not GOOGLE_OAUTH_CLIENT_SECRET:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured")
 
-    token = await oauth.google.authorize_access_token(request)
-    user_info = token.get("userinfo")
-    if not user_info:
-        user_info = await oauth.google.userinfo(token=token)
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="Missing code or state")
+
+    # Look up state from MongoDB
+    state_doc = await db.google_oauth_states.find_one_and_delete({"state": state})
+    if not state_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
+
+    mobile_redirect = state_doc.get("mobile_redirect", "")
+    callback_url = state_doc.get("callback_url", "")
+
+    # Exchange code for tokens directly with Google
+    import httpx
+    async with httpx.AsyncClient() as client_http:
+        token_resp = await client_http.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code": code,
+                "client_id": GOOGLE_OAUTH_CLIENT_ID,
+                "client_secret": GOOGLE_OAUTH_CLIENT_SECRET,
+                "redirect_uri": callback_url,
+                "grant_type": "authorization_code",
+            },
+        )
+        if token_resp.status_code != 200:
+            logger.error(f"Google token exchange failed: {token_resp.text}")
+            raise HTTPException(status_code=400, detail="Failed to exchange Google code")
+        token_data = token_resp.json()
+
+        # Get user info
+        userinfo_resp = await client_http.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {token_data['access_token']}"},
+        )
+        if userinfo_resp.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to get user info from Google")
+        user_info = userinfo_resp.json()
 
     access_token = await _issue_google_access_token(
         identity_id=user_info.get("sub") or user_info.get("id") or "",
@@ -1274,7 +1327,7 @@ async def auth_google_direct_callback(request: Request):
         name=user_info.get("name", ""),
         picture=user_info.get("picture", ""),
     )
-    mobile_redirect = request.session.pop("google_mobile_redirect", None)
+
     if not mobile_redirect:
         raise HTTPException(status_code=400, detail="Missing mobile redirect")
 
