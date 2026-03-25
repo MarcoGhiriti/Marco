@@ -22,7 +22,7 @@ from datetime import datetime
 from typing import Dict, Any
 
 # API Base URL from frontend .env
-BASE_URL = "https://search-suggestions.preview.emergentagent.com/api"
+BASE_URL = "https://native-payments-test.preview.emergentagent.com/api"
 
 # Test credentials  
 SELLER_EMAIL = "user1@example.com"

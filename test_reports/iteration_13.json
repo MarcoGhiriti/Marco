@@ -1,0 +1,66 @@
+{
+  "summary": "Iteration 13 testing complete: Stripe removal, Google auth endpoint, and premium payments status verified. All 13 backend tests passed (100%). Frontend login page loads correctly with Google/Apple buttons. MapCanvas.native.tsx correctly uses custom overlay popups instead of react-native-maps Callout to avoid Android crashes. newArchEnabled is false in app.json.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration13_stripe_removal.py",
+    "/app/test_reports/pytest/pytest_results_iter13.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "POST /api/auth/google correctly returns 401 for invalid session_id - endpoint is alive and working",
+    "POST /api/premium/checkout returns 410 (Gone) with message about Stripe removal - correct behavior",
+    "GET /api/premium/payments/status returns stripe_removed: true, apple_pay_ready: false, google_pay_ready: false",
+    "MapCanvas.native.tsx imports only Marker from react-native-maps, NOT Callout - uses custom overlay popups instead",
+    "app.json has newArchEnabled: false (line 10) - correct for Android stability",
+    "Frontend auth flow uses /api/auth/google endpoint correctly, no references to nonexistent /api/auth/google-pending or /api/auth/google-callback",
+    "googleAuth.ts correctly calls POST /api/auth/google with session_id from Emergent Auth redirect"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration13_stripe_removal.py"
+  ],
+  "success_rate": {
+    "backend": "100% (13/13 tests passed)",
+    "frontend": "100% - Login page loads with Google/Apple buttons, Welcome page renders correctly"
+  },
+  "test_credentials": {
+    "user1": "user1@example.com / Password123"
+  },
+  "seed_data_creation": "None - used existing test users",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Stripe has been fully removed from backend. Premium payments now show stripe_removed: true. Native Apple Pay and Google Pay are NOT yet configured (merchant IDs not set). MapCanvas uses custom overlay popups instead of react-native-maps Callout to avoid Android crashes. newArchEnabled is false in app.json for Android stability.",
+  "features_tested": {
+    "Email Login API": "PASS - POST /api/auth/login returns 200 with access_token for user1@example.com",
+    "Google Auth Endpoint": "PASS - POST /api/auth/google returns 401 for invalid session_id, endpoint exists",
+    "Premium Payments Status": "PASS - GET /api/premium/payments/status returns stripe_removed: true",
+    "Stripe Checkout Removed": "PASS - POST /api/premium/checkout returns 410 Gone",
+    "Stripe Checkout Status Removed": "PASS - GET /api/premium/checkout/status/{id} returns 410 Gone",
+    "Stripe Webhook Removed": "PASS - POST /api/webhook/stripe returns 410 Gone",
+    "Premium Status Endpoint": "PASS - GET /api/premium/status returns correct structure",
+    "Health Endpoint": "PASS - GET /api/health returns ok: true",
+    "Frontend Login Page": "PASS - Renders with Sign In header, Google button, Apple button, email/password fields",
+    "Frontend Welcome Page": "PASS - Renders with MotoGo branding, Register, Log in, Google, Apple buttons",
+    "MapCanvas Android Safety": "PASS - No react-native-maps Callout import, uses custom overlay popups",
+    "app.json newArchEnabled": "PASS - Set to false for Android stability"
+  },
+  "code_review_android_crash_prevention": {
+    "MapCanvas.native.tsx": {
+      "imports_from_react_native_maps": ["Marker"],
+      "does_NOT_import": ["Callout"],
+      "custom_overlay_implementation": "Uses Pressable + View components for popup overlays instead of native Callout",
+      "overlay_styles": ["friendOverlayBackdrop", "meetingPointOverlayBackdrop", "friendPopupCard", "meetingPointCallout"]
+    },
+    "app.json": {
+      "newArchEnabled": false,
+      "reason": "Disabled new architecture to avoid Android crashes with react-native-maps"
+    }
+  }
+}

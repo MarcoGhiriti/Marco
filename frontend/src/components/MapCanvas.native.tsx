@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import ClusteredMapView from "react-native-map-clustering";
-import { Callout, Marker } from "react-native-maps";
+import { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../theme/colors";
@@ -87,6 +87,11 @@ type MeetingPointMarker = {
   start_radius_km?: number;
   start_time?: string;
 };
+
+type MapOverlaySelection =
+  | { kind: "event"; data: MapEvent; lat: number; lng: number }
+  | { kind: "place"; data: MapPlace }
+  | { kind: "police"; data: PoliceReport };
 
 type MapCanvasProps = {
   mapRef: React.RefObject<any>;
@@ -339,7 +344,14 @@ export default function MapCanvas({
   const popupWidth = Math.min(Math.max(screenWidth * 0.72, 220), 300);
   const [selectedFriend, setSelectedFriend] = useState<FriendMarker | null>(null);
   const [selectedMP, setSelectedMP] = useState<MeetingPointMarker | null>(null);
+  const [selectedOverlay, setSelectedOverlay] = useState<MapOverlaySelection | null>(null);
   const popupBottomPadding = Math.max(insets.bottom + 88, 112);
+
+  const clearSelections = () => {
+    setSelectedOverlay(null);
+    setSelectedFriend(null);
+    setSelectedMP(null);
+  };
 
   useEffect(() => {
     Animated.timing(searchAnim, {
@@ -371,10 +383,10 @@ export default function MapCanvas({
         ref={mapRef}
         region={region}
         onPanDrag={() => {
-          setSelectedFriend(null);
-          setSelectedMP(null);
+          clearSelections();
           onPanDrag();
         }}
+        onPress={clearSelections}
         onRegionChangeComplete={onRegionChangeComplete}
         customMapStyle={MAP_STYLE}
         clusterColor={Colors.accent}
@@ -403,29 +415,12 @@ export default function MapCanvas({
                 key={`event-${event.id}`}
                 coordinate={{ latitude: lat, longitude: lng }}
                 pinColor={Colors.accent}
-              >
-                <Callout tooltip onPress={() => onEventPress?.(event.id)}>
-                  <View style={styles.placeCallout} data-testid={`event-callout-${event.id}`}>
-                    <View style={styles.placeCalloutHeader}>
-                      <Ionicons name="calendar" size={14} color={Colors.accent} />
-                      <Text style={styles.placeCalloutName} numberOfLines={1} data-testid={`event-callout-title-${event.id}`}>{event.title}</Text>
-                    </View>
-                    {event.location_name && (
-                      <Text style={styles.eventLocationText} numberOfLines={1} data-testid={`event-callout-location-${event.id}`}>{event.location_name}</Text>
-                    )}
-                    <View style={{ flexDirection: "row", gap: 6 }}>
-                      <Pressable style={styles.directionsBtn} onPress={() => onEventPress?.(event.id)} data-testid={`event-callout-details-${event.id}`}>
-                        <Ionicons name="eye" size={14} color={Colors.bg} />
-                        <Text style={styles.directionsBtnText}>Detalii</Text>
-                      </Pressable>
-                      <Pressable style={[styles.directionsBtn, { backgroundColor: "#4A90D9" }]} onPress={() => openDirections(lat, lng, event.title)} data-testid={`event-callout-directions-${event.id}`}>
-                        <Ionicons name="navigate" size={14} color={Colors.bg} />
-                        <Text style={styles.directionsBtnText}>Direcții</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                </Callout>
-              </Marker>
+                onPress={() => {
+                  setSelectedFriend(null);
+                  setSelectedMP(null);
+                  setSelectedOverlay({ kind: "event", data: event, lat, lng });
+                }}
+              />
             );
           })}
 
@@ -437,20 +432,12 @@ export default function MapCanvas({
               key={`place-${place.id}`}
               coordinate={{ latitude: place.lat, longitude: place.lng }}
               pinColor="#FFB020"
-            >
-              <Callout tooltip onPress={() => openDirections(place.lat, place.lng, place.name)}>
-                <View style={styles.placeCallout} data-testid={`place-callout-${place.id}`}>
-                  <View style={styles.placeCalloutHeader}>
-                    <Ionicons name="flame" size={14} color="#FFB020" />
-                    <Text style={styles.placeCalloutName} numberOfLines={1} data-testid={`place-callout-name-${place.id}`}>{place.name}</Text>
-                  </View>
-                  <View style={styles.directionsBtn}>
-                    <Ionicons name="navigate" size={14} color={Colors.bg} />
-                    <Text style={styles.directionsBtnText}>Directions</Text>
-                  </View>
-                </View>
-              </Callout>
-            </Marker>
+              onPress={() => {
+                setSelectedFriend(null);
+                setSelectedMP(null);
+                setSelectedOverlay({ kind: "place", data: place });
+              }}
+            />
           ))}
 
         {showService &&
@@ -461,20 +448,12 @@ export default function MapCanvas({
               key={`svc-${place.id}`}
               coordinate={{ latitude: place.lat, longitude: place.lng }}
               pinColor="#4A90D9"
-            >
-              <Callout tooltip onPress={() => openDirections(place.lat, place.lng, place.name)}>
-                <View style={styles.placeCallout} data-testid={`place-callout-${place.id}`}>
-                  <View style={styles.placeCalloutHeader}>
-                    <Ionicons name="build" size={14} color="#4A90D9" />
-                    <Text style={styles.placeCalloutName} numberOfLines={1} data-testid={`place-callout-name-${place.id}`}>{place.name}</Text>
-                  </View>
-                  <View style={[styles.directionsBtn, { backgroundColor: "#4A90D9" }]}>
-                    <Ionicons name="navigate" size={14} color={Colors.bg} />
-                    <Text style={styles.directionsBtnText}>Directions</Text>
-                  </View>
-                </View>
-              </Callout>
-            </Marker>
+              onPress={() => {
+                setSelectedFriend(null);
+                setSelectedMP(null);
+                setSelectedOverlay({ kind: "place", data: place });
+              }}
+            />
           ))}
 
         {showFriends &&
@@ -486,6 +465,7 @@ export default function MapCanvas({
               tracksViewChanges={false}
               cluster={false}
               onPress={() => {
+                setSelectedOverlay(null);
                 setSelectedFriend(friend);
                 setSelectedMP(null);
               }}
@@ -499,32 +479,12 @@ export default function MapCanvas({
             key={`police-${report.id}`}
             coordinate={{ latitude: report.lat, longitude: report.lng }}
             pinColor="#FF3B30"
-          >
-            <Callout tooltip>
-              <View style={styles.calloutCard} data-testid={`police-report-callout-${report.id}`}>
-                <Text style={styles.calloutTitle} data-testid={`police-report-title-${report.id}`}>Police report</Text>
-                <View style={styles.voteRow}>
-                  <Pressable
-                    style={[styles.voteBtn, styles.voteUp]}
-                    onPress={() => onVotePolice(report.id, "up", report.lat, report.lng)}
-                    data-testid={`police-vote-up-${report.id}`}
-                  >
-                    <Ionicons name="thumbs-up" size={14} color={Colors.bg} />
-                    <Text style={styles.voteText} data-testid={`police-upvotes-${report.id}`}>{report.upvotes}</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.voteBtn, styles.voteDown]}
-                    onPress={() => onVotePolice(report.id, "down", report.lat, report.lng)}
-                    data-testid={`police-vote-down-${report.id}`}
-                  >
-                    <Ionicons name="thumbs-down" size={14} color={Colors.bg} />
-                    <Text style={styles.voteText} data-testid={`police-downvotes-${report.id}`}>{report.downvotes}</Text>
-                  </Pressable>
-                </View>
-                <Text style={styles.calloutHint} data-testid={`police-callout-hint-${report.id}`}>Still there?</Text>
-              </View>
-            </Callout>
-          </Marker>
+            onPress={() => {
+              setSelectedFriend(null);
+              setSelectedMP(null);
+              setSelectedOverlay({ kind: "police", data: report });
+            }}
+          />
         ))}
 
         {/* Route Meeting Point Markers */}
@@ -534,6 +494,7 @@ export default function MapCanvas({
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
             onPress={() => {
+              setSelectedOverlay(null);
               setSelectedMP(rm);
               setSelectedFriend(null);
             }}
@@ -551,6 +512,7 @@ export default function MapCanvas({
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
             onPress={() => {
+              setSelectedOverlay(null);
               setSelectedMP(rm);
               setSelectedFriend(null);
             }}
@@ -630,6 +592,158 @@ export default function MapCanvas({
           <Ionicons name="locate" size={20} color={Colors.accent} />
         </Pressable>
       </View>
+
+      {selectedOverlay && (
+        <Pressable
+          style={[styles.meetingPointOverlayBackdrop, { paddingBottom: popupBottomPadding, paddingHorizontal: 12 }]}
+          onPress={() => setSelectedOverlay(null)}
+        >
+          <Pressable
+            style={[styles.meetingPointCallout, { width: popupWidth }]}
+            onPress={(e) => e.stopPropagation()}
+            data-testid={`map-overlay-card-${selectedOverlay.kind}-${selectedOverlay.data.id}`}
+          >
+            <View style={styles.popupHandle} />
+            <View style={styles.mapOverlayHeader}>
+              <View
+                style={[
+                  styles.mapOverlayBadge,
+                  selectedOverlay.kind === "event"
+                    ? styles.mapOverlayBadgeEvent
+                    : selectedOverlay.kind === "police"
+                      ? styles.mapOverlayBadgePolice
+                      : selectedOverlay.data.place_type === "gas"
+                        ? styles.mapOverlayBadgeGas
+                        : styles.mapOverlayBadgeService,
+                ]}
+              >
+                <Ionicons
+                  name={
+                    selectedOverlay.kind === "event"
+                      ? "calendar"
+                      : selectedOverlay.kind === "police"
+                        ? "shield"
+                        : selectedOverlay.data.place_type === "gas"
+                          ? "flame"
+                          : "build"
+                  }
+                  size={12}
+                  color={Colors.bg}
+                />
+                <Text style={styles.mapOverlayBadgeText}>
+                  {selectedOverlay.kind === "event"
+                    ? "Event"
+                    : selectedOverlay.kind === "police"
+                      ? "Police report"
+                      : selectedOverlay.data.place_type === "gas"
+                        ? "Gas station"
+                        : "Service"}
+                </Text>
+              </View>
+            </View>
+
+            <Text
+              style={styles.meetingPointCalloutTitle}
+              numberOfLines={2}
+              data-testid={`map-overlay-title-${selectedOverlay.kind}-${selectedOverlay.data.id}`}
+            >
+              {selectedOverlay.kind === "event"
+                ? selectedOverlay.data.title
+                : selectedOverlay.kind === "police"
+                  ? "Police report"
+                  : selectedOverlay.data.name}
+            </Text>
+
+            {selectedOverlay.kind === "event" && selectedOverlay.data.location_name ? (
+              <Text
+                style={styles.meetingPointCalloutMeta}
+                numberOfLines={2}
+                data-testid={`map-overlay-subtitle-${selectedOverlay.kind}-${selectedOverlay.data.id}`}
+              >
+                {selectedOverlay.data.location_name}
+              </Text>
+            ) : null}
+
+            {selectedOverlay.kind === "place" ? (
+              <Text
+                style={styles.meetingPointCalloutMeta}
+                data-testid={`map-overlay-subtitle-${selectedOverlay.kind}-${selectedOverlay.data.id}`}
+              >
+                {selectedOverlay.data.place_type === "gas" ? "Fuel stop nearby" : "Service point nearby"}
+              </Text>
+            ) : null}
+
+            <Text
+              style={styles.meetingPointCalloutMeta}
+              data-testid={`map-overlay-distance-${selectedOverlay.kind}-${selectedOverlay.data.id}`}
+            >
+              {userLocation
+                ? `${haversineDistanceKm(
+                    userLocation.lat,
+                    userLocation.lng,
+                    selectedOverlay.kind === "event"
+                      ? selectedOverlay.lat
+                      : selectedOverlay.data.lat,
+                    selectedOverlay.kind === "event"
+                      ? selectedOverlay.lng
+                      : selectedOverlay.data.lng,
+                  ).toFixed(1)} km from you`
+                : "Enable location to see distance"}
+            </Text>
+
+            {selectedOverlay.kind === "police" ? (
+              <>
+                <View style={styles.voteRow}>
+                  <Pressable
+                    style={[styles.voteBtn, styles.voteUp]}
+                    onPress={() => onVotePolice(selectedOverlay.data.id, "up", selectedOverlay.data.lat, selectedOverlay.data.lng)}
+                    data-testid={`police-vote-up-${selectedOverlay.data.id}`}
+                  >
+                    <Ionicons name="thumbs-up" size={14} color={Colors.bg} />
+                    <Text style={styles.voteText} data-testid={`police-upvotes-${selectedOverlay.data.id}`}>{selectedOverlay.data.upvotes}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.voteBtn, styles.voteDown]}
+                    onPress={() => onVotePolice(selectedOverlay.data.id, "down", selectedOverlay.data.lat, selectedOverlay.data.lng)}
+                    data-testid={`police-vote-down-${selectedOverlay.data.id}`}
+                  >
+                    <Ionicons name="thumbs-down" size={14} color={Colors.bg} />
+                    <Text style={styles.voteText} data-testid={`police-downvotes-${selectedOverlay.data.id}`}>{selectedOverlay.data.downvotes}</Text>
+                  </Pressable>
+                </View>
+                <Text style={styles.calloutHint} data-testid={`police-callout-hint-${selectedOverlay.data.id}`}>Still there?</Text>
+              </>
+            ) : (
+              <View style={styles.meetingPointPopupActions}>
+                <Pressable
+                  style={styles.meetingPointPopupGhostBtn}
+                  onPress={() =>
+                    openDirections(
+                      selectedOverlay.kind === "event" ? selectedOverlay.lat : selectedOverlay.data.lat,
+                      selectedOverlay.kind === "event" ? selectedOverlay.lng : selectedOverlay.data.lng,
+                      selectedOverlay.kind === "event" ? selectedOverlay.data.title : selectedOverlay.data.name,
+                    )
+                  }
+                  data-testid={`map-overlay-directions-${selectedOverlay.kind}-${selectedOverlay.data.id}`}
+                >
+                  <Ionicons name="navigate" size={14} color={Colors.text} />
+                  <Text style={styles.meetingPointPopupGhostBtnText}>Directions</Text>
+                </Pressable>
+                {selectedOverlay.kind === "event" ? (
+                  <Pressable
+                    style={styles.calloutPrimaryBtn}
+                    onPress={() => onEventPress?.(selectedOverlay.data.id)}
+                    data-testid={`map-overlay-details-${selectedOverlay.kind}-${selectedOverlay.data.id}`}
+                  >
+                    <Ionicons name="eye" size={14} color={Colors.bg} />
+                    <Text style={styles.calloutPrimaryBtnText}>Details</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            )}
+          </Pressable>
+        </Pressable>
+      )}
 
       {selectedFriend && (
         <Pressable
@@ -1128,6 +1242,36 @@ const styles = StyleSheet.create({
   calloutPrimaryBtnText: {
     color: Colors.bg,
     fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
+  mapOverlayHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  mapOverlayBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  mapOverlayBadgeEvent: {
+    backgroundColor: Colors.accent,
+  },
+  mapOverlayBadgeGas: {
+    backgroundColor: "#FFB020",
+  },
+  mapOverlayBadgeService: {
+    backgroundColor: "#4A90D9",
+  },
+  mapOverlayBadgePolice: {
+    backgroundColor: "#FF3B30",
+  },
+  mapOverlayBadgeText: {
+    color: Colors.bg,
+    fontSize: 11,
     fontFamily: "Inter_700Bold",
   },
 

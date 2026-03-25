@@ -5,8 +5,7 @@ from typing import Optional, List
 
 from bson import ObjectId
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from database import db, get_current_user, _safe_create_index, logger, GOOGLE_MAPS_API_KEY
@@ -15,15 +14,23 @@ load_dotenv()
 
 router = APIRouter(tags=["premium"])
 
-STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 PREMIUM_PRICE_EUR = 4.99
 PREMIUM_PLAN_ID = "motogo_premium"
+APPLE_PAY_MERCHANT_ID = os.environ.get("APPLE_PAY_MERCHANT_ID")
+GOOGLE_PAY_MERCHANT_ID = os.environ.get("GOOGLE_PAY_MERCHANT_ID")
 
 
 # --- Models ---
 
 class CheckoutRequest(BaseModel):
     origin_url: str
+
+
+class PaymentMethodsStatus(BaseModel):
+    apple_pay_ready: bool
+    google_pay_ready: bool
+    stripe_removed: bool = True
+    message: str
 
 
 class BikeDataUpdate(BaseModel):
@@ -86,182 +93,48 @@ async def require_premium(user=Depends(get_current_user)):
 
 
 # ==========================================
-# STRIPE CHECKOUT
+# NATIVE PAYMENTS STATUS
 # ==========================================
 
+@router.get("/api/premium/payments/status", response_model=PaymentMethodsStatus)
+async def get_payment_methods_status(user=Depends(get_current_user)):
+    """Expose current payment readiness after Stripe removal."""
+    apple_ready = bool(APPLE_PAY_MERCHANT_ID)
+    google_ready = bool(GOOGLE_PAY_MERCHANT_ID)
+
+    if apple_ready or google_ready:
+        message = "Stripe has been removed. Native Apple Pay / Google Pay configuration is in progress."
+    else:
+        message = "Stripe has been removed. Add Apple Pay and Google Pay merchant configuration to enable native payments."
+
+    return PaymentMethodsStatus(
+        apple_pay_ready=apple_ready,
+        google_pay_ready=google_ready,
+        message=message,
+    )
+
 @router.post("/api/premium/checkout")
-async def create_checkout(body: CheckoutRequest, request: Request, user=Depends(get_current_user)):
-    """Create a Stripe checkout session for premium subscription."""
-    import stripe
-    stripe.api_key = STRIPE_API_KEY
-
-    uid = user["id"]
-    origin = body.origin_url.rstrip("/")
-    success_url = f"{origin}/premium/success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin}/premium"
-
-    try:
-        # Create a standard (non-metered) subscription price
-        # First check if we already have our price
-        prices = stripe.Price.list(
-            lookup_keys=["motogo_premium_standard"],
-            limit=1,
-        )
-
-        if prices.data:
-            price_id = prices.data[0].id
-        else:
-            # Create product and standard monthly price
-            product = stripe.Product.create(name="MotoGO Premium")
-            price = stripe.Price.create(
-                product=product.id,
-                unit_amount=499,  # €4.99 in cents
-                currency="eur",
-                recurring={"interval": "month"},
-                lookup_key="motogo_premium_standard",
-            )
-            price_id = price.id
-
-        session = stripe.checkout.Session.create(
-            mode="subscription",
-            line_items=[{"quantity": 1, "price": price_id}],
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata={
-                "user_id": uid,
-                "plan": PREMIUM_PLAN_ID,
-                "username": user.get("username", ""),
-            },
-        )
-
-        # Create payment transaction record
-        now = datetime.now(timezone.utc)
-        await db.payment_transactions.insert_one({
-            "session_id": session.id,
-            "user_id": uid,
-            "amount": PREMIUM_PRICE_EUR,
-            "currency": "eur",
-            "plan": PREMIUM_PLAN_ID,
-            "status": "initiated",
-            "payment_status": "pending",
-            "metadata": {"username": user.get("username", "")},
-            "created_at": now,
-            "updated_at": now,
-        })
-
-        return {"url": session.url, "session_id": session.id}
-
-    except Exception as e:
-        logger.error(f"Stripe checkout error: {e}")
-        raise HTTPException(500, f"Checkout failed: {str(e)}")
+async def create_checkout(body: CheckoutRequest, user=Depends(get_current_user)):
+    raise HTTPException(
+        status_code=410,
+        detail="Stripe checkout has been removed. Configure native Apple Pay / Google Pay to continue.",
+    )
 
 
 @router.get("/api/premium/checkout/status/{session_id}")
 async def check_checkout_status(session_id: str, user=Depends(get_current_user)):
-    """Check the status of a checkout session and activate premium if paid."""
-    import stripe
-    stripe.api_key = STRIPE_API_KEY
-
-    uid = user["id"]
-
-    # Check if already processed
-    txn = await db.payment_transactions.find_one({"session_id": session_id})
-    if not txn:
-        raise HTTPException(404, "Transaction not found")
-
-    if txn.get("payment_status") == "paid":
-        return {"status": "complete", "payment_status": "paid", "already_processed": True}
-
-    try:
-        session = stripe.checkout.Session.retrieve(session_id)
-    except Exception:
-        raise HTTPException(404, "Session not found")
-
-    now = datetime.now(timezone.utc)
-    update_data = {
-        "status": session.status,
-        "payment_status": session.payment_status,
-        "updated_at": now,
-    }
-
-    if session.payment_status == "paid" and txn.get("payment_status") != "paid":
-        from datetime import timedelta
-        premium_until = now + timedelta(days=30)
-
-        await db.users.update_one(
-            {"_id": ObjectId(uid)},
-            {"$set": {"premium": True, "premium_until": premium_until}},
-        )
-        update_data["premium_activated_at"] = now
-
-    await db.payment_transactions.update_one(
-        {"session_id": session_id},
-        {"$set": update_data},
+    raise HTTPException(
+        status_code=410,
+        detail="Stripe checkout has been removed. Native payment verification is not configured yet.",
     )
-
-    return {
-        "status": session.status,
-        "payment_status": session.payment_status,
-        "amount_total": session.amount_total,
-        "currency": session.currency,
-    }
 
 
 @router.post("/api/webhook/stripe")
-async def stripe_webhook(request: Request):
-    """Handle Stripe webhook events for subscriptions."""
-    import stripe
-    stripe.api_key = STRIPE_API_KEY
-
-    body = await request.body()
-    sig = request.headers.get("Stripe-Signature", "")
-
-    try:
-        event = stripe.Event.construct_from(
-            stripe.util.convert_to_stripe_object(
-                __import__("json").loads(body)
-            ),
-            stripe.api_key,
-        )
-    except Exception as e:
-        logger.error(f"Webhook parse error: {e}")
-        raise HTTPException(400, "Webhook parse failed")
-
-    event_type = event.type
-    data_object = event.data.object if hasattr(event, "data") else {}
-
-    if event_type == "checkout.session.completed":
-        session_id = data_object.get("id", "")
-        metadata = data_object.get("metadata", {})
-        user_id = metadata.get("user_id")
-
-        if user_id and session_id:
-            now = datetime.now(timezone.utc)
-            from datetime import timedelta
-            premium_until = now + timedelta(days=30)
-
-            await db.payment_transactions.update_one(
-                {"session_id": session_id},
-                {"$set": {
-                    "status": "complete",
-                    "payment_status": "paid",
-                    "updated_at": now,
-                    "premium_activated_at": now,
-                }},
-            )
-            await db.users.update_one(
-                {"_id": ObjectId(user_id)},
-                {"$set": {"premium": True, "premium_until": premium_until}},
-            )
-            logger.info(f"Premium activated for user {user_id} via webhook")
-
-    elif event_type == "customer.subscription.deleted":
-        logger.info(f"Subscription deleted: {data_object.get('id', '')}")
-
-    elif event_type == "customer.subscription.updated":
-        logger.info(f"Subscription updated: {data_object.get('id', '')}")
-
-    return {"status": "success"}
+async def stripe_webhook():
+    raise HTTPException(
+        status_code=410,
+        detail="Stripe webhook has been removed.",
+    )
 
 
 # ==========================================

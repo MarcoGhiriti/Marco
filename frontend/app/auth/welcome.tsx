@@ -11,10 +11,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import { Colors } from "../../src/theme/colors";
-import { apiPost, API_BASE_URL } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
+import { startGoogleAuth } from "../../src/lib/googleAuth";
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -24,28 +23,9 @@ export default function WelcomeScreen() {
   const onGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      const redirectUrl = `${API_BASE_URL}/api/auth/google-callback`;
-      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-      const result = await WebBrowser.openBrowserAsync(authUrl, {
-        dismissButtonStyle: "close",
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-      });
-      if (result.type === "cancel" || result.type === "dismiss") {
-        for (let i = 0; i < 5; i++) {
-          await new Promise(r => setTimeout(r, 1500));
-          try {
-            const resp = await fetch(`${API_BASE_URL}/api/auth/google-pending`);
-            if (resp.ok) {
-              const data = await resp.json();
-              if (data.access_token) {
-                await loginWithToken(data.access_token);
-                router.replace("/(tabs)/home");
-                return;
-              }
-            }
-          } catch {}
-        }
-      }
+      const accessToken = await startGoogleAuth("/auth/welcome");
+      await loginWithToken(accessToken);
+      router.replace("/(tabs)/home");
     } catch (e) {
       console.error("Google login error:", e);
     } finally {
@@ -119,8 +99,7 @@ export default function WelcomeScreen() {
 
             <Pressable
               style={s.socialBtn}
-              onPress={onGoogleLogin}
-              disabled={googleLoading}
+              disabled
               data-testid="welcome-apple-btn"
             >
               <View style={s.socialIcon}>

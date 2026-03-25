@@ -1,179 +1,144 @@
 <analysis>**original_problem_statement:**
-The user's initial problem was a deployment-blocking syntax error. After fixing it, the user reported a cascade of new issues and feature requests:
+The user initially requested a comprehensive Premium subscription system with Stripe, including a dedicated dashboard, a Your Bike management page, a Free Ride tracking mode, AI-generated route recommendations, and chat route sharing. Over the course of the session, the user requested additional features like group chat Polls, i18n translations (EN/RO), Apple/Google social logins, and push notifications. 
 
-**Product Requirements (Features & UI):**
-1.  **Create Route UI:** The form for creating a new route was missing a section to add a Meeting Point. This needed to be added.
-2.  **Routes/Explore Page UI:**
-    *   Add a section titled Created by users to display a normal list of routes.
-    *   Below that, add a section titled Recommendation of the day.
-    *   Under the recommendation, add a locked, blurred premium card with a lock icon, showing the text Available with Moto Go Premium.
-3.  **Map Popups:**
-    *   Change the popups for Meeting Point and Friends markers on the map. Instead of the existing bottom-sheet, they should be small cards that appear directly on the map (like the Events markers).
-    *   The Meeting Point popup should show details and the user's distance to it.
-    *   The Friends popup should show the friend's distance from the user and include a Chat button.
+**CRITICAL PIVOT at the end of the session:** After struggling with Stripe (Sandbox mode and SDK configuration issues), the user explicitly requested to **REMOVE STRIPE** and implement native **Apple Pay and Google Pay**. Furthermore, the user reported that **Google Login is currently broken** and the **Android APK crashes completely when tapping the interactive map**.
 
-**Bugs Reported:**
-1.  **Location Search Broken:** In the Create Route form, the autocomplete list of locations (for start, stop, meeting point, and end point) does not appear when the user types in the search box.
-2.  **Shop Chat Regression:** The listing-specific chat system stopped working. Sellers were not receiving messages, and conversations were not being saved for the buyer.
-3.  **Map Callout/Popup Issues:**
-    *   The new card-style popups () do not work correctly on Android devices.
-    *   The popups disappear immediately after being clicked, instead of staying visible.
-    *   The distance displayed for Friends on the map shows not available.
+**User's preferred language**: Romanian (română). You MUST respond to the user in Romanian only. Technical elements, code, and error messages must remain in English.
 
-**User's preferred language**: Romanian (română). The next agent **MUST** respond in Romanian for all conversational interactions. Technical elements like UI text, code, and error messages must remain in English.
-
-**what currently exists?**
-The agent successfully resolved the initial deployment-blocking syntax error from the previous session. It then implemented several UI changes requested by the user, including adding a Meeting Point section to the Create Route form and redesigning the Routes/Explore page with new sections. It also refactored the map markers to use  popups. However, these changes introduced several new, critical bugs. The agent then worked on fixing a major regression in the shop's chat functionality and the new map popup issues. The session ended while the agent was in the middle of fixing a broken location search autocomplete feature in the Create Route screen. The application is currently in a broken state due to this bug.
+**what currently exists?** 
+A heavily modified React Native (Expo) frontend and FastAPI backend. The app features a comprehensive Premium tier logic (AI Route Generation using Google Directions + Polyline, Saved Routes, Free Ride tracking, Bike Maintenance tracking). It has a functional Polling system in group chats via Socket.IO, i18n translation support, and an updated Auth UI. However, the core monetization gateway (Stripe) needs to be ripped out, Social Auth is failing, and a critical platform-specific map bug is crashing the Android build.
 
 **Last working item**:
--   Last item agent was working: Fixing the broken location search autocomplete in the Create Route screen. The list of location suggestions was not appearing when a user searched for a start, end, or meeting point. The agent was modifying  to fix the integration with the Google Places API.
--   Status: IN PROGRESS
--   Agent Testing Done: N
--   Which testing method agent to use? frontend testing agent. The agent should write a test to ensure that typing into the location input fields on the create route page correctly displays a list of suggestions.
--   User Testing Done: N
+- **Last item agent was working:** The agent had just received the user's request to abandon Stripe, switch to Apple/Google Pay, fix the Google Login, and debug the Android Map crash. The agent invoked  but did not start implementation.
+- **Status:** NOT STARTED
+- **Agent Testing Done:** N
+- **Which testing method agent to use?** Frontend/Backend testing agent + Manual testing.
+- **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   Issue 1: Broken Location Search in Create Route (P0)
--   Issue 2: Map Callout/Popup Bugs (P1)
--   Issue 3: Shop Chat System Functionality Needs Verification (P1)
+- **Issue 1: Pivot to Native Apple Pay & Google Pay (P0)**
+    - **Attempted fixes:** None yet. Previous agent spent the session trying to fix Stripe (changing from one-time payment to subscription mode), which failed on the user's end.
+    - **Next debug checklist:** Remove Stripe SDK and endpoints. Call  for Expo/React Native Native Apple Pay and Google Pay integration. Set up the backend to verify native payment receipts.
+    - **Why fix this issue and what will be achieved with the fix?** Core monetization requirement. The user explicitly rejected Stripe.
+    - **Status:** NOT STARTED
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?** Both
+    - **Blocked on other issue:** Needs developer keys/setup from the user.
 
-Issues Detail:
--   **Issue 1: Broken Location Search in Create Route (P0)**
-    -   **Attempted fixes**: The agent was modifying the  function and the rendering logic for the suggestion list in  to correctly fetch and display data from the Google Places Autocomplete API. The fix was not completed.
-    -   **Next debug checklist**:
-        1.  Review the  changes made to  in the last steps.
-        2.  Verify the state (, ) is being updated correctly.
-        3.  Ensure the  component's  and rendering logic for  are correctly implemented.
-        4.  Check for any API key issues or network request errors related to the Google Places API in the device logs.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a **critical blocker**. Users cannot create new routes without being able to search for and select locations.
-    -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: frontend
-    -   **Blocked on other issue**: None.
+- **Issue 2: Android APK Map Crash (P0)**
+    - **Attempted fixes:** None yet.
+    - **Next debug checklist:** Inspect . The crash happens when tapping the interactive map on an Android APK. Check for  handlers,  components (known from the previous fork to be buggy on Android), and marker rendering logic. Look for null pointer exceptions or unsupported native map features on Android.
+    - **Why fix this issue and what will be achieved with the fix?** Fatal blocker. The app is unusable on Android if the map crashes.
+    - **Status:** NOT STARTED
+    - **Is recurring issue?** Y (Map Callout issues were reported in the very first fork summary).
+    - **Should Test frontend/backend/both after fix?** Frontend (Specifically Android emulator/device).
+    - **Blocked on other issue:** None
 
--   **Issue 2: Map Callout/Popup Bugs (P1)**
-    -   **Attempted fixes**: The agent modified  to use React state () to control the visibility of a selected marker's callout, aiming to prevent it from disappearing on click. The fix for Android was not explicitly detailed but was part of the work. The distance not available issue was also investigated. The effectiveness of these fixes is unknown.
-    -   **Next debug checklist**:
-        1.  **Persistence:** Verify if the state-based solution correctly keeps the callout visible after a click.
-        2.  **Android:** Test the map on an Android emulator/device to see how the callouts are rendered. It may require platform-specific styling or a different implementation approach. The   component has known platform differences.
-        3.  **Friend Distance:** Trace the  prop and the  calculation within  for friend markers to understand why distance is sometimes unavailable.
-    -   **Why fix this issue and what will be achieved with the fix?**: The map is a core feature, and these bugs severely degrade the user experience and functionality requested by the user.
-    -   **Status**: TESTING PENDING
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: frontend
-    -   **Blocked on other issue**: None.
+- **Issue 3: Google Login Broken (P1)**
+    - **Attempted fixes:** The agent integrated Emergent Auth for Google and added a  backend endpoint.
+    - **Next debug checklist:** Check backend logs (a  was seen in previous logs for ). Verify how the  is passed to Emergent Auth and how the backend validates it.
+    - **Why fix this issue and what will be achieved with the fix?** Core authentication feature requested by the user.
+    - **Status:** NOT STARTED
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?** Both
 
--   **Issue 3: Shop Chat System Functionality Needs Verification (P1)**
-    -   **Attempted fixes**: The agent identified and patched issues in  and . The frontend was not correctly sending  and , and the backend logic for retrieving conversations was flawed. The agent applied fixes for both.
-    -   **Next debug checklist**:
-        1.  Perform an end-to-end test of the chat flow.
-        2.  **Scenario 1 (Buyer):** As , send a message to a seller on a listing. Navigate away and come back to see if the conversation persists.
-        3.  **Scenario 2 (Seller):** Log in as the seller and check the My Listings -> Messages section for that item to see if the new message appears.
-        4.  Reply as the seller and verify the buyer receives the reply.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a major regression of a recently built feature. It must be confirmed as fixed to restore core application functionality.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: Y (It was a regression)
-    -   **Should Test frontend/backend/both after fix?**: both
-    -   **Blocked on other issue**: None.
+- **Issue 4: Create Route - Location Search Autocomplete (P1)**
+    - **Attempted fixes:** This was the P0 blocker from the *previous* handoff. The current agent never explicitly fixed , though it did fix API key issues and  returns 200 OK in the logs.
+    - **Next debug checklist:** Verify if  correctly renders the dropdown list when typing in the Create Route screen.
+    - **Status:** USER VERIFICATION PENDING
+    - **Is recurring issue?** Y
 
 **In progress Task List**:
-- None. All current work is classified under bug fixes.
+- None.
 
-**Upcoming and Future Tasks**
-*   **Upcoming Tasks**:
-    *   **P1: User Verification of All Recent Fixes:** Once the location search is fixed, the user must be prompted to test the entire suite of recent changes: the Shop Chat, the Map callouts (on Android and iOS), the new Routes/Explore page, and the full Create Route flow.
-*   **Future Tasks**:
-    *   **P1: Backend Refactor**: The user requested a full refactor of  into modular router files. This is a large, incremental task that has not been started.
-    *   **P2: Error when pausing a route from My Routes**: A carry-over issue from a previous session that is pending user verification.
-    *   **P3: Forgot Password Flow:** Blocked pending acquisition of an email service API key.
+**Upcoming and Future Tasks**:
+- **P1: Backend Refactor:**  has grown to over 4,600 lines. Needs to be split into modular routers. The previous agent extracted , , and , but the core file is still massive.
+- **P2: Forgot Password Flow:** Blocked pending an email service API key.
+- **P2: Apply  translations:** Apply the  hook to the remaining premium screens to complete the i18n rollout.
 
-**Completed work in this session**
--   **Bug Fix: Critical Deployment Blocker:** Resolved the  syntax error in .
--   **Feature: Create Route UI:** Added the Meeting Point input section to the create route form.
--   **Feature: Routes/Explore Page:** Implemented the new UI with Created by users and the locked Recommendation of the day sections.
--   **Refactor: Map Popups:** Changed Meeting Point and Friend markers to use  components for on-map card-style popups.
--   **Bug Fix: Shop Chat Regression:** Applied fixes to both frontend and backend to restore messaging functionality (pending verification).
+**Completed work in this session**:
+- Premium Tier Backend/Frontend Foundation (Dashboard, Status) (DONE)
+- Your Bike Redesign (Car-management style UI, DatePickers, mileage tracking) (DONE)
+- AI Route Generator (Google Directions API, calculates curves, speed, polyline, outputs rich UI card) (DONE)
+- Saved Routes & Free Ride Mode (Live tracking with Google Static Maps, syncs to Leaderboard ) (DONE)
+- Group Chat Upgrades (Polls with TTL auto-delete, Route Sharing as rich cards, bypass 3-user minimum for Premium) (DONE)
+- i18n implementation ( and  created, partially applied) (DONE)
+- Push Notifications infrastructure ( setup, backend routes added) (DONE)
 
-**Earlier issues found/mentioned but not fixed**
--   All new issues reported by the user in this session have been addressed or are currently in progress. The primary unfixed issue is the **Last working item**.
+**Earlier issues found/mentioned but not fixed**:
+- Distance to friend showing not available on map popups.
 
-**Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: The  preview tunnel for mobile testing remains inaccessible. This is a persistent platform-level issue.
--   **Recurrence count**: 3+
--   **Status**: BLOCKED
+**Known issue recurrence from previous fork**:
+- **Map Component Bugs on Android:** The introduction of custom  components in  caused bugs in the previous fork, which have now escalated to a hard crash on the Android APK.
+- **Recurrence count:** 2
+- **Status:** NOT STARTED
 
-**Code Architecture**
+**Code Architecture**:
 
 
-**Key Technical Concepts**
--   ** :** This component was newly introduced to create custom, on-map popups for markers. Its platform-specific behavior (iOS vs. Android) is a key challenge.
--   **Google Places Autocomplete API (Frontend):** The integration in  is currently broken and is the immediate focus for the next agent.
--   **State Management for UI Interaction:** The agent used  in  to attempt to control which map callout is active, a pattern that should be reviewed.
--   **Full-Stack Debugging:** The session required debugging a regression that spanned from the frontend React Native code () to the FastAPI backend ().
+**Key Technical Concepts**:
+- Frontend: React Native (Expo), ,  (authStore), , .
+- Backend: FastAPI, MongoDB (), Socket.IO (for live group chats and polls).
+- Integrations: Emergent Google Auth, Google Maps Platform (Directions, Static Maps, Places).
 
-**key DB schema**
--   No changes were made to the database schema in this session.
+**key DB schema**:
+- : 
+- :  (Must sync with )
+- : 
+- , , .
 
-**All files of reference**
--    (Contains the active P0 bug).
--    (Contains the new  logic with potential bugs).
--    (New UI for the Explore tab).
--    (File modified to fix chat regression).
--    (File modified to fix chat regression).
+**changes in tech stack**:
+- Added  Python library for route decoding.
+- Added  and  for translations.
+
+**All files of reference**:
+-  (Need to rip out Stripe here)
+-  &  (Google login bug)
+-  (Android crash source)
 
 **Areas that need refactoring**:
--   ****: Remains a high-priority future task for refactoring.
--   ****: This component's complexity continues to grow. The logic for rendering different marker types and handling their state (callouts, etc.) is becoming difficult to manage and should be broken into smaller sub-components.
+-  MUST be broken down.
 
-**key api endpoints**
--   The agent debugged and fixed issues with the existing  endpoints. No new endpoints were created.
+**key api endpoints**:
+-  (Currently failing / 401 Unauthorized)
+-  (Will need to be replaced with native pay validation)
+- 
 
-**Critical Info for New Agent**
--   **TOP PRIORITY (P0 - BLOCKER):** You **must** start by fixing the location search autocomplete in . This feature is completely broken and blocks a core user flow.
--   **User Language:** All conversational interactions with the user must be in **Romanian**.
--   **VERIFICATION IS CRITICAL (P1):** This session involved many fixes applied in response to user complaints. Their effectiveness is unproven. After fixing the P0 blocker, you must create a plan to systematically test and ask the user to verify:
-    1.  **Shop Chat:** End-to-end flow.
-    2.  **Map Popups:** Behavior on click, display on Android, and distance calculation for friends.
-    3.  **Create Route:** The complete flow, including the now-visible Meeting Point section.
--   **Platform-Specific Bugs:** Be aware that the  issue is platform-specific (Android). Testing must account for this.
+**Critical Info for New Agent**:
+1. **STRIPE IS DEAD:** Ignore all previous Stripe setups. The user wants **Apple Pay and Google Pay**. You must use  to get the correct Expo/React Native playbook for native payments before writing code.
+2. **Android Map Crash:** This is a P0 blocker. The app crashes upon interacting with the map. Look closely at  and how  handles  or  events on Android.
+3. **Google Auth:** The Emergent Google Auth flow was built into  and , but the user reports it doesn't work. Logs indicate a .
 
-**documents and test reports created in this job**
--   None.
+**documents and test reports created in this job**:
+- 
 
-**Last 10 User Messages and any pending HUMAN messages**
-10.  (Now why doesn't the list of what I search for appear...) - **Status: IN PROGRESS**. User reports the critical bug with the location search autocomplete.
-9.   (yes fix it) - User confirming to fix the batch of bugs reported in message #7.
-8.   (for friends the km display says not available...) - **Status: Partially Addressed (Verification Pending)**. User reports three new bugs: friend distance unavailable, popups disappearing, and shop messages being broken.
-7.   (yes make it functional on android and ios) - **Status: In Progress**. User confirms the map callouts need to work on both platforms.
-6.   (however on android those callouts don't work well...) - **Status: In Progress**. User reports that the new map popups are broken on Android.
-5.   (yes, for friends with a chat button...) - User confirming the requirements for the map popups and the new explore page.
-4.   (nothing was implemented, nothing is visible...) - User reports that none of the recent UI changes are visible and adds a new request for map popups. This led to the discovery of the stale bundle issue.
-3.   (but in the 'created by user' section, it should be a normal list...) - User clarifies requirements for the Routes/Explore page.
-2.   (add to the routes page like this...) - User requests a significant new feature for the Routes/Explore page.
-1.   (yes fix it, and fix the display of the meeting point on the map...) - User confirms to fix the missing meeting point UI and reports a bug with the map marker display.
+**Last 10 User Messages and any pending HUMAN messages**:
+10. (Image upload) User asks to fix poll UI (move modal up, make card wider).
+9. User complains Stripe is still not taking money (Sandbox mode).
+8. User asks for Expo Web restart.
+7. User requests clicking AI route card opens full details, and formatting minutes > 60 into hours.
+6. User confirms to continue with next action items.
+5. User asks why time selection in Route/Events doesn't save. Asks if Stripe is working now after they modified dashboard.
+4. User shares a random API key 
+3. User complains Stripe still shows Sandbox mode.
+2. User provides Ruby/Sinatra backend examples trying to fix Stripe.
+1. **PENDING:**  (We will eliminate Stripe and use Apple Pay / Google Pay. Fix Google login, and fix the Android APK crash when clicking the interactive map).
 
 **Project Health Check:**
--   **Broken**: Yes. The application has a P0 bug in a core user flow (creating routes is impossible without location search), making it unusable for that purpose. Multiple other features are in an unverified state.
+- Broken: Google Login, Android Interactive Map, Payments.
 
-**3rd Party Integrations**
--   OpenAI GPT-4o
--   Google Maps Platform (Google Places Autocomplete API is currently broken)
--   Socket.IO
--   react-native-maps-clustering
--   @react-native-community/datetimepicker
+**3rd Party Integrations**:
+- Google Maps Platform (Directions, Static Images, Places) — requires User API Key
+- Emergent Google Auth — uses Emergent infrastructure
+- Stripe (Payments) — **TO BE REMOVED**
+- Socket.IO — Local service
+- Apple Pay / Google Pay — **TO BE ADDED**
 
-**Testing status**
--   Testing agent used after significant changes: NO
--   Troubleshoot agent used after agent stuck in loop: YES (Agent called  when UI changes weren't appearing)
--   Test files created: None
--   Known regressions:
-    -   A major regression occurred in the Shop Chat system, which was subsequently fixed but needs verification.
-    -   The introduction of  components for map markers led to new bugs (disappearing on click, broken on Android).
+**Testing status**:
+- Testing agent used after significant changes: NO (Manual curl/bash testing was heavily used instead).
+- Troubleshoot agent used after agent stuck in loop: NO
+- Test files created: None
+- Known regressions: Android Map crash, Google Login failure.
 
-**Credentials to test flow:**
--   User 1 (Verified):  / 
--   (You will need credentials for at least one other user to test the chat functionality from a seller's perspective. You may need to register a new user).
-
-**What agent forgot to execute**
--   The agent did not perform end-to-end verification of its fixes before moving on. For example, after fixing the chat system, it should have been tested before declaring it done.
--   The agent did not use the testing agent to validate the numerous UI fixes and bug patches, leading to a situation where the stability of many features is unknown.</analysis>
+**What agent forgot to execute**:
+The agent did not use the  despite making massive, application-wide changes to the UI, State, Auth flow, and Database schemas. This likely contributed to the undetected Android map crash and Google Auth failure. The next agent should heavily utilize the testing agent.</analysis>

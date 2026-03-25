@@ -15,10 +15,9 @@ import {
 import { Link, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import * as WebBrowser from "expo-web-browser";
 import { Colors } from "../../src/theme/colors";
 import { useAuthStore } from "../../src/state/authStore";
-import { apiPost, API_BASE_URL } from "../../src/lib/api";
+import { startGoogleAuth } from "../../src/lib/googleAuth";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -58,39 +57,13 @@ export default function LoginScreen() {
     setGoogleLoading(true);
     setError(null);
     try {
-      // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-      const redirectUrl = `${API_BASE_URL}/api/auth/google-callback`;
-      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-
-      const result = await WebBrowser.openBrowserAsync(authUrl, {
-        dismissButtonStyle: "close",
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-      });
-
-      // After returning from browser, check if there's a pending session
-      if (result.type === "cancel" || result.type === "dismiss") {
-        // Poll for pending Google auth session
-        for (let i = 0; i < 5; i++) {
-          await new Promise(r => setTimeout(r, 1500));
-          try {
-            const stored = await fetch(`${API_BASE_URL}/api/auth/google-pending`, {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-            });
-            if (stored.ok) {
-              const data = await stored.json();
-              if (data.access_token) {
-                setToken(data.access_token);
-                router.replace("/(tabs)/home");
-                return;
-              }
-            }
-          } catch { }
-        }
-      }
+      const accessToken = await startGoogleAuth("/auth/login");
+      await loginWithToken(accessToken);
+      router.replace("/(tabs)/home");
     } catch (e) {
       console.error("Google login error:", e);
-      setError("Google login failed. Please try again.");
+      const msg = e instanceof Error ? e.message : "Google login failed. Please try again.";
+      setError(msg);
     } finally {
       setGoogleLoading(false);
     }

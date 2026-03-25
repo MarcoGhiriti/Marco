@@ -13,9 +13,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import * as WebBrowser from "expo-web-browser";
 import { Colors } from "../../src/theme/colors";
-import { apiGet, apiPost, API_BASE_URL } from "../../src/lib/api";
+import { apiGet } from "../../src/lib/api";
 import { useAuthStore } from "../../src/state/authStore";
 
 type PremiumStatus = {
@@ -23,6 +22,13 @@ type PremiumStatus = {
   premium_until: string | null;
   plan: string | null;
   price: number;
+};
+
+type PaymentMethodsStatus = {
+  apple_pay_ready: boolean;
+  google_pay_ready: boolean;
+  stripe_removed: boolean;
+  message: string;
 };
 
 const FEATURES = [
@@ -68,8 +74,8 @@ export default function PremiumDashboard() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
   const [status, setStatus] = useState<PremiumStatus | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentMethodsStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const headers = useMemo(() => {
     if (!accessToken) return undefined;
@@ -79,8 +85,12 @@ export default function PremiumDashboard() {
   const loadStatus = useCallback(async () => {
     if (!headers) return;
     try {
-      const data = await apiGet<PremiumStatus>("/api/premium/status", headers);
-      setStatus(data);
+      const [premiumData, paymentsData] = await Promise.all([
+        apiGet<PremiumStatus>("/api/premium/status", headers),
+        apiGet<PaymentMethodsStatus>("/api/premium/payments/status", headers),
+      ]);
+      setStatus(premiumData);
+      setPaymentStatus(paymentsData);
     } catch (e) {
       console.error("Premium status error:", e);
     } finally {
@@ -92,53 +102,9 @@ export default function PremiumDashboard() {
     loadStatus();
   }, [loadStatus]);
 
-  const handleSubscribe = async () => {
-    if (!headers) return;
-    setCheckoutLoading(true);
-    try {
-      const origin = API_BASE_URL;
-
-      const data = await apiPost<{ url: string; session_id: string }>(
-        "/api/premium/checkout",
-        { origin_url: origin },
-        headers,
-      );
-
-      if (data.url) {
-        // Open Stripe checkout in-app browser (not Safari)
-        const result = await WebBrowser.openBrowserAsync(data.url, {
-          dismissButtonStyle: "close",
-          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-        });
-
-        // When user comes back from in-app browser, poll for payment status
-        if (result.type === "cancel" || result.type === "dismiss") {
-          // Poll payment status a few times
-          for (let i = 0; i < 8; i++) {
-            await new Promise((r) => setTimeout(r, 2000));
-            try {
-              const statusData = await apiGet<{ payment_status: string }>(
-                `/api/premium/checkout/status/${data.session_id}`,
-                headers,
-              );
-              if (statusData.payment_status === "paid") {
-                await loadStatus();
-                break;
-              }
-            } catch { break; }
-          }
-          // Reload status regardless
-          await loadStatus();
-        }
-      }
-    } catch (e) {
-      console.error("Checkout error:", e);
-    } finally {
-      setCheckoutLoading(false);
-    }
-  };
-
   const isPremium = status?.is_premium === true;
+  const applePayReady = paymentStatus?.apple_pay_ready === true;
+  const googlePayReady = paymentStatus?.google_pay_ready === true;
   const premiumUntil = status?.premium_until
     ? new Date(status.premium_until).toLocaleDateString("en-US", {
         year: "numeric",
@@ -215,6 +181,25 @@ export default function PremiumDashboard() {
                 <Text style={styles.pricePeriod}> / month</Text>
               </Text>
 
+              <View style={styles.paymentMethodsRow}>
+                <Pressable
+                  style={[styles.nativePayBtn, !applePayReady && styles.nativePayBtnDisabled]}
+                  disabled
+                  data-testid="premium-apple-pay-btn"
+                >
+                  <Ionicons name="logo-apple" size={18} color={Colors.text} />
+                  <Text style={styles.nativePayBtnText}>Apple Pay</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.nativePayBtn, !googlePayReady && styles.nativePayBtnDisabled]}
+                  disabled
+                  data-testid="premium-google-pay-btn"
+                >
+                  <Ionicons name="logo-google" size={18} color={Colors.text} />
+                  <Text style={styles.nativePayBtnText}>Google Pay</Text>
+                </Pressable>
+              </View>
+
               {/* Feature list */}
               <View style={styles.featureList}>
                 {[
@@ -231,24 +216,13 @@ export default function PremiumDashboard() {
                 ))}
               </View>
 
-              <Pressable
-                style={styles.subscribeBtn}
-                onPress={handleSubscribe}
-                disabled={checkoutLoading}
-                data-testid="premium-subscribe-btn"
-              >
-                {checkoutLoading ? (
-                  <ActivityIndicator color={Colors.bg} />
-                ) : (
-                  <>
-                    <Ionicons name="card" size={20} color={Colors.bg} />
-                    <Text style={styles.subscribeBtnText}>Subscribe Now</Text>
-                  </>
-                )}
-              </Pressable>
+              <View style={[styles.subscribeBtn, styles.subscribeBtnDisabled]} data-testid="premium-native-pay-status-card">
+                <Ionicons name="phone-portrait" size={20} color={Colors.bg} />
+                <Text style={styles.subscribeBtnText}>Native payments are being configured</Text>
+              </View>
 
               <Text style={styles.subscribeNote}>
-                Secure payment via Stripe. Cancel anytime.
+                {paymentStatus?.message ?? "Stripe has been removed. Apple Pay and Google Pay will activate after merchant setup."}
               </Text>
             </View>
 
@@ -452,6 +426,31 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     flex: 1,
   },
+  paymentMethodsRow: {
+    width: "100%",
+    flexDirection: "row",
+    gap: 10,
+  },
+  nativePayBtn: {
+    flex: 1,
+    minHeight: 50,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  nativePayBtnDisabled: {
+    opacity: 0.6,
+  },
+  nativePayBtnText: {
+    color: Colors.text,
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
   subscribeBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -463,6 +462,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     width: "100%",
     marginTop: 8,
+  },
+  subscribeBtnDisabled: {
+    opacity: 0.78,
   },
   subscribeBtnText: {
     color: Colors.bg,
