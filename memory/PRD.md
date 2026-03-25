@@ -36,12 +36,20 @@ Aplicația MotoGO are nevoie de:
 - Shop păstrează doar taburile `New` și `Second Hand`
 - Butonul Account din dreapta sus deschide acum o pagină separată Marketplace Account
 - Marketplace Account include `Seller tools` și inbox pentru conversațiile cumpărătorului
+- Hartă Android APK întărită special pentru release:
+  - Android folosește `MapView` în loc de `ClusteredMapView`
+  - `initialRegion` în loc de `region` controlat pe Android
+  - markere simplificate pe Android
+  - `tracksViewChanges={false}` aplicat larg
+  - limită de markere pe Android pentru stabilitate
+  - iOS păstrează comportamentul mai bogat cu clustering și markere custom
 
 ## Verificare făcută
 - Iteration 13 testing: PASS
 - Iteration 14 testing: PASS
 - Iteration 15 testing: PASS
 - Verificare UI logout + Shop Account: PASS
+- Iteration 17 code review map stability: PASS
 - Backend verificat:
   - `/api/auth/login` 200
   - `/api/auth/google` 401 pentru session invalid (endpoint funcțional)
@@ -55,6 +63,7 @@ Aplicația MotoGO are nevoie de:
 - Google Login session callback în aplicație: REZOLVAT și verificat
 - Logout mobile/web: REZOLVAT
 - Buyer conversations mutate din tab Shop într-o pagină separată accesată din butonul Account
+- Android APK map ANR: FIX dedicat implementat în cod, necesită build nou pentru validare pe device
 - Android interactive map crash: MITIGAT prin eliminarea Callout + dezactivarea new architecture
 - Stripe removal: REZOLVAT
 
