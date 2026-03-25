@@ -10,7 +10,7 @@ import pytest
 import requests
 from datetime import datetime
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://native-payments-test.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://android-subs.preview.emergentagent.com').rstrip('/')
 
 
 class TestLocationSharing:

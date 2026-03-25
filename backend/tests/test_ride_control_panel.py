@@ -9,7 +9,7 @@ import os
 import time
 from datetime import datetime
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://native-payments-test.preview.emergentagent.com')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://android-subs.preview.emergentagent.com')
 
 # Test credentials
 TEST_USER_EMAIL = "user1@example.com"

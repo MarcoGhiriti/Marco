@@ -12,7 +12,7 @@ from datetime import datetime
 import httpx
 
 # Get backend URL from frontend env
-BACKEND_URL = "https://native-payments-test.preview.emergentagent.com/api"
+BACKEND_URL = "https://android-subs.preview.emergentagent.com/api"
 
 class TestResults:
     def __init__(self):
