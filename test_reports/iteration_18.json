@@ -1,0 +1,65 @@
+{
+  "summary": "Iteration 18: Code Review for Android Native Callouts + iOS Rich Overlays - All requirements verified",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_18.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VERIFIED: Android uses MapView (not ClusteredMapView) via isAndroidReleaseSafeMap flag (line 176, 395)",
+    "VERIFIED: Android uses initialRegion instead of controlled region (lines 396-398)",
+    "VERIFIED: useNativeCalloutMode flag correctly set for Android (line 178)",
+    "VERIFIED: Android markers have simple native callouts for ALL 7 categories: events (441-461), gas (469-490), service (496-517), friends (521-554), police (556-579), route meeting points (582-611), live rides (614-643)",
+    "VERIFIED: renderNativeCallout() uses only Callout/View/Text - no nested Pressables or heavy UI (lines 180-191)",
+    "VERIFIED: iOS/non-Android preserves rich overlay popups with full UI (lines 715-993) - conditionally rendered with !useNativeCalloutMode",
+    "VERIFIED: iOS path uses ClusteredMapView with controlled region and custom marker views (FriendMarkerView, route/ride icons)",
+    "VERIFIED: No TypeScript errors in MapCanvas.native.tsx or MapScreen.tsx code logic - only node_modules type conflicts",
+    "VERIFIED: Android callout styling is lightweight (styles.androidNativeCalloutCard/Title/Text at lines 1174-1190)"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - skipped per request",
+    "frontend": "100% - All code review verification points passed"
+  },
+  "test_credentials": "",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Android map stability fix with native callouts verified. Key implementation: 1) isAndroidReleaseSafeMap (line 176) controls MapView vs ClusteredMapView, 2) useNativeCalloutMode (line 178) controls native callouts vs rich overlays, 3) renderNativeCallout() helper provides simple text-only callouts for Android, 4) All 7 marker categories (events, gas, service, friends, police, routes, live rides) have Android native callouts, 5) iOS preserves rich overlay popups with photos, buttons, distance calculations. TypeScript errors in node_modules are type definition conflicts, not code issues.",
+  "code_review_details": {
+    "files_reviewed": [
+      "/app/frontend/src/components/MapCanvas.native.tsx",
+      "/app/frontend/src/screens/MapScreen.tsx"
+    ],
+    "android_native_callouts_verified": {
+      "events": "lines 441-461 - title, description, onCalloutPress + renderNativeCallout",
+      "gas": "lines 469-490 - title, description, onCalloutPress + renderNativeCallout",
+      "service": "lines 496-517 - title, description, onCalloutPress + renderNativeCallout",
+      "friends": "lines 521-554 - title, description, onCalloutPress + renderNativeCallout",
+      "police": "lines 556-579 - title, description + renderNativeCallout",
+      "route_meeting_points": "lines 582-611 - title, description, onCalloutPress + renderNativeCallout",
+      "live_rides": "lines 614-643 - title, description, onCalloutPress + renderNativeCallout"
+    },
+    "android_safety_protections": {
+      "uses_mapview_not_clustered": true,
+      "uses_initial_region": true,
+      "simple_callouts_no_pressables": true,
+      "tracks_view_changes_false": true
+    },
+    "ios_rich_behavior_preserved": {
+      "uses_clustered_mapview": true,
+      "custom_marker_views": true,
+      "controlled_region": true,
+      "rich_overlay_popups": true
+    },
+    "typescript_errors_in_map_files": false
+  }
+}

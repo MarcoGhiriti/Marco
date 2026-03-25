@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import ClusteredMapView from "react-native-map-clustering";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Callout, Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../theme/colors";
@@ -175,6 +175,20 @@ const MAP_STYLE = [
 const FAB_BOTTOM = Platform.OS === "ios" ? 110 : 90;
 const isAndroidReleaseSafeMap = Platform.OS === "android";
 const ClusterCompatibleMarker = Marker as any;
+const useNativeCalloutMode = Platform.OS === "android";
+
+const renderNativeCallout = (title: string, detailLines: string[]) => (
+  <Callout>
+    <View style={styles.androidNativeCalloutCard}>
+      <Text style={styles.androidNativeCalloutTitle}>{title}</Text>
+      {detailLines.filter(Boolean).slice(0, 3).map((line, index) => (
+        <Text key={`${title}-${index}`} style={styles.androidNativeCalloutText}>
+          {line}
+        </Text>
+      ))}
+    </View>
+  </Callout>
+);
 
 const FriendMarkerView = ({ friend }: { friend: FriendMarker }) => {
   const initial = (friend.username || "?")[0].toUpperCase();
@@ -429,12 +443,22 @@ export default function MapCanvas({
                 coordinate={{ latitude: lat, longitude: lng }}
                 pinColor={Colors.accent}
                 tracksViewChanges={false}
-                onPress={() => {
-                  setSelectedFriend(null);
-                  setSelectedMP(null);
-                  setSelectedOverlay({ kind: "event", data: event, lat, lng });
-                }}
-              />
+                {...(useNativeCalloutMode
+                  ? {
+                      title: event.title,
+                      description: event.location_name || "Tap for details",
+                      onCalloutPress: () => onEventPress?.(event.id),
+                    }
+                  : {
+                      onPress: () => {
+                        setSelectedFriend(null);
+                        setSelectedMP(null);
+                        setSelectedOverlay({ kind: "event", data: event, lat, lng });
+                      },
+                    })}
+              >
+                {useNativeCalloutMode ? renderNativeCallout(event.title, [event.location_name || "", "Tap for details"]) : null}
+              </Marker>
             );
           })}
 
@@ -447,12 +471,22 @@ export default function MapCanvas({
               coordinate={{ latitude: place.lat, longitude: place.lng }}
               pinColor="#FFB020"
               tracksViewChanges={false}
-              onPress={() => {
-                setSelectedFriend(null);
-                setSelectedMP(null);
-                setSelectedOverlay({ kind: "place", data: place });
-              }}
-            />
+              {...(useNativeCalloutMode
+                ? {
+                    title: place.name,
+                    description: "Gas station · Tap for directions",
+                    onCalloutPress: () => openDirections(place.lat, place.lng, place.name),
+                  }
+                : {
+                    onPress: () => {
+                      setSelectedFriend(null);
+                      setSelectedMP(null);
+                      setSelectedOverlay({ kind: "place", data: place });
+                    },
+                  })}
+            >
+              {useNativeCalloutMode ? renderNativeCallout(place.name, ["Gas station", "Tap for directions"]) : null}
+            </Marker>
           ))}
 
         {showService &&
@@ -464,12 +498,22 @@ export default function MapCanvas({
               coordinate={{ latitude: place.lat, longitude: place.lng }}
               pinColor="#4A90D9"
               tracksViewChanges={false}
-              onPress={() => {
-                setSelectedFriend(null);
-                setSelectedMP(null);
-                setSelectedOverlay({ kind: "place", data: place });
-              }}
-            />
+              {...(useNativeCalloutMode
+                ? {
+                    title: place.name,
+                    description: "Service point · Tap for directions",
+                    onCalloutPress: () => openDirections(place.lat, place.lng, place.name),
+                  }
+                : {
+                    onPress: () => {
+                      setSelectedFriend(null);
+                      setSelectedMP(null);
+                      setSelectedOverlay({ kind: "place", data: place });
+                    },
+                  })}
+            >
+              {useNativeCalloutMode ? renderNativeCallout(place.name, ["Service point", "Tap for directions"]) : null}
+            </Marker>
           ))}
 
         {showFriends &&
@@ -481,13 +525,31 @@ export default function MapCanvas({
               tracksViewChanges={false}
               {...(isAndroidReleaseSafeMap ? {} : { cluster: false })}
               pinColor={isAndroidReleaseSafeMap ? "#9B59B6" : undefined}
-              onPress={() => {
-                setSelectedOverlay(null);
-                setSelectedFriend(friend);
-                setSelectedMP(null);
-              }}
+              {...(useNativeCalloutMode
+                ? {
+                    title: friend.username,
+                    description: friend.active_ride?.route_title || "Tap to open profile",
+                    onCalloutPress: () => onFriendProfilePress?.(friend.id),
+                  }
+                : {
+                    onPress: () => {
+                      setSelectedOverlay(null);
+                      setSelectedFriend(friend);
+                      setSelectedMP(null);
+                    },
+                  })}
             >
               {!isAndroidReleaseSafeMap ? <FriendMarkerView friend={friend} /> : null}
+              {useNativeCalloutMode
+                ? renderNativeCallout(friend.username, [
+                    friend.active_ride?.route_title ? `On route: ${friend.active_ride.route_title}` : "Friend on map",
+                    friend.distance_km != null
+                      ? `${friend.distance_km.toFixed(1)} km away`
+                      : userLocation
+                        ? `${haversineDistanceKm(userLocation.lat, userLocation.lng, friend.lat, friend.lng).toFixed(1)} km away`
+                        : "Tap to open profile",
+                  ])
+                : null}
             </ClusterCompatibleMarker>
           ))}
 
@@ -497,12 +559,23 @@ export default function MapCanvas({
             coordinate={{ latitude: report.lat, longitude: report.lng }}
             pinColor="#FF3B30"
             tracksViewChanges={false}
-            onPress={() => {
-              setSelectedFriend(null);
-              setSelectedMP(null);
-              setSelectedOverlay({ kind: "police", data: report });
-            }}
-          />
+            {...(useNativeCalloutMode
+              ? {
+                  title: "Police report",
+                  description: `${report.upvotes} upvotes · ${report.downvotes} downvotes`,
+                }
+              : {
+                  onPress: () => {
+                    setSelectedFriend(null);
+                    setSelectedMP(null);
+                    setSelectedOverlay({ kind: "police", data: report });
+                  },
+                })}
+          >
+            {useNativeCalloutMode
+              ? renderNativeCallout("Police report", [`${report.upvotes} upvotes`, `${report.downvotes} downvotes`])
+              : null}
+          </Marker>
         ))}
 
         {/* Route Meeting Point Markers */}
@@ -512,17 +585,28 @@ export default function MapCanvas({
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
             pinColor={isAndroidReleaseSafeMap ? Colors.accent : undefined}
-            onPress={() => {
-              setSelectedOverlay(null);
-              setSelectedMP(rm);
-              setSelectedFriend(null);
-            }}
+            {...(useNativeCalloutMode
+              ? {
+                  title: rm.name,
+                  description: rm.route_title || "Tap for route details",
+                  onCalloutPress: () => onRoutePress?.(rm.route_id ?? rm.id),
+                }
+              : {
+                  onPress: () => {
+                    setSelectedOverlay(null);
+                    setSelectedMP(rm);
+                    setSelectedFriend(null);
+                  },
+                })}
           >
             {!isAndroidReleaseSafeMap ? (
               <View style={mpStyles.routePin}>
                 <Ionicons name="flag" size={14} color="#fff" />
               </View>
             ) : null}
+            {useNativeCalloutMode
+              ? renderNativeCallout(rm.name, [rm.route_title || "Route meeting point", rm.difficulty ? `Difficulty: ${rm.difficulty}` : "Tap for route details"])
+              : null}
           </Marker>
         ))}
 
@@ -533,17 +617,28 @@ export default function MapCanvas({
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
             pinColor={isAndroidReleaseSafeMap ? "#FF6B35" : undefined}
-            onPress={() => {
-              setSelectedOverlay(null);
-              setSelectedMP(rm);
-              setSelectedFriend(null);
-            }}
+            {...(useNativeCalloutMode
+              ? {
+                  title: rm.name,
+                  description: rm.route_title || "Live ride",
+                  onCalloutPress: () => onRoutePress?.(rm.route_id ?? rm.id),
+                }
+              : {
+                  onPress: () => {
+                    setSelectedOverlay(null);
+                    setSelectedMP(rm);
+                    setSelectedFriend(null);
+                  },
+                })}
           >
             {!isAndroidReleaseSafeMap ? (
               <View style={mpStyles.ridePin}>
                 <Ionicons name="bicycle" size={14} color="#fff" />
               </View>
             ) : null}
+            {useNativeCalloutMode
+              ? renderNativeCallout(rm.name, [rm.route_title || "Live ride", rm.difficulty ? `Difficulty: ${rm.difficulty}` : "Tap for details"])
+              : null}
           </Marker>
         ))}
       </MapComponent>
@@ -617,7 +712,7 @@ export default function MapCanvas({
         </Pressable>
       </View>
 
-      {selectedOverlay && (
+      {!useNativeCalloutMode && selectedOverlay && (
         <Pressable
           style={[styles.meetingPointOverlayBackdrop, { paddingBottom: popupBottomPadding, paddingHorizontal: 12 }]}
           onPress={() => setSelectedOverlay(null)}
@@ -769,7 +864,7 @@ export default function MapCanvas({
         </Pressable>
       )}
 
-      {selectedFriend && (
+      {!useNativeCalloutMode && selectedFriend && (
         <Pressable
           style={[styles.friendOverlayBackdrop, { paddingBottom: popupBottomPadding }]}
           onPress={() => setSelectedFriend(null)}
@@ -837,7 +932,7 @@ export default function MapCanvas({
         </Pressable>
       )}
 
-      {selectedMP && (
+      {!useNativeCalloutMode && selectedMP && (
         <Pressable
           style={[styles.meetingPointOverlayBackdrop, { paddingBottom: popupBottomPadding, paddingHorizontal: 12 }]}
           onPress={() => setSelectedMP(null)}
@@ -1075,6 +1170,23 @@ const styles = StyleSheet.create({
     color: Colors.bg,
     fontSize: 11,
     fontFamily: "Inter_700Bold",
+  },
+  androidNativeCalloutCard: {
+    width: 170,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  androidNativeCalloutTitle: {
+    color: Colors.text,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 4,
+  },
+  androidNativeCalloutText: {
+    color: Colors.muted,
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 16,
   },
   eventLocationText: {
     color: Colors.muted,
