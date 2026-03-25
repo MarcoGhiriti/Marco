@@ -1230,7 +1230,23 @@ async def _exchange_google_session_for_token(session_id: str) -> str:
 async def auth_google_start(request: Request, redirect_uri: str):
     if not GOOGLE_OAUTH_CLIENT_ID or not GOOGLE_OAUTH_CLIENT_SECRET:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured")
-    if not redirect_uri.startswith("motogo://"):
+    # Accept: motogo:// (production APK), exp:// (Expo Go dev),
+    # and the app's own HTTPS domain (web version)
+    allowed = False
+    if not redirect_uri.startswith("http://") and not redirect_uri.startswith("https://"):
+        # Custom schemes (motogo://, exp://, etc.) are always allowed
+        allowed = True
+    elif redirect_uri.startswith("https://"):
+        # Allow HTTPS only from the server's own origin or known host headers
+        from urllib.parse import urlparse
+        redirect_host = urlparse(redirect_uri).hostname or ""
+        # Check forwarded host (behind proxy/ingress), request host, or base URL
+        forwarded_host = request.headers.get("x-forwarded-host", "")
+        req_host = request.headers.get("host", "")
+        base_host = request.base_url.hostname or ""
+        if redirect_host and redirect_host in (forwarded_host, req_host, base_host):
+            allowed = True
+    if not allowed:
         raise HTTPException(status_code=400, detail="Invalid redirect URI")
 
     request.session["google_mobile_redirect"] = redirect_uri
