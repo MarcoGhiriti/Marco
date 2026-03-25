@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import re
+import urllib.parse
 import uuid
 import math
 from datetime import datetime, timedelta, timezone
@@ -37,6 +38,7 @@ from database import (
 import httpx
 import polyline as polyline_lib
 import socketio as socketio_lib
+from authlib.integrations.starlette_client import OAuth
 from bson import ObjectId
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
@@ -45,6 +47,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 # -----------------
 # Unread Messages (DM + Groups)
@@ -57,6 +60,19 @@ class UnreadSummaryOut(BaseModel):
 
 fastapi_app = FastAPI()
 api_router = APIRouter(prefix="/api")
+oauth = OAuth()
+
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+
+if GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET:
+    oauth.register(
+        name="google",
+        client_id=GOOGLE_OAUTH_CLIENT_ID,
+        client_secret=GOOGLE_OAUTH_CLIENT_SECRET,
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
 
 
 @sio.event
@@ -1118,6 +1134,12 @@ def _google_pending_client_key(request: Request) -> str:
     return "unknown-client"
 
 
+def _build_redirect_with_token(redirect_uri: str, access_token: str) -> str:
+    parsed = urllib.parse.urlsplit(redirect_uri)
+    token_fragment = urllib.parse.urlencode({"access_token": access_token})
+    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, parsed.query, token_fragment))
+
+
 def _build_google_username(name: str, email: str) -> str:
     cleaned_name = re.sub(r"[^a-z0-9]", "", name.lower())
     if cleaned_name:
@@ -1127,22 +1149,8 @@ def _build_google_username(name: str, email: str) -> str:
     return (email_prefix or "rider")[:20]
 
 
-async def _exchange_google_session_for_token(session_id: str) -> str:
-    """Exchange Emergent Auth session_id for app JWT token."""
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.get(
-            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-            headers={"X-Session-ID": session_id},
-        )
-
-    if resp.status_code != 200:
-        raise HTTPException(status_code=401, detail="Google auth failed")
-
-    data = resp.json()
-    email = data.get("email", "").lower().strip()
-    name = data.get("name", "")
-    picture = data.get("picture", "")
-
+async def _issue_google_access_token(identity_id: str, email: str, name: str, picture: str) -> str:
+    email = email.lower().strip()
     if not email:
         raise HTTPException(status_code=400, detail="No email from Google")
 
@@ -1153,7 +1161,7 @@ async def _exchange_google_session_for_token(session_id: str) -> str:
         if picture and not existing.get("profile_photo_base64"):
             update["google_picture"] = picture
         if not existing.get("google_id"):
-            update["google_id"] = data.get("id", "")
+            update["google_id"] = identity_id
         current_username = (existing.get("username") or "").strip().lower()
         email_prefix = re.sub(r"[^a-z0-9]", "", email.split("@")[0].lower())
         if desired_username and current_username in {"", email_prefix}:
@@ -1171,7 +1179,7 @@ async def _exchange_google_session_for_token(session_id: str) -> str:
     base_username = username
     counter = 1
     while await db.users.find_one({"username": username}):
-        username = f"{base_username}{counter}"
+        username = f"{base_username[:16]}{counter}"
         counter += 1
 
     now = datetime.utcnow()
@@ -1179,7 +1187,7 @@ async def _exchange_google_session_for_token(session_id: str) -> str:
         "email": email,
         "username": username,
         "password_hash": "",
-        "google_id": data.get("id", ""),
+        "google_id": identity_id,
         "google_picture": picture,
         "profile_photo_base64": None,
         "bio": "",
@@ -1196,6 +1204,62 @@ async def _exchange_google_session_for_token(session_id: str) -> str:
     }
     res = await db.users.insert_one(doc)
     return create_access_token(oid_str(res.inserted_id))
+
+
+async def _exchange_google_session_for_token(session_id: str) -> str:
+    """Exchange Emergent Auth session_id for app JWT token."""
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get(
+            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+            headers={"X-Session-ID": session_id},
+        )
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=401, detail="Google auth failed")
+
+    data = resp.json()
+    return await _issue_google_access_token(
+        identity_id=data.get("id", ""),
+        email=data.get("email", ""),
+        name=data.get("name", ""),
+        picture=data.get("picture", ""),
+    )
+
+
+@api_router.get("/auth/google/start")
+async def auth_google_start(request: Request, redirect_uri: str):
+    if not GOOGLE_OAUTH_CLIENT_ID or not GOOGLE_OAUTH_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+    if not redirect_uri.startswith("motogo://"):
+        raise HTTPException(status_code=400, detail="Invalid redirect URI")
+
+    request.session["google_mobile_redirect"] = redirect_uri
+    # REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+    callback_url = request.url_for("auth_google_direct_callback")
+    return await oauth.google.authorize_redirect(request, str(callback_url))
+
+
+@api_router.get("/auth/google/direct-callback")
+async def auth_google_direct_callback(request: Request):
+    if not GOOGLE_OAUTH_CLIENT_ID or not GOOGLE_OAUTH_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+
+    token = await oauth.google.authorize_access_token(request)
+    user_info = token.get("userinfo")
+    if not user_info:
+        user_info = await oauth.google.userinfo(token=token)
+
+    access_token = await _issue_google_access_token(
+        identity_id=user_info.get("sub") or user_info.get("id") or "",
+        email=user_info.get("email", ""),
+        name=user_info.get("name", ""),
+        picture=user_info.get("picture", ""),
+    )
+    mobile_redirect = request.session.pop("google_mobile_redirect", None)
+    if not mobile_redirect:
+        raise HTTPException(status_code=400, detail="Missing mobile redirect")
+
+    return RedirectResponse(_build_redirect_with_token(mobile_redirect, access_token))
 
 
 @api_router.post("/auth/google", response_model=AuthToken)
@@ -4694,6 +4758,13 @@ fastapi_app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+fastapi_app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ["JWT_SECRET"],
+    same_site="lax",
+    https_only=False,
 )
 
 

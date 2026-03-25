@@ -17,6 +17,8 @@ Aplicația MotoGO are nevoie de:
 - Premium foundation, Your Bike, Free Ride, Saved Routes, Polls, i18n, notificări push
 - Google Login refăcut pe flow nou Expo (`openAuthSessionAsync` + exchange la `/api/auth/google`)
 - Ecran nou frontend: `/auth/google-callback` pentru finalizarea reală a sesiunii Google Login
+- Google Login direct fără Emergent începe acum din `/api/auth/google/start` și redirecționează direct către Google OAuth
+- Backend folosește Google OAuth client ID/secret din `.env` și emite JWT propriu pentru app
 - Compatibilitate adăugată pentru flow-ul vechi Google Login:
   - `GET /api/auth/google-callback`
   - `GET /api/auth/google-pending`
@@ -60,6 +62,7 @@ Aplicația MotoGO are nevoie de:
 - Iteration 17 code review map stability: PASS
 - Iteration 18 Android native callouts + iOS overlays: PASS
 - Iteration 19 Android ultra-safe APK hardening: PASS
+- Backend Google direct start endpoint: PASS (`/api/auth/google/start` -> 302 către Google)
 - Backend verificat:
   - `/api/auth/login` 200
   - `/api/auth/google` 401 pentru session invalid (endpoint funcțional)
@@ -71,6 +74,7 @@ Aplicația MotoGO are nevoie de:
 ## P0 rezolvate / în progres
 - Google login raw `{"detail":"Not Found"}`: REZOLVAT prin callback compatibil
 - Google Login session callback în aplicație: REZOLVAT și verificat
+- Emergent Google Auth înlocuit în frontend cu start direct Google OAuth; validarea finală depinde de configurarea redirect-urilor în Google Cloud Console
 - Logout mobile/web: REZOLVAT
 - Buyer conversations mutate din tab Shop într-o pagină separată accesată din butonul Account
 - Android APK map ANR: FIX dedicat implementat în cod, necesită build nou pentru validare pe device

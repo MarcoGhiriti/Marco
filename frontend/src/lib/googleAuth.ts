@@ -1,13 +1,25 @@
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 
-import { apiPost } from "./api";
+import { API_BASE_URL, apiPost } from "./api";
 
 WebBrowser.maybeCompleteAuthSession();
 export const GOOGLE_AUTH_CALLBACK_PATH = "/auth/google-callback";
 
 type GoogleAuthExchange = {
   access_token: string;
+};
+
+const extractAccessToken = (url: string): string | null => {
+  const parsed = Linking.parse(url);
+  const parsedAccessToken = parsed.queryParams?.access_token;
+  if (typeof parsedAccessToken === "string" && parsedAccessToken.trim()) {
+    return parsedAccessToken.trim();
+  }
+
+  const fragment = url.split("#")[1] ?? "";
+  const params = new URLSearchParams(fragment);
+  return params.get("access_token")?.trim() || null;
 };
 
 export const extractSessionId = (url: string): string | null => {
@@ -36,6 +48,11 @@ export async function exchangeGoogleSession(sessionId: string): Promise<string> 
 }
 
 export async function completeGoogleAuthFromUrl(url: string): Promise<string> {
+  const accessToken = extractAccessToken(url);
+  if (accessToken) {
+    return accessToken;
+  }
+
   const sessionId = extractSessionId(url);
   if (!sessionId) {
     throw new Error("Google session was not returned");
@@ -47,7 +64,7 @@ export async function completeGoogleAuthFromUrl(url: string): Promise<string> {
 export async function startGoogleAuth(): Promise<string | null> {
   // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
   const redirectUrl = Linking.createURL(GOOGLE_AUTH_CALLBACK_PATH);
-  const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  const authUrl = `${API_BASE_URL}/api/auth/google/start?redirect_uri=${encodeURIComponent(redirectUrl)}`;
 
   const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
   if (result.type === "success" && result.url) {
