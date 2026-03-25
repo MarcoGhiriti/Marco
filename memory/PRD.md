@@ -1,41 +1,60 @@
-# MotoGO PRD - Final Mar 17, 2026
+# MotoGO PRD
 
-## Full API Health Check (18/18 PASSED)
-1. Auth/Me: OK (user1, premium=True)
-2. Premium Status: OK (is_premium=True)
-3. Bike Data: OK (Yamaha MT-07, 5350km)
-4. Maintenance Tips: OK (8 tips)
-5. AI Route Generator: OK (63.3km, 116min, 39 curves)
-6. Saved Routes: OK (2 saved)
-7. Ride History: OK (4 free rides)
-8. Stripe Checkout: OK (LIVE mode)
-9. Leaderboard: OK (5 riders, top=user1:3000km)
-10. Friends: OK (1 friend, premium field)
-11. Routes: OK (19 routes)
-12. Events: OK (19 events)
-13. Groups: OK (10 groups)
-14. Polls: OK (create + vote + view voters)
-15. Push Notifications: OK (endpoint active)
-16. Stories: OK
-17. Marketplace: OK (5 listings)
-18. Google Auth: OK (endpoint exists)
+## Problemă originală
+Aplicația MotoGO are nevoie de:
+- sistem Premium complet
+- Google Login funcțional
+- hartă stabilă pe Android
+- înlocuirea Stripe cu Apple Pay + Google Pay native
 
-## Session Summary - All Features Built
-- Stripe Premium (€4.99/mo LIVE)
-- YourBike dashboard (insurance/ITP/service/expenses)
-- Free Ride Mode (live map + summary)
-- AI Route Generator (click-to-detail, hours format)
-- Saved Routes with Google Maps navigation
-- Ride History (routes + free rides)
-- Polls in group chat (backend, single vote, voter names, 14-day TTL)
-- Push Notifications (Expo, local bike alerts)
-- Google + Apple Login (welcome + login pages)
-- Premium Badge (profile, friends)
-- Chat Route Sharing (rich cards)
-- i18n EN + RO (120+ keys)
-- Leaderboard sync with Free Ride km
+## Arhitectură curentă
+- Frontend: Expo / React Native / expo-router
+- Backend: FastAPI + MongoDB
+- Hărți: Google Maps + react-native-maps
+- Auth social: Emergent Google Auth
 
-## Pending
-- Backend refactor (server.py 4600 lines)
-- Forgot Password (needs email service)
-- Full i18n t() calls on all premium pages
+## Implementat până acum
+- Premium foundation, Your Bike, Free Ride, Saved Routes, Polls, i18n, notificări push
+- Google Login refăcut pe flow nou Expo (`openAuthSessionAsync` + exchange la `/api/auth/google`)
+- Compatibilitate adăugată pentru flow-ul vechi Google Login:
+  - `GET /api/auth/google-callback`
+  - `GET /api/auth/google-pending`
+  - `POST /api/auth/google/pending-session`
+- Stripe eliminat din backend și din UI-ul principal Premium
+- Endpoint nou: `GET /api/premium/payments/status`
+- Endpoint-urile Stripe vechi returnează `410 Gone`
+- `react-native-maps` Callout eliminat pentru event/gas/service/police popups
+- `newArchEnabled` setat la `false` în `frontend/app.json` pentru stabilitate Android
+- Pachetul Python `stripe` dezinstalat din backend
+
+## Verificare făcută
+- Iteration 13 testing: PASS
+- Iteration 14 testing: PASS
+- Backend verificat:
+  - `/api/auth/login` 200
+  - `/api/auth/google` 401 pentru session invalid (endpoint funcțional)
+  - `/api/auth/google-callback` 200 HTML
+  - `/api/premium/payments/status` 200
+  - `/api/premium/checkout` 410
+- Frontend web smoke test: PASS pe `/auth/login`
+
+## P0 rezolvate / în progres
+- Google login raw `{"detail":"Not Found"}`: REZOLVAT prin callback compatibil
+- Android interactive map crash: MITIGAT prin eliminarea Callout + dezactivarea new architecture
+- Stripe removal: REZOLVAT
+
+## P0 rămase
+- Integrarea completă Apple Pay + Google Pay native după primirea credentialelor de merchant
+
+## P1
+- Verificare / reparare autocomplete pe Create Route
+- Confirmare pe device Android că noul build nu mai crapă la hartă
+
+## P2
+- Refactor `backend/server.py`
+- Forgot password cu provider de email
+- Finalizare traduceri rămase pe ecranele Premium
+
+## Date / chei necesare de la utilizator pentru plăți native
+- Apple Pay: Merchant Identifier, Key ID, Issuer ID, cheia `.p8`
+- Google Pay: package name, product/subscription ID, Merchant ID, service account JSON cu Android Publisher access
