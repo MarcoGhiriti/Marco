@@ -28,11 +28,18 @@ Aplicația MotoGO are nevoie de:
 - `react-native-maps` Callout eliminat pentru event/gas/service/police popups
 - `newArchEnabled` setat la `false` în `frontend/app.json` pentru stabilitate Android
 - Pachetul Python `stripe` dezinstalat din backend
+- Your Bike are acum card de preview pentru motocicletă
+- Free Ride folosește hartă interactivă pe native și fallback sigur pe web
+- History arată preview-uri de traseu și modal cu detalii pentru free rides
+- Profile are blocurile Premium și Personal Stats mutate mai sus
+- Logout reparat fără erorile din notifications/router
+- Shop are tab nou `Account` cu inbox pentru conversațiile cumpărătorului
 
 ## Verificare făcută
 - Iteration 13 testing: PASS
 - Iteration 14 testing: PASS
 - Iteration 15 testing: PASS
+- Verificare UI logout + Shop Account: PASS
 - Backend verificat:
   - `/api/auth/login` 200
   - `/api/auth/google` 401 pentru session invalid (endpoint funcțional)
@@ -44,6 +51,8 @@ Aplicația MotoGO are nevoie de:
 ## P0 rezolvate / în progres
 - Google login raw `{"detail":"Not Found"}`: REZOLVAT prin callback compatibil
 - Google Login session callback în aplicație: REZOLVAT și verificat
+- Logout mobile/web: REZOLVAT
+- Buyer conversations în Shop > Account: IMPLEMENTAT
 - Android interactive map crash: MITIGAT prin eliminarea Callout + dezactivarea new architecture
 - Stripe removal: REZOLVAT
 
