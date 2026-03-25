@@ -4,12 +4,13 @@ import * as WebBrowser from "expo-web-browser";
 import { apiPost } from "./api";
 
 WebBrowser.maybeCompleteAuthSession();
+export const GOOGLE_AUTH_CALLBACK_PATH = "/auth/google-callback";
 
 type GoogleAuthExchange = {
   access_token: string;
 };
 
-const extractSessionId = (url: string): string | null => {
+export const extractSessionId = (url: string): string | null => {
   const parsed = Linking.parse(url);
   const parsedSessionId = parsed.queryParams?.session_id;
   if (typeof parsedSessionId === "string" && parsedSessionId.trim()) {
@@ -22,21 +23,7 @@ const extractSessionId = (url: string): string | null => {
   return rawSessionId?.trim() || null;
 };
 
-export async function startGoogleAuth(redirectPath: string): Promise<string> {
-  // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-  const redirectUrl = Linking.createURL(redirectPath);
-  const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-
-  const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
-  if (result.type !== "success" || !result.url) {
-    throw new Error("Google login was cancelled");
-  }
-
-  const sessionId = extractSessionId(result.url);
-  if (!sessionId) {
-    throw new Error("Google session was not returned");
-  }
-
+export async function exchangeGoogleSession(sessionId: string): Promise<string> {
   const data = await apiPost<GoogleAuthExchange>("/api/auth/google", {
     session_id: sessionId,
   });
@@ -46,4 +33,28 @@ export async function startGoogleAuth(redirectPath: string): Promise<string> {
   }
 
   return data.access_token;
+}
+
+export async function completeGoogleAuthFromUrl(url: string): Promise<string> {
+  const sessionId = extractSessionId(url);
+  if (!sessionId) {
+    throw new Error("Google session was not returned");
+  }
+
+  return exchangeGoogleSession(sessionId);
+}
+
+export async function startGoogleAuth(): Promise<string | null> {
+  // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+  const redirectUrl = Linking.createURL(GOOGLE_AUTH_CALLBACK_PATH);
+  const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+
+  const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+  if (result.type === "success" && result.url) {
+    return completeGoogleAuthFromUrl(result.url);
+  }
+  if (result.type === "cancel") {
+    throw new Error("Google login was cancelled");
+  }
+  return null;
 }

@@ -57,9 +57,11 @@ export default function LoginScreen() {
     setGoogleLoading(true);
     setError(null);
     try {
-      const accessToken = await startGoogleAuth("/auth/login");
-      await loginWithToken(accessToken);
-      router.replace("/(tabs)/home");
+      const accessToken = await startGoogleAuth();
+      if (accessToken) {
+        await loginWithToken(accessToken);
+        router.replace("/(tabs)/home");
+      }
     } catch (e) {
       console.error("Google login error:", e);
       const msg = e instanceof Error ? e.message : "Google login failed. Please try again.";

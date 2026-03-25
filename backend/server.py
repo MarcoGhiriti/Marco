@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 import uuid
 import math
 from datetime import datetime, timedelta, timezone
@@ -1117,6 +1118,15 @@ def _google_pending_client_key(request: Request) -> str:
     return "unknown-client"
 
 
+def _build_google_username(name: str, email: str) -> str:
+    cleaned_name = re.sub(r"[^a-z0-9]", "", name.lower())
+    if cleaned_name:
+        return cleaned_name[:20]
+
+    email_prefix = re.sub(r"[^a-z0-9]", "", email.split("@")[0].lower())
+    return (email_prefix or "rider")[:20]
+
+
 async def _exchange_google_session_for_token(session_id: str) -> str:
     """Exchange Emergent Auth session_id for app JWT token."""
     async with httpx.AsyncClient(timeout=10) as client:
@@ -1139,15 +1149,25 @@ async def _exchange_google_session_for_token(session_id: str) -> str:
     existing = await db.users.find_one({"email": email})
     if existing:
         update = {}
+        desired_username = _build_google_username(name, email)
         if picture and not existing.get("profile_photo_base64"):
             update["google_picture"] = picture
         if not existing.get("google_id"):
             update["google_id"] = data.get("id", "")
+        current_username = (existing.get("username") or "").strip().lower()
+        email_prefix = re.sub(r"[^a-z0-9]", "", email.split("@")[0].lower())
+        if desired_username and current_username in {"", email_prefix}:
+            unique_username = desired_username
+            counter = 1
+            while await db.users.find_one({"username": unique_username, "_id": {"$ne": existing["_id"]}}):
+                unique_username = f"{desired_username[:16]}{counter}"
+                counter += 1
+            update["username"] = unique_username
         if update:
             await db.users.update_one({"_id": existing["_id"]}, {"$set": update})
         return create_access_token(oid_str(existing["_id"]))
 
-    username = name.replace(" ", "").lower()[:15] or email.split("@")[0]
+    username = _build_google_username(name, email)
     base_username = username
     counter = 1
     while await db.users.find_one({"username": username}):
@@ -1207,12 +1227,15 @@ async def auth_google_callback_page():
             <div class=\"card\">
               <p class=\"title\">MotoGO</p>
               <p id=\"status\" class=\"status\">Finalizăm conectarea cu Google...</p>
-              <a class=\"cta\" href=\"motogo://auth/login\">Înapoi în aplicație</a>
+              <a id=\"back-link\" class=\"cta\" href=\"motogo://auth/google-callback\">Înapoi în aplicație</a>
             </div>
             <script>
               const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
               const sessionId = params.get('session_id');
               const statusNode = document.getElementById('status');
+              const backLink = document.getElementById('back-link');
+              const deepLink = sessionId ? `motogo://auth/google-callback#session_id=${encodeURIComponent(sessionId)}` : 'motogo://auth/google-callback';
+              backLink.setAttribute('href', deepLink);
 
               if (!sessionId) {
                 statusNode.textContent = 'Lipsește sesiunea Google. Revino în aplicație și încearcă din nou.';
@@ -1229,7 +1252,7 @@ async def auth_google_callback_page():
                     }
                     statusNode.textContent = 'Conectarea a reușit. Revino în aplicație.';
                     setTimeout(() => {
-                      window.location.href = 'motogo://auth/login';
+                      window.location.href = deepLink;
                     }, 500);
                   })
                   .catch((error) => {

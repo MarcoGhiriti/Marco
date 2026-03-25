@@ -23,9 +23,11 @@ export default function WelcomeScreen() {
   const onGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      const accessToken = await startGoogleAuth("/auth/welcome");
-      await loginWithToken(accessToken);
-      router.replace("/(tabs)/home");
+      const accessToken = await startGoogleAuth();
+      if (accessToken) {
+        await loginWithToken(accessToken);
+        router.replace("/(tabs)/home");
+      }
     } catch (e) {
       console.error("Google login error:", e);
     } finally {
