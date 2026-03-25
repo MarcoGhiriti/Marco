@@ -16,10 +16,12 @@ Aplicația MotoGO are nevoie de:
 ## Implementat până acum
 - Premium foundation, Your Bike, Free Ride, Saved Routes, Polls, i18n, notificări push
 - Google Login refăcut pe flow nou Expo (`openAuthSessionAsync` + exchange la `/api/auth/google`)
+- Ecran nou frontend: `/auth/google-callback` pentru finalizarea reală a sesiunii Google Login
 - Compatibilitate adăugată pentru flow-ul vechi Google Login:
   - `GET /api/auth/google-callback`
   - `GET /api/auth/google-pending`
   - `POST /api/auth/google/pending-session`
+- Username-ul la Google Login este derivat acum din numele Google (sanitizat, unic)
 - Stripe eliminat din backend și din UI-ul principal Premium
 - Endpoint nou: `GET /api/premium/payments/status`
 - Endpoint-urile Stripe vechi returnează `410 Gone`
@@ -30,6 +32,7 @@ Aplicația MotoGO are nevoie de:
 ## Verificare făcută
 - Iteration 13 testing: PASS
 - Iteration 14 testing: PASS
+- Iteration 15 testing: PASS
 - Backend verificat:
   - `/api/auth/login` 200
   - `/api/auth/google` 401 pentru session invalid (endpoint funcțional)
@@ -40,6 +43,7 @@ Aplicația MotoGO are nevoie de:
 
 ## P0 rezolvate / în progres
 - Google login raw `{"detail":"Not Found"}`: REZOLVAT prin callback compatibil
+- Google Login session callback în aplicație: REZOLVAT și verificat
 - Android interactive map crash: MITIGAT prin eliminarea Callout + dezactivarea new architecture
 - Stripe removal: REZOLVAT
 
