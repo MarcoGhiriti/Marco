@@ -20,7 +20,9 @@ export default function GoogleCallbackScreen() {
 
       try {
         const initialUrl = await Linking.getInitialURL();
-        const currentUrl = typeof window !== "undefined" ? window.location.href : null;
+        const currentUrl = typeof window !== "undefined" && window.location?.href
+          ? window.location.href
+          : null;
         const candidateUrl = currentUrl && currentUrl.includes("session_id=")
           ? currentUrl
           : initialUrl;
