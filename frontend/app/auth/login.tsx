@@ -61,11 +61,18 @@ export default function LoginScreen() {
       if (accessToken) {
         await loginWithToken(accessToken);
         router.replace("/(tabs)/home");
+      } else {
+        // null means browser opened externally (fallback) or user cancelled silently
+        // Don't show error - user may return via deep link
       }
     } catch (e) {
       console.error("Google login error:", e);
       const msg = e instanceof Error ? e.message : "Google login failed. Please try again.";
-      setError(msg);
+      if (msg.includes("cancelled")) {
+        // User cancelled, just reset loading
+      } else {
+        setError(msg);
+      }
     } finally {
       setGoogleLoading(false);
     }

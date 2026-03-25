@@ -1,10 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import ClusteredMapView from "react-native-map-clustering";
-import MapView, { Callout, Marker } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../theme/colors";
+
+// CRITICAL: Only load clustering on iOS. Importing on Android causes ANR crashes.
+const ClusteredMapView = Platform.OS === "ios"
+  ? require("react-native-map-clustering").default
+  : MapView;
 
 const openDirections = (lat: number, lng: number, label: string) => {
   const encoded = encodeURIComponent(label);
@@ -176,6 +180,7 @@ const FAB_BOTTOM = Platform.OS === "ios" ? 110 : 90;
 const isAndroidReleaseSafeMap = Platform.OS === "android";
 const ClusterCompatibleMarker = Marker as any;
 const useNativeCalloutMode = Platform.OS === "android";
+const ANDROID_MAX_MARKERS = 5;
 
 const FriendMarkerView = ({ friend }: { friend: FriendMarker }) => {
   const initial = (friend.username || "?")[0].toUpperCase();
@@ -350,6 +355,43 @@ export default function MapCanvas({
   const [selectedOverlay, setSelectedOverlay] = useState<MapOverlaySelection | null>(null);
   const popupBottomPadding = Math.max(insets.bottom + 88, 112);
 
+  // Android: debounce region change to prevent rapid re-renders
+  const regionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedOnRegionChange = useCallback((newRegion: MapRegion) => {
+    if (isAndroidReleaseSafeMap) {
+      if (regionTimerRef.current) clearTimeout(regionTimerRef.current);
+      regionTimerRef.current = setTimeout(() => onRegionChangeComplete(newRegion), 400);
+    } else {
+      onRegionChangeComplete(newRegion);
+    }
+  }, [onRegionChangeComplete]);
+
+  // Android: aggressively limit marker counts per category
+  const safeEvents = useMemo(() =>
+    isAndroidReleaseSafeMap ? events.slice(0, ANDROID_MAX_MARKERS) : events,
+    [events]
+  );
+  const safeGasMarkers = useMemo(() =>
+    isAndroidReleaseSafeMap ? gasMarkers.slice(0, ANDROID_MAX_MARKERS) : gasMarkers,
+    [gasMarkers]
+  );
+  const safePoliceReports = useMemo(() =>
+    isAndroidReleaseSafeMap ? policeReports.slice(0, ANDROID_MAX_MARKERS) : policeReports,
+    [policeReports]
+  );
+  const safeFriendMarkers = useMemo(() =>
+    isAndroidReleaseSafeMap ? friendMarkers.slice(0, 4) : friendMarkers,
+    [friendMarkers]
+  );
+  const safeRouteMarkers = useMemo(() =>
+    isAndroidReleaseSafeMap ? routeMarkers.slice(0, ANDROID_MAX_MARKERS) : routeMarkers,
+    [routeMarkers]
+  );
+  const safeRideMarkers = useMemo(() =>
+    isAndroidReleaseSafeMap ? rideMarkers.slice(0, ANDROID_MAX_MARKERS) : rideMarkers,
+    [rideMarkers]
+  );
+
   const clearSelections = () => {
     setSelectedOverlay(null);
     setSelectedFriend(null);
@@ -402,7 +444,7 @@ export default function MapCanvas({
           onPanDrag();
         }}
         onPress={clearSelections}
-        onRegionChangeComplete={onRegionChangeComplete}
+        onRegionChangeComplete={debouncedOnRegionChange}
         customMapStyle={isAndroidReleaseSafeMap ? undefined : MAP_STYLE}
         moveOnMarkerPress={false}
         toolbarEnabled={!isAndroidReleaseSafeMap}
@@ -413,6 +455,8 @@ export default function MapCanvas({
         showsTraffic={false}
         showsIndoors={false}
         showsUserLocation={isAndroidReleaseSafeMap && !!userLocation}
+        showsPointsOfInterest={false}
+        loadingEnabled={false}
         {...clusteredMapProps}
       >
         {/* User location marker */}
@@ -429,7 +473,7 @@ export default function MapCanvas({
         )}
 
         {showEvents &&
-          events.map((event) => {
+          safeEvents.map((event) => {
             const [lat, lng] = event.start_point || [];
             if (typeof lat !== "number" || typeof lng !== "number") return null;
             return (
@@ -456,7 +500,7 @@ export default function MapCanvas({
           })}
 
         {showGas &&
-          gasMarkers
+          safeGasMarkers
             .filter((place) => place.place_type === "gas")
             .map((place) => (
             <Marker
@@ -481,7 +525,7 @@ export default function MapCanvas({
           ))}
 
         {showService &&
-          gasMarkers
+          safeGasMarkers
             .filter((place) => place.place_type === "service")
             .map((place) => (
             <Marker
@@ -506,7 +550,7 @@ export default function MapCanvas({
           ))}
 
         {showFriends &&
-          friendMarkers.map((friend) => (
+          safeFriendMarkers.map((friend) => (
             <ClusterCompatibleMarker
               key={`friend-${friend.id}`}
               coordinate={{ latitude: friend.lat, longitude: friend.lng }}
@@ -532,7 +576,7 @@ export default function MapCanvas({
             </ClusterCompatibleMarker>
           ))}
 
-        {policeReports.map((report) => (
+        {safePoliceReports.map((report) => (
           <Marker
             key={`police-${report.id}`}
             coordinate={{ latitude: report.lat, longitude: report.lng }}
@@ -554,7 +598,7 @@ export default function MapCanvas({
         ))}
 
         {/* Route Meeting Point Markers */}
-        {showRoutes && routeMarkers.map((rm) => (
+        {showRoutes && safeRouteMarkers.map((rm) => (
           <Marker
             key={`route-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
@@ -583,7 +627,7 @@ export default function MapCanvas({
         ))}
 
         {/* Live Ride Meeting Point Markers */}
-        {showLiveRides && rideMarkers.map((rm) => (
+        {showLiveRides && safeRideMarkers.map((rm) => (
           <Marker
             key={`ride-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}

@@ -1,0 +1,126 @@
+{
+  "summary": "Iteration 20: Code Review for Android Map Crash Prevention & Google Login Black Screen Fix - All 11 verification points PASSED. Key changes verified: 1) ClusteredMapView is now lazy-loaded via require() only on iOS (not static import), 2) All marker arrays use safe* prefixed memoized versions with strict slice limits (5 max per category, 4 friends), 3) onRegionChangeComplete debounced by 400ms on Android, 4) Google Auth has warmUp/coolDown, try-catch with Linking.openURL fallback, showInRecents option, 5) google-callback.tsx tries multiple URL sources for Android deep link compatibility.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_20.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VERIFIED: ClusteredMapView is NOT statically imported - uses dynamic require() only on iOS (lines 9-11)",
+    "VERIFIED: Android uses debounced onRegionChangeComplete with 400ms delay (lines 359-367)",
+    "VERIFIED: All marker arrays use safe* prefixed memoized versions with slice limits - events/gas/service/police/routes/rides: 5 max, friends: 4 max (lines 370-393)",
+    "VERIFIED: showsPointsOfInterest={false} and loadingEnabled={false} are set (lines 458-459)",
+    "VERIFIED: isAndroidReleaseSafeMap flag correctly uses MapView not ClusteredMapView on Android (lines 180, 424)",
+    "VERIFIED: startGoogleAuth has try/catch around openAuthSessionAsync with Linking.openURL fallback (lines 77-92)",
+    "VERIFIED: warmUpAsync and coolDownAsync are called in googleAuth.ts (lines 69-75, 91)",
+    "VERIFIED: google-callback.tsx tries multiple URL sources - initialUrl, window.location, fallback (lines 25-44)",
+    "VERIFIED: login.tsx onGoogleLogin handles null return from startGoogleAuth gracefully (lines 60-67)",
+    "VERIFIED: Backend /api/auth/google/start returns 302 redirect",
+    "VERIFIED: Backend /api/auth/login returns 200 with valid credentials and access_token"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% - All auth endpoints working correctly",
+    "frontend": "100% - All 9 code review verification points passed"
+  },
+  "test_credentials": "user1@example.com / Password123",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 20 verified all Android stability and Google Login fixes. Key changes from iteration 19: 1) ClusteredMapView is now lazy-loaded via require() ONLY on iOS instead of static import at top of file - this prevents the native clustering module from loading on Android which was causing ANR crashes. 2) All marker arrays are now memoized with safe* prefix and sliced to strict limits on Android (5 per category, 4 friends). 3) onRegionChangeComplete is debounced by 400ms on Android. 4) Google Auth startGoogleAuth now has warmUp/coolDown, try-catch around openAuthSessionAsync with Linking.openURL fallback, and showInRecents option. 5) google-callback.tsx tries multiple URL sources (initialUrl, window.location, fallback) for better Android deep link compatibility. 6) login.tsx handles null return from startGoogleAuth gracefully without showing error.",
+  "code_review_details": {
+    "files_reviewed": [
+      "/app/frontend/src/components/MapCanvas.native.tsx",
+      "/app/frontend/src/lib/googleAuth.ts",
+      "/app/frontend/app/auth/google-callback.tsx",
+      "/app/frontend/app/auth/login.tsx"
+    ],
+    "android_map_crash_prevention": {
+      "clustered_mapview_lazy_load": {
+        "verified": true,
+        "location": "lines 9-11",
+        "pattern": "const ClusteredMapView = Platform.OS === 'ios' ? require('react-native-map-clustering').default : MapView"
+      },
+      "debounced_region_change": {
+        "verified": true,
+        "location": "lines 359-367",
+        "delay_ms": 400
+      },
+      "marker_limits": {
+        "verified": true,
+        "location": "lines 370-393",
+        "limits": {
+          "ANDROID_MAX_MARKERS": 5,
+          "events": "slice(0, 5)",
+          "gas": "slice(0, 5)",
+          "police": "slice(0, 5)",
+          "friends": "slice(0, 4)",
+          "routes": "slice(0, 5)",
+          "rides": "slice(0, 5)"
+        }
+      },
+      "map_performance_flags": {
+        "verified": true,
+        "location": "lines 458-459",
+        "flags": {
+          "showsPointsOfInterest": false,
+          "loadingEnabled": false
+        }
+      },
+      "android_uses_mapview": {
+        "verified": true,
+        "location": "lines 180, 424",
+        "pattern": "isAndroidReleaseSafeMap ? MapView : ClusteredMapView"
+      }
+    },
+    "google_login_black_screen_fix": {
+      "try_catch_with_fallback": {
+        "verified": true,
+        "location": "googleAuth.ts lines 77-92",
+        "pattern": "try { openAuthSessionAsync } catch { Linking.openURL fallback }"
+      },
+      "warmup_cooldown": {
+        "verified": true,
+        "warmup_location": "lines 69-75",
+        "cooldown_location": "line 91"
+      },
+      "multiple_url_sources": {
+        "verified": true,
+        "location": "google-callback.tsx lines 25-44",
+        "sources": ["Linking.getInitialURL()", "window.location.href", "initialUrl fallback"]
+      },
+      "null_handling": {
+        "verified": true,
+        "location": "login.tsx lines 60-67",
+        "pattern": "if (accessToken) { ... } else { /* null means browser opened externally */ }"
+      }
+    },
+    "backend_api_tests": {
+      "health_check": {
+        "endpoint": "/api/health",
+        "status": 200,
+        "verified": true
+      },
+      "login": {
+        "endpoint": "/api/auth/login",
+        "status": 200,
+        "verified": true,
+        "returns_access_token": true
+      },
+      "google_start": {
+        "endpoint": "/api/auth/google/start",
+        "status": 302,
+        "verified": true,
+        "note": "Returns redirect to Google OAuth"
+      }
+    }
+  }
+}

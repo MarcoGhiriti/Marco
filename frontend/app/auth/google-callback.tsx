@@ -19,13 +19,29 @@ export default function GoogleCallbackScreen() {
       hasProcessed.current = true;
 
       try {
+        // Try multiple URL sources for maximum Android compatibility
+        let candidateUrl: string | null = null;
+
+        // 1. Try expo-linking initial URL (works best on native)
         const initialUrl = await Linking.getInitialURL();
-        const currentUrl = typeof window !== "undefined" && window.location?.href
-          ? window.location.href
-          : null;
-        const candidateUrl = currentUrl && currentUrl.includes("session_id=")
-          ? currentUrl
-          : initialUrl;
+        if (initialUrl && initialUrl.includes("access_token=")) {
+          candidateUrl = initialUrl;
+        } else if (initialUrl && initialUrl.includes("session_id=")) {
+          candidateUrl = initialUrl;
+        }
+
+        // 2. Fallback: try window.location if on web
+        if (!candidateUrl && typeof window !== "undefined" && window.location?.href) {
+          const webUrl = window.location.href;
+          if (webUrl.includes("session_id=") || webUrl.includes("access_token=")) {
+            candidateUrl = webUrl;
+          }
+        }
+
+        // 3. Last resort: use the initial URL even without params
+        if (!candidateUrl && initialUrl) {
+          candidateUrl = initialUrl;
+        }
 
         if (!candidateUrl) {
           throw new Error("Google session was not returned");
