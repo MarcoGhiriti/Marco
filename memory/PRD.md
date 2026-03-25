@@ -45,6 +45,12 @@ Aplicația MotoGO are nevoie de:
   - iOS păstrează comportamentul mai bogat cu clustering și markere custom
 - Android are acum și callout-uri native simple pentru toate categoriile principale de markere
 - iOS păstrează popup-uri bogate separate de varianta Android-safe
+- Mod Android ultra-safe adăugat pentru APK:
+  - callout-uri native doar cu `title/description`
+  - fără custom map style pe Android
+  - locația userului prin `showsUserLocation`
+  - route/live ride OFF implicit pe Android
+  - limită markere Android = 8, friends = 6
 
 ## Verificare făcută
 - Iteration 13 testing: PASS
@@ -53,6 +59,7 @@ Aplicația MotoGO are nevoie de:
 - Verificare UI logout + Shop Account: PASS
 - Iteration 17 code review map stability: PASS
 - Iteration 18 Android native callouts + iOS overlays: PASS
+- Iteration 19 Android ultra-safe APK hardening: PASS
 - Backend verificat:
   - `/api/auth/login` 200
   - `/api/auth/google` 401 pentru session invalid (endpoint funcțional)
@@ -68,6 +75,7 @@ Aplicația MotoGO are nevoie de:
 - Buyer conversations mutate din tab Shop într-o pagină separată accesată din butonul Account
 - Android APK map ANR: FIX dedicat implementat în cod, necesită build nou pentru validare pe device
 - Android callouts + iOS rich popups: IMPLEMENTAT separat pe platforme
+- Android APK hardening stage 2/extreme: IMPLEMENTAT, necesită build nou pentru validare pe device
 - Android interactive map crash: MITIGAT prin eliminarea Callout + dezactivarea new architecture
 - Stripe removal: REZOLVAT
 
