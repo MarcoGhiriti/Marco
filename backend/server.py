@@ -1251,8 +1251,11 @@ async def auth_google_start(request: Request, redirect_uri: str):
 
     request.session["google_mobile_redirect"] = redirect_uri
     # REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    callback_url = request.url_for("auth_google_direct_callback")
-    return await oauth.google.authorize_redirect(request, str(callback_url))
+    callback_url = str(request.url_for("auth_google_direct_callback"))
+    # Behind proxy/ingress, url_for generates http:// but Google requires https://
+    if request.headers.get("x-forwarded-proto") == "https" and callback_url.startswith("http://"):
+        callback_url = "https://" + callback_url[7:]
+    return await oauth.google.authorize_redirect(request, callback_url)
 
 
 @api_router.get("/auth/google/direct-callback")

@@ -1,5 +1,6 @@
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
+import { Platform } from "react-native";
 
 import { API_BASE_URL, apiPost } from "./api";
 
@@ -66,29 +67,23 @@ export async function startGoogleAuth(): Promise<string | null> {
   const redirectUrl = Linking.createURL(GOOGLE_AUTH_CALLBACK_PATH);
   const authUrl = `${API_BASE_URL}/api/auth/google/start?redirect_uri=${encodeURIComponent(redirectUrl)}`;
 
-  try {
-    // Dismiss any lingering browser sessions first
-    try { await WebBrowser.dismissBrowser(); } catch (_) {}
-    await WebBrowser.warmUpAsync();
-  } catch (_) {
-    // warmUp not available on all devices, ignore
+  // Android-only: warm up Chrome Custom Tabs for faster open
+  if (Platform.OS === "android") {
+    try { await WebBrowser.warmUpAsync(); } catch (_) {}
   }
 
   let result: WebBrowser.WebBrowserAuthSessionResult;
   try {
-    result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl, {
-      showInRecents: true,
-      preferEphemeralSession: false,
-    });
+    result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
   } catch (browserError) {
     // Fallback: some Android devices fail with openAuthSessionAsync
-    // Try opening in external browser as last resort
     console.warn("WebBrowser.openAuthSessionAsync failed, trying Linking.openURL:", browserError);
     await Linking.openURL(authUrl);
-    // User will need to come back via deep link - return null (not an error)
     return null;
   } finally {
-    try { await WebBrowser.coolDownAsync(); } catch (_) {}
+    if (Platform.OS === "android") {
+      try { await WebBrowser.coolDownAsync(); } catch (_) {}
+    }
   }
 
   if (result.type === "success" && result.url) {
