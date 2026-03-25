@@ -33,7 +33,9 @@ Aplicația MotoGO are nevoie de:
 - History arată preview-uri de traseu și modal cu detalii pentru free rides
 - Profile are blocurile Premium și Personal Stats mutate mai sus
 - Logout reparat fără erorile din notifications/router
-- Shop are tab nou `Account` cu inbox pentru conversațiile cumpărătorului
+- Shop păstrează doar taburile `New` și `Second Hand`
+- Butonul Account din dreapta sus deschide acum o pagină separată Marketplace Account
+- Marketplace Account include `Seller tools` și inbox pentru conversațiile cumpărătorului
 
 ## Verificare făcută
 - Iteration 13 testing: PASS
@@ -52,7 +54,7 @@ Aplicația MotoGO are nevoie de:
 - Google login raw `{"detail":"Not Found"}`: REZOLVAT prin callback compatibil
 - Google Login session callback în aplicație: REZOLVAT și verificat
 - Logout mobile/web: REZOLVAT
-- Buyer conversations în Shop > Account: IMPLEMENTAT
+- Buyer conversations mutate din tab Shop într-o pagină separată accesată din butonul Account
 - Android interactive map crash: MITIGAT prin eliminarea Callout + dezactivarea new architecture
 - Stripe removal: REZOLVAT
 
