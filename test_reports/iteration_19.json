@@ -1,0 +1,79 @@
+{
+  "summary": "Iteration 19: Code Review for Android APK Stability Hardening - All 8 requirements verified. Android map is now extremely conservative with native callouts only, no custom styles, built-in user location, marker caps (8 general, 6 friends), and route/live ride layers OFF by default. iOS preserves full rich overlay behavior.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_19.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VERIFIED: Android uses MapView (not ClusteredMapView) - line 176, 382",
+    "VERIFIED: Android uses built-in title/description native callouts only - NO custom Callout children (lines 441-604)",
+    "VERIFIED: customMapStyle disabled on Android (line 406: undefined for Android, MAP_STYLE for iOS)",
+    "VERIFIED: Android uses showsUserLocation instead of custom user marker (line 415, 419-429)",
+    "VERIFIED: Android route/live ride layers default to OFF (lines 126-127: Platform.OS !== 'android')",
+    "VERIFIED: Android marker cap = 8 (line 67), friend cap = 6 (line 431)",
+    "VERIFIED: iOS preserves rich overlays (lines 684, 836, 904 - !useNativeCalloutMode conditions)",
+    "VERIFIED: No TypeScript errors in MapCanvas.native.tsx or MapScreen.tsx - errors exist only in unrelated files"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - skipped per request",
+    "frontend": "100% - All 8 code review verification points passed"
+  },
+  "test_credentials": "",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Android APK stability hardening iteration 19 verified. Key changes from iteration 18: 1) Android now uses ONLY native title/description callouts without any custom Callout children, 2) customMapStyle is undefined on Android (uses default Google Maps), 3) showsUserLocation=true on Android instead of custom marker, 4) showRoutes and showLiveRides default to OFF on Android, 5) Marker caps: 8 for events/gas/police/routes/rides, 6 for friends. iOS preserves all rich features including ClusteredMapView, custom marker views, rich overlay popups, and custom map styling.",
+  "code_review_details": {
+    "files_reviewed": [
+      "/app/frontend/src/components/MapCanvas.native.tsx",
+      "/app/frontend/src/screens/MapScreen.tsx"
+    ],
+    "android_safety_flags": {
+      "isAndroidReleaseSafeMap": "line 176 - Platform.OS === 'android'",
+      "useNativeCalloutMode": "line 178 - Platform.OS === 'android'"
+    },
+    "android_native_callouts_verified": {
+      "events": "lines 441-455 - title, description, onCalloutPress (no Callout children)",
+      "gas": "lines 467-480 - title, description, onCalloutPress (no Callout children)",
+      "service": "lines 492-505 - title, description, onCalloutPress (no Callout children)",
+      "friends": "lines 517-529 - title, description, onCalloutPress (no Callout children)",
+      "police": "lines 541-552 - title, description only (no Callout children)",
+      "route_meeting_points": "lines 563-575 - title, description, onCalloutPress (no Callout children)",
+      "live_rides": "lines 592-604 - title, description, onCalloutPress (no Callout children)"
+    },
+    "android_safety_protections": {
+      "uses_mapview_not_clustered": "line 382 - MapView for Android",
+      "uses_initial_region": "lines 383-385 - initialRegion for Android",
+      "custom_map_style_disabled": "line 406 - undefined for Android",
+      "shows_user_location_native": "line 415 - showsUserLocation for Android",
+      "toolbar_rotate_pitch_disabled": "lines 408-412 - all false for Android",
+      "marker_cap_8": "line 67 MapScreen.tsx - ANDROID_MARKER_LIMIT = 8",
+      "friend_cap_6": "line 431 MapScreen.tsx - slice(0, 6) for Android",
+      "routes_default_off": "line 126 - useState(Platform.OS !== 'android')",
+      "live_rides_default_off": "line 127 - useState(Platform.OS !== 'android')"
+    },
+    "ios_rich_behavior_preserved": {
+      "uses_clustered_mapview": "line 382 - ClusteredMapView for iOS",
+      "custom_marker_views": "lines 531, 577-581, 606-610 - FriendMarkerView, route/ride icons",
+      "controlled_region": "lines 383-385 - region prop for iOS",
+      "custom_map_style": "line 406 - MAP_STYLE for iOS",
+      "rich_overlay_popups": "lines 684, 836, 904 - !useNativeCalloutMode conditions",
+      "custom_user_marker": "lines 419-429 - !isAndroidReleaseSafeMap condition"
+    },
+    "typescript_status": {
+      "MapCanvas.native.tsx": "No errors",
+      "MapScreen.tsx": "No errors",
+      "other_files_with_errors": ["community.tsx", "events.tsx", "group/[groupId].tsx"]
+    }
+  }
+}

@@ -64,7 +64,7 @@ const DEFAULT_REGION: MapRegion = {
 };
 
 const VOTE_DISTANCE_KM = 1;
-const ANDROID_MARKER_LIMIT = 24;
+const ANDROID_MARKER_LIMIT = 8;
 
 const getBoundsFromRegion = (region: MapRegion) => {
   const halfLat = region.latitudeDelta / 2;
@@ -123,8 +123,8 @@ export default function MapScreen() {
   const locationSharingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Map layer toggles: Routes & Live Rides meeting points
-  const [showRoutes, setShowRoutes] = useState(true);
-  const [showLiveRides, setShowLiveRides] = useState(true);
+  const [showRoutes, setShowRoutes] = useState(Platform.OS !== "android");
+  const [showLiveRides, setShowLiveRides] = useState(Platform.OS !== "android");
   const [routeMarkers, setRouteMarkers] = useState<any[]>([]);
   const [rideMarkers, setRideMarkers] = useState<any[]>([]);
 
@@ -175,9 +175,9 @@ export default function MapScreen() {
           (showGas || showService) ? apiGet<MapPlace[]>(`/api/map/gas-service${query}`, authHeader) : Promise.resolve([]),
           apiGet<PoliceReport[]>(`/api/map/police-reports${query}`, authHeader),
         ]);
-        setEvents(eventsData || []);
-        setGasMarkers(gasData || []);
-        setPoliceReports(policeData || []);
+        setEvents(Platform.OS === "android" ? (eventsData || []).slice(0, ANDROID_MARKER_LIMIT) : (eventsData || []));
+        setGasMarkers(Platform.OS === "android" ? (gasData || []).slice(0, ANDROID_MARKER_LIMIT) : (gasData || []));
+        setPoliceReports(Platform.OS === "android" ? (policeData || []).slice(0, ANDROID_MARKER_LIMIT) : (policeData || []));
 
         // Fetch routes with meeting points for map markers
         if (showRoutes) {
@@ -427,7 +427,9 @@ export default function MapScreen() {
         url += `?my_lat=${userLocation.lat}&my_lng=${userLocation.lng}`;
       }
       const data = await apiGet(url, authHeader);
-      if (Array.isArray(data)) setFriendLocations(data);
+      if (Array.isArray(data)) {
+        setFriendLocations(Platform.OS === "android" ? data.slice(0, 6) : data);
+      }
     } catch (err) {
       console.log("Failed to fetch friends locations", err);
     }
