@@ -41,6 +41,14 @@ type Conversation = {
   listing_title: string;
 };
 
+type SendMessageResponse = {
+  id: string;
+  chat_id?: string;
+  sender_id?: string;
+  created_at?: string;
+  text?: string;
+};
+
 export default function ListingChatScreen() {
   const router = useRouter();
   const { chatId, listingId } = useLocalSearchParams<{ chatId?: string; listingId?: string }>();
@@ -99,11 +107,11 @@ export default function ListingChatScreen() {
     if (!authHeader || !text.trim()) return;
     setSending(true);
     try {
-      let result;
+      let result: SendMessageResponse | null = null;
       if (chatId) {
-        result = await apiPost(`/api/marketplace/chat/${chatId}/send`, { text: text.trim() }, authHeader);
+        result = await apiPost<SendMessageResponse>(`/api/marketplace/chat/${chatId}/send`, { text: text.trim() }, authHeader);
       } else if (listingId) {
-        result = await apiPost(`/api/marketplace/chat/listing/${listingId}/send`, { text: text.trim() }, authHeader);
+        result = await apiPost<SendMessageResponse>(`/api/marketplace/chat/listing/${listingId}/send`, { text: text.trim() }, authHeader);
       }
       if (result) {
         const newMsg: Message = {
@@ -116,9 +124,10 @@ export default function ListingChatScreen() {
         setMessages((prev) => [...prev, newMsg]);
         setText("");
         if (!chatId && result.chat_id) {
-          router.replace(`/marketplace/chat?listingId=${listingId}&chatId=${result.chat_id}`);
+          const nextChatId = result.chat_id;
+          router.replace(`/marketplace/chat?listingId=${listingId}&chatId=${nextChatId}`);
           setTimeout(() => {
-            loadMessagesForChat(result.chat_id);
+            loadMessagesForChat(nextChatId);
           }, 150);
         }
         setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
