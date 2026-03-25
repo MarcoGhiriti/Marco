@@ -3,7 +3,7 @@ import logging
 import os
 import uuid
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, List, Literal, Optional
@@ -38,8 +38,8 @@ import polyline as polyline_lib
 import socketio as socketio_lib
 from bson import ObjectId
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
-from fastapi.responses import RedirectResponse, Response
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
@@ -1108,16 +1108,21 @@ class GoogleAuthRequest(BaseModel):
     session_id: str
 
 
-@api_router.post("/auth/google", response_model=AuthToken)
-async def auth_google(payload: GoogleAuthRequest):
-    """Exchange Emergent Auth session_id for app JWT token."""
-    import httpx
+def _google_pending_client_key(request: Request) -> str:
+    forwarded_for = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    if forwarded_for:
+        return forwarded_for
+    if request.client and request.client.host:
+        return request.client.host
+    return "unknown-client"
 
-    # Get user data from Emergent Auth
+
+async def _exchange_google_session_for_token(session_id: str) -> str:
+    """Exchange Emergent Auth session_id for app JWT token."""
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
             "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-            headers={"X-Session-ID": payload.session_id},
+            headers={"X-Session-ID": session_id},
         )
 
     if resp.status_code != 200:
@@ -1131,11 +1136,8 @@ async def auth_google(payload: GoogleAuthRequest):
     if not email:
         raise HTTPException(status_code=400, detail="No email from Google")
 
-    # Find or create user
     existing = await db.users.find_one({"email": email})
-
     if existing:
-        # Update profile photo if not set
         update = {}
         if picture and not existing.get("profile_photo_base64"):
             update["google_picture"] = picture
@@ -1143,41 +1145,142 @@ async def auth_google(payload: GoogleAuthRequest):
             update["google_id"] = data.get("id", "")
         if update:
             await db.users.update_one({"_id": existing["_id"]}, {"$set": update})
-        token = create_access_token(oid_str(existing["_id"]))
-    else:
-        # Create new user with Google data
-        username = name.replace(" ", "").lower()[:15] or email.split("@")[0]
-        # Ensure unique username
-        base_username = username
-        counter = 1
-        while await db.users.find_one({"username": username}):
-            username = f"{base_username}{counter}"
-            counter += 1
+        return create_access_token(oid_str(existing["_id"]))
 
-        now = datetime.utcnow()
-        doc = {
-            "email": email,
-            "username": username,
-            "password_hash": "",
-            "google_id": data.get("id", ""),
-            "google_picture": picture,
-            "profile_photo_base64": None,
-            "bio": "",
-            "bike": None,
-            "country": None,
-            "privacy": {"location_visible": False, "routes_visible": "public"},
-            "level": 1,
-            "km_total": 0.0,
-            "km_month": 0.0,
-            "created_at": now,
-            "friends": [],
-            "friend_requests_in": [],
-            "friend_requests_out": [],
-        }
-        res = await db.users.insert_one(doc)
-        token = create_access_token(oid_str(res.inserted_id))
+    username = name.replace(" ", "").lower()[:15] or email.split("@")[0]
+    base_username = username
+    counter = 1
+    while await db.users.find_one({"username": username}):
+        username = f"{base_username}{counter}"
+        counter += 1
 
+    now = datetime.utcnow()
+    doc = {
+        "email": email,
+        "username": username,
+        "password_hash": "",
+        "google_id": data.get("id", ""),
+        "google_picture": picture,
+        "profile_photo_base64": None,
+        "bio": "",
+        "bike": None,
+        "country": None,
+        "privacy": {"location_visible": False, "routes_visible": "public"},
+        "level": 1,
+        "km_total": 0.0,
+        "km_month": 0.0,
+        "created_at": now,
+        "friends": [],
+        "friend_requests_in": [],
+        "friend_requests_out": [],
+    }
+    res = await db.users.insert_one(doc)
+    return create_access_token(oid_str(res.inserted_id))
+
+
+@api_router.post("/auth/google", response_model=AuthToken)
+async def auth_google(payload: GoogleAuthRequest):
+    token = await _exchange_google_session_for_token(payload.session_id)
     return AuthToken(access_token=token)
+
+
+@api_router.get("/auth/google-callback", response_class=HTMLResponse)
+async def auth_google_callback_page():
+    """Compatibility page for older Google login flows that redirected to backend."""
+    return HTMLResponse(
+        """
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset=\"utf-8\" />
+            <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />
+            <title>MotoGO Google Login</title>
+            <style>
+              body { background:#050507; color:#f5f7fb; font-family:system-ui,-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
+              .card { width:min(92vw,420px); background:#10141d; border:1px solid #222a36; border-radius:18px; padding:24px; text-align:center; }
+              .title { font-size:24px; font-weight:800; margin:0 0 12px; }
+              .status { color:#b7c1d1; line-height:1.5; }
+              .cta { margin-top:16px; display:inline-block; background:#2ca453; color:#050507; font-weight:800; padding:12px 18px; border-radius:999px; text-decoration:none; }
+            </style>
+          </head>
+          <body>
+            <div class=\"card\">
+              <p class=\"title\">MotoGO</p>
+              <p id=\"status\" class=\"status\">Finalizăm conectarea cu Google...</p>
+              <a class=\"cta\" href=\"motogo://auth/login\">Înapoi în aplicație</a>
+            </div>
+            <script>
+              const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+              const sessionId = params.get('session_id');
+              const statusNode = document.getElementById('status');
+
+              if (!sessionId) {
+                statusNode.textContent = 'Lipsește sesiunea Google. Revino în aplicație și încearcă din nou.';
+              } else {
+                fetch('/api/auth/google/pending-session', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ session_id: sessionId }),
+                })
+                  .then(async (response) => {
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                      throw new Error(data.detail || 'Google auth failed');
+                    }
+                    statusNode.textContent = 'Conectarea a reușit. Revino în aplicație.';
+                    setTimeout(() => {
+                      window.location.href = 'motogo://auth/login';
+                    }, 500);
+                  })
+                  .catch((error) => {
+                    statusNode.textContent = error.message || 'Conectarea cu Google a eșuat.';
+                  });
+              }
+            </script>
+          </body>
+        </html>
+        """
+    )
+
+
+@api_router.post("/auth/google/pending-session")
+async def auth_google_pending_session(payload: GoogleAuthRequest, request: Request):
+    """Compatibility endpoint used by the legacy browser-based Google login flow."""
+    token = await _exchange_google_session_for_token(payload.session_id)
+    client_key = _google_pending_client_key(request)
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(minutes=5)
+
+    await db.google_auth_pending.update_one(
+        {"client_key": client_key},
+        {"$set": {
+            "client_key": client_key,
+            "access_token": token,
+            "created_at": now,
+            "expires_at": expires_at,
+        }},
+        upsert=True,
+    )
+    return {"ok": True}
+
+
+@api_router.get("/auth/google-pending")
+async def auth_google_pending(request: Request):
+    """Compatibility polling endpoint for the legacy mobile Google auth flow."""
+    client_key = _google_pending_client_key(request)
+    pending = await db.google_auth_pending.find_one({"client_key": client_key})
+    if not pending:
+        raise HTTPException(status_code=404, detail="No pending Google auth session")
+
+    expires_at = pending.get("expires_at")
+    if isinstance(expires_at, datetime) and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if not isinstance(expires_at, datetime) or expires_at < datetime.now(timezone.utc):
+        await db.google_auth_pending.delete_one({"client_key": client_key})
+        raise HTTPException(status_code=404, detail="No pending Google auth session")
+
+    await db.google_auth_pending.delete_one({"client_key": client_key})
+    return {"access_token": pending.get("access_token")}
 
 
 
