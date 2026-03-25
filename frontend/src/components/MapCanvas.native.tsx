@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import ClusteredMapView from "react-native-map-clustering";
-import { Marker } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../theme/colors";
@@ -173,6 +173,7 @@ const MAP_STYLE = [
 ];
 
 const FAB_BOTTOM = Platform.OS === "ios" ? 110 : 90;
+const isAndroidReleaseSafeMap = Platform.OS === "android";
 const ClusterCompatibleMarker = Marker as any;
 
 const FriendMarkerView = ({ friend }: { friend: FriendMarker }) => {
@@ -377,9 +378,18 @@ export default function MapCanvas({
     [searchAnim]
   );
 
+  const MapComponent = isAndroidReleaseSafeMap ? MapView : ClusteredMapView;
+  const clusteredMapProps = isAndroidReleaseSafeMap
+    ? {}
+    : {
+        clusterColor: Colors.accent,
+        clusterTextColor: Colors.bg,
+        spiralEnabled: false,
+      };
+
   return (
     <View style={styles.mapWrapper}>
-      <ClusteredMapView
+      <MapComponent
         style={StyleSheet.absoluteFill}
         ref={mapRef}
         region={region}
@@ -390,15 +400,15 @@ export default function MapCanvas({
         onPress={clearSelections}
         onRegionChangeComplete={onRegionChangeComplete}
         customMapStyle={MAP_STYLE}
-        clusterColor={Colors.accent}
-        clusterTextColor={Colors.bg}
-        spiralEnabled
+        moveOnMarkerPress={false}
+        {...clusteredMapProps}
       >
         {/* User location marker */}
         {userLocation && (
           <Marker
             coordinate={{ latitude: userLocation.lat, longitude: userLocation.lng }}
             anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={false}
           >
             <View style={styles.userDotOuter}>
               <View style={styles.userDotInner} />
@@ -415,6 +425,7 @@ export default function MapCanvas({
                 key={`event-${event.id}`}
                 coordinate={{ latitude: lat, longitude: lng }}
                 pinColor={Colors.accent}
+                tracksViewChanges={false}
                 onPress={() => {
                   setSelectedFriend(null);
                   setSelectedMP(null);
@@ -432,6 +443,7 @@ export default function MapCanvas({
               key={`place-${place.id}`}
               coordinate={{ latitude: place.lat, longitude: place.lng }}
               pinColor="#FFB020"
+              tracksViewChanges={false}
               onPress={() => {
                 setSelectedFriend(null);
                 setSelectedMP(null);
@@ -448,6 +460,7 @@ export default function MapCanvas({
               key={`svc-${place.id}`}
               coordinate={{ latitude: place.lat, longitude: place.lng }}
               pinColor="#4A90D9"
+              tracksViewChanges={false}
               onPress={() => {
                 setSelectedFriend(null);
                 setSelectedMP(null);
@@ -463,14 +476,15 @@ export default function MapCanvas({
               coordinate={{ latitude: friend.lat, longitude: friend.lng }}
               anchor={{ x: 0.5, y: 0.5 }}
               tracksViewChanges={false}
-              cluster={false}
+              {...(isAndroidReleaseSafeMap ? {} : { cluster: false })}
+              pinColor={isAndroidReleaseSafeMap ? "#9B59B6" : undefined}
               onPress={() => {
                 setSelectedOverlay(null);
                 setSelectedFriend(friend);
                 setSelectedMP(null);
               }}
             >
-              <FriendMarkerView friend={friend} />
+              {!isAndroidReleaseSafeMap ? <FriendMarkerView friend={friend} /> : null}
             </ClusterCompatibleMarker>
           ))}
 
@@ -479,6 +493,7 @@ export default function MapCanvas({
             key={`police-${report.id}`}
             coordinate={{ latitude: report.lat, longitude: report.lng }}
             pinColor="#FF3B30"
+            tracksViewChanges={false}
             onPress={() => {
               setSelectedFriend(null);
               setSelectedMP(null);
@@ -493,15 +508,18 @@ export default function MapCanvas({
             key={`route-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
+            pinColor={isAndroidReleaseSafeMap ? Colors.accent : undefined}
             onPress={() => {
               setSelectedOverlay(null);
               setSelectedMP(rm);
               setSelectedFriend(null);
             }}
           >
-            <View style={mpStyles.routePin}>
-              <Ionicons name="flag" size={14} color="#fff" />
-            </View>
+            {!isAndroidReleaseSafeMap ? (
+              <View style={mpStyles.routePin}>
+                <Ionicons name="flag" size={14} color="#fff" />
+              </View>
+            ) : null}
           </Marker>
         ))}
 
@@ -511,18 +529,21 @@ export default function MapCanvas({
             key={`ride-mp-${rm.id}`}
             coordinate={{ latitude: rm.lat, longitude: rm.lng }}
             tracksViewChanges={false}
+            pinColor={isAndroidReleaseSafeMap ? "#FF6B35" : undefined}
             onPress={() => {
               setSelectedOverlay(null);
               setSelectedMP(rm);
               setSelectedFriend(null);
             }}
           >
-            <View style={mpStyles.ridePin}>
-              <Ionicons name="bicycle" size={14} color="#fff" />
-            </View>
+            {!isAndroidReleaseSafeMap ? (
+              <View style={mpStyles.ridePin}>
+                <Ionicons name="bicycle" size={14} color="#fff" />
+              </View>
+            ) : null}
           </Marker>
         ))}
-      </ClusteredMapView>
+      </MapComponent>
 
       <View style={styles.filtersRow}>
         {/* Subtle loading indicator - no blocking overlay */}

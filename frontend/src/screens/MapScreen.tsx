@@ -64,6 +64,7 @@ const DEFAULT_REGION: MapRegion = {
 };
 
 const VOTE_DISTANCE_KM = 1;
+const ANDROID_MARKER_LIMIT = 24;
 
 const getBoundsFromRegion = (region: MapRegion) => {
   const halfLat = region.latitudeDelta / 2;
@@ -182,7 +183,9 @@ export default function MapScreen() {
         if (showRoutes) {
           try {
             const routes = await apiGet<any[]>(`/api/routes`, authHeader);
-            setRouteMarkers((routes || []).filter(r => r.meeting_point).map(r => ({
+            const visibleRoutes = (routes || []).filter(r => r.meeting_point);
+            const cappedRoutes = Platform.OS === "android" ? visibleRoutes.slice(0, ANDROID_MARKER_LIMIT) : visibleRoutes;
+            setRouteMarkers(cappedRoutes.map(r => ({
               id: r.id,
               route_id: r.id,
               type: "route",
@@ -227,7 +230,7 @@ export default function MapScreen() {
                 } catch {}
               }
             }
-            setRideMarkers(rideItems);
+            setRideMarkers(Platform.OS === "android" ? rideItems.slice(0, ANDROID_MARKER_LIMIT) : rideItems);
           } catch { setRideMarkers([]); }
         } else { setRideMarkers([]); }
       } catch (error) {
