@@ -24,6 +24,9 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.motogo.app",
+      "navigationBar": {
+        "enforceContrast": true
+      },
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -57,7 +60,9 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-navigation-bar",
+      "react-native-edge-to-edge"
     ],
     "experiments": {
       "typedRoutes": true

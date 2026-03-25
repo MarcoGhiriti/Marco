@@ -4,6 +4,7 @@ import "../src/lib/i18n";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
+import * as NavigationBar from "expo-navigation-bar";
 import { useFonts } from "expo-font";
 import {
   Inter_400Regular,
@@ -34,6 +35,13 @@ export default function RootLayout() {
     (async () => {
       if (loaded) {
         await SplashScreen.hideAsync();
+        // Android 15+ edge-to-edge: use new NavigationBar API
+        if (Platform.OS === "android") {
+          try {
+            await NavigationBar.setBackgroundColorAsync(Colors.bg);
+            await NavigationBar.setButtonStyleAsync("light");
+          } catch (_) {}
+        }
         setReady(true);
       }
     })();
@@ -55,7 +63,7 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style="light" backgroundColor="transparent" translucent />
       <View style={[styles.appRoot, { paddingTop: androidTopInset }]}>
         <Stack screenOptions={{ headerShown: false }} />
       </View>
