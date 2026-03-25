@@ -379,6 +379,9 @@ export default function MapCanvas({
   );
 
   const MapComponent = isAndroidReleaseSafeMap ? MapView : ClusteredMapView;
+  const mapRegionProps = isAndroidReleaseSafeMap
+    ? { initialRegion: region }
+    : { region };
   const clusteredMapProps = isAndroidReleaseSafeMap
     ? {}
     : {
@@ -392,7 +395,7 @@ export default function MapCanvas({
       <MapComponent
         style={StyleSheet.absoluteFill}
         ref={mapRef}
-        region={region}
+        {...mapRegionProps}
         onPanDrag={() => {
           clearSelections();
           onPanDrag();

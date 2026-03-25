@@ -534,16 +534,16 @@ export default function MapScreen() {
           onVotePolice={handleVotePolice}
           isFetching={isFetching}
           userLocation={userLocation}
-          onEventPress={(eventId) => router.push(`/event/${eventId}`)}
-          onFriendPress={(friendId) => router.push(`/community/dm/${friendId}`)}
-          onFriendProfilePress={(friendId) => router.push(`/profile/${friendId}`)}
+          onEventPress={(eventId: string) => router.push(`/event/${eventId}`)}
+          onFriendPress={(friendId: string) => router.push(`/community/dm/${friendId}`)}
+          onFriendProfilePress={(friendId: string) => router.push(`/profile/${friendId}`)}
           showRoutes={showRoutes}
           showLiveRides={showLiveRides}
           routeMarkers={routeMarkers}
           rideMarkers={rideMarkers}
           onToggleRoutes={() => setShowRoutes((prev) => !prev)}
           onToggleLiveRides={() => setShowLiveRides((prev) => !prev)}
-          onRoutePress={(routeId) => router.push(`/route/${routeId}`)}
+          onRoutePress={(routeId: string) => router.push(`/route/${routeId}`)}
         />
 
         {sharingLocation && showLiveMessage && (
