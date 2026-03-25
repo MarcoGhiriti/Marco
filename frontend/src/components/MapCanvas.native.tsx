@@ -173,6 +173,7 @@ const MAP_STYLE = [
 ];
 
 const FAB_BOTTOM = Platform.OS === "ios" ? 110 : 90;
+const ClusterCompatibleMarker = Marker as any;
 
 const FriendMarkerView = ({ friend }: { friend: FriendMarker }) => {
   const initial = (friend.username || "?")[0].toUpperCase();
@@ -391,7 +392,6 @@ export default function MapCanvas({
         customMapStyle={MAP_STYLE}
         clusterColor={Colors.accent}
         clusterTextColor={Colors.bg}
-        clusterBorderColor={Colors.bg}
         spiralEnabled
       >
         {/* User location marker */}
@@ -458,7 +458,7 @@ export default function MapCanvas({
 
         {showFriends &&
           friendMarkers.map((friend) => (
-            <Marker
+            <ClusterCompatibleMarker
               key={`friend-${friend.id}`}
               coordinate={{ latitude: friend.lat, longitude: friend.lng }}
               anchor={{ x: 0.5, y: 0.5 }}
@@ -471,7 +471,7 @@ export default function MapCanvas({
               }}
             >
               <FriendMarkerView friend={friend} />
-            </Marker>
+            </ClusterCompatibleMarker>
           ))}
 
         {policeReports.map((report) => (

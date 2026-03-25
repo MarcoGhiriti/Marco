@@ -333,7 +333,7 @@
     "unlockPremium": "Unlock MotoGO Premium",
     "perMonth": "/ month",
     "subscribeNow": "Subscribe Now",
-    "securePayment": "Secure payment via Stripe. Cancel anytime.",
+    "securePayment": "Native Apple Pay and Google Pay will be available after merchant setup.",
     "whatYouGet": "What you get",
     "features": {
       "bikeDashboard": "Your Bike dashboard with smart alerts",

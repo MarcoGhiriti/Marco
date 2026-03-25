@@ -333,7 +333,7 @@
     "unlockPremium": "Deblocheaza MotoGO Premium",
     "perMonth": "/ luna",
     "subscribeNow": "Aboneaza-te Acum",
-    "securePayment": "Plata securizata prin Stripe. Anuleaza oricand.",
+    "securePayment": "Apple Pay si Google Pay native vor fi disponibile dupa configurarea merchant-ului.",
     "whatYouGet": "Ce primesti",
     "features": {
       "bikeDashboard": "Dashboard-ul motocicletei cu alerte inteligente",
