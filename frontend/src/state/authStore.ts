@@ -7,6 +7,7 @@ export type Me = {
   id: string;
   email: string;
   username: string;
+  premium?: boolean;
   profile_photo_base64?: string | null;
   bio: string;
   bike?: { model?: string | null; cc?: number | null } | null;

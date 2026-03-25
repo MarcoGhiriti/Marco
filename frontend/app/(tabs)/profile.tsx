@@ -135,7 +135,10 @@ export default function ProfileScreen() {
   }, [accessToken]);
 
   const load = useCallback(async () => {
-    if (!headers) return;
+    if (!headers) {
+      setLoading(false);
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -252,6 +255,67 @@ export default function ProfileScreen() {
 
   const levelInfo = calculateLevel(stats?.km_total ?? 0);
 
+  const personalStatsSection = (
+    <View style={styles.section} data-testid="profile-personal-stats-section">
+      <Text style={styles.sectionTitle}>{t("profile.personalStats")}</Text>
+
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={Colors.accent} />
+        </View>
+      ) : error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : (
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Ionicons name="navigate-outline" size={18} color={Colors.accent} />
+            <Text style={styles.statValue}>{Math.round(stats?.km_total ?? 0)}</Text>
+            <Text style={styles.statLabel}>{t("profile.totalKmLabel")}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
+            <Text style={styles.statValue}>{Math.round(stats?.km_month ?? 0)}</Text>
+            <Text style={styles.statLabel}>{t("profile.thisMonth")}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="trail-sign-outline" size={18} color={Colors.accent} />
+            <Text style={styles.statValue}>{stats?.completed_routes ?? 0}</Text>
+            <Text style={styles.statLabel}>{t("profile.routesLabel")}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="ticket-outline" size={18} color={Colors.accent} />
+            <Text style={styles.statValue}>{stats?.events_joined ?? 0}</Text>
+            <Text style={styles.statLabel}>{t("profile.eventsLabel")}</Text>
+          </View>
+        </View>
+      )}
+
+      <Text style={styles.statsNote}>{t("profile.statsNote")}</Text>
+    </View>
+  );
+
+  const premiumSection = (
+    <Pressable
+      style={styles.premiumGoCard}
+      onPress={() => router.push("/premium")}
+      data-testid="go-premium-btn"
+    >
+      <View style={styles.premiumGoGlow} />
+      <View style={styles.premiumGoIconBox}>
+        <Ionicons name="diamond" size={28} color={Colors.accent} />
+      </View>
+      <View style={styles.premiumGoInfo}>
+        <Text style={styles.premiumGoTitle}>MotoGO Premium</Text>
+        <Text style={styles.premiumGoSub}>Your Bike, Free Ride, Tips & more</Text>
+      </View>
+      <View style={styles.premiumGoPriceBox}>
+        <Text style={styles.premiumGoPrice}>{"\u20AC"}4.99</Text>
+        <Text style={styles.premiumGoPricePer}>/mo</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
+    </Pressable>
+  );
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 20 }]}>
@@ -291,6 +355,10 @@ export default function ProfileScreen() {
             <Ionicons name="create-outline" size={18} color={Colors.text} />
           </Pressable>
         </View>
+
+        {premiumSection}
+
+        {personalStatsSection}
 
         {/* LEVEL PROGRESS */}
         <View style={styles.levelCard}>
@@ -596,67 +664,6 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* PERSONAL STATS */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t("profile.personalStats")}</Text>
-
-          {loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator color={Colors.accent} />
-            </View>
-          ) : error ? (
-            <Text style={styles.errorText}>{error}</Text>
-          ) : (
-            <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <Ionicons name="navigate-outline" size={18} color={Colors.accent} />
-                <Text style={styles.statValue}>{Math.round(stats?.km_total ?? 0)}</Text>
-                <Text style={styles.statLabel}>{t("profile.totalKmLabel")}</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
-                <Text style={styles.statValue}>{Math.round(stats?.km_month ?? 0)}</Text>
-                <Text style={styles.statLabel}>{t("profile.thisMonth")}</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Ionicons name="trail-sign-outline" size={18} color={Colors.accent} />
-                <Text style={styles.statValue}>{stats?.completed_routes ?? 0}</Text>
-                <Text style={styles.statLabel}>{t("profile.routesLabel")}</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Ionicons name="ticket-outline" size={18} color={Colors.accent} />
-                <Text style={styles.statValue}>{stats?.events_joined ?? 0}</Text>
-                <Text style={styles.statLabel}>{t("profile.eventsLabel")}</Text>
-              </View>
-            </View>
-          )}
-
-          <Text style={styles.statsNote}>
-            {t("profile.statsNote")}
-          </Text>
-        </View>
-
-        {/* PREMIUM */}
-        <Pressable
-          style={styles.premiumGoCard}
-          onPress={() => router.push("/premium")}
-          data-testid="go-premium-btn"
-        >
-          <View style={styles.premiumGoGlow} />
-          <View style={styles.premiumGoIconBox}>
-            <Ionicons name="diamond" size={28} color={Colors.accent} />
-          </View>
-          <View style={styles.premiumGoInfo}>
-            <Text style={styles.premiumGoTitle}>MotoGO Premium</Text>
-            <Text style={styles.premiumGoSub}>Your Bike, Free Ride, Tips & more</Text>
-          </View>
-          <View style={styles.premiumGoPriceBox}>
-            <Text style={styles.premiumGoPrice}>{"\u20AC"}4.99</Text>
-            <Text style={styles.premiumGoPricePer}>/mo</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
-        </Pressable>
-
         {/* SETTINGS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t("profile.profileSettings")}</Text>
@@ -733,8 +740,10 @@ export default function ProfileScreen() {
             onPress={async () => {
               try {
                 await logout();
-              } catch {}
-              setTimeout(() => router.replace("/auth/welcome"), 100);
+                router.replace("/auth/welcome");
+              } catch {
+                router.replace("/auth/welcome");
+              }
             }}
           />
         </View>
