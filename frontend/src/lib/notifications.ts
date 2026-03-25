@@ -8,14 +8,16 @@ import { apiPost } from "./api";
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
 });
 
 export function useNotifications(accessToken: string | null) {
-  const responseListener = useRef<Notifications.Subscription>();
-  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription | null>(null);
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -58,8 +60,8 @@ export function useNotifications(accessToken: string | null) {
     responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {});
 
     return () => {
-      if (notificationListener.current) Notifications.removeNotificationSubscription(notificationListener.current);
-      if (responseListener.current) Notifications.removeNotificationSubscription(responseListener.current);
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
     };
   }, [accessToken]);
 }

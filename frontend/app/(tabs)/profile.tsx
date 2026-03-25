@@ -740,10 +740,7 @@ export default function ProfileScreen() {
             onPress={async () => {
               try {
                 await logout();
-                router.replace("/auth/welcome");
-              } catch {
-                router.replace("/auth/welcome");
-              }
+              } catch {}
             }}
           />
         </View>

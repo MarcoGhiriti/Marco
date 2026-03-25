@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View, StyleSheet, Platform, Animated, Easing } from "react-native";
 import { Colors } from "../../src/theme/colors";
@@ -178,6 +178,10 @@ function AnimatedTabIcon({
 export default function TabsLayout() {
   const { accessToken } = useAuthStore();
   useNotifications(accessToken);
+
+  if (!accessToken) {
+    return <Redirect href="/auth/welcome" />;
+  }
 
   return (
     <Tabs

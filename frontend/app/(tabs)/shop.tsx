@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import { useFocusEffect } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "../../src/hooks/useSafeTabBarHeight";
 import * as ImagePicker from "expo-image-picker";
 import { Colors } from "../../src/theme/colors";
@@ -55,6 +56,19 @@ type ListingOut = {
   seller_id: string;
   seller_username: string;
   created_at: string;
+};
+
+type Conversation = {
+  id: string;
+  listing_id: string;
+  listing_title: string;
+  buyer_id: string;
+  seller_id: string;
+  other_user_id: string;
+  other_username: string;
+  last_message: string;
+  last_message_at: string;
+  unread_count: number;
 };
 
 const CATEGORIES = [
@@ -267,6 +281,102 @@ function SecondHandTab() {
         authHeader={authHeader}
       />
     </View>
+  );
+}
+
+function AccountTab() {
+  const router = useRouter();
+  const { accessToken, me } = useAuthStore();
+  const [loading, setLoading] = useState(true);
+  const [buyerConversations, setBuyerConversations] = useState<Conversation[]>([]);
+
+  const authHeader = useMemo(() => {
+    if (!accessToken) return undefined;
+    return { Authorization: `Bearer ${accessToken}` };
+  }, [accessToken]);
+
+  const loadConversations = useCallback(async () => {
+    if (!authHeader || !me?.id) {
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const data = await apiGet<Conversation[]>("/api/marketplace/chat/conversations", authHeader);
+      setBuyerConversations(data.filter((conversation) => conversation.buyer_id === me.id));
+    } catch (e) {
+      console.error("Failed to load marketplace conversations", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [authHeader, me?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadConversations();
+    }, [loadConversations]),
+  );
+
+  return (
+    <ScrollView contentContainerStyle={styles.accountTabContent}>
+      <Pressable
+        style={styles.accountHeroCard}
+        onPress={() => router.push("/marketplace/my-listings")}
+        data-testid="shop-account-seller-tools-btn"
+      >
+        <View style={styles.accountHeroIconBox}>
+          <Ionicons name="storefront" size={24} color={Colors.accent} />
+        </View>
+        <View style={styles.accountHeroInfo}>
+          <Text style={styles.accountHeroTitle}>Seller tools</Text>
+          <Text style={styles.accountHeroSub}>My listings and buyer conversations for what you sell.</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
+      </Pressable>
+
+      <View style={styles.accountSection}>
+        <Text style={styles.accountSectionTitle}>Buyer messages</Text>
+        <Text style={styles.accountSectionSub}>All your purchase conversations in one place.</Text>
+
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={Colors.accent} size="large" />
+          </View>
+        ) : buyerConversations.length === 0 ? (
+          <View style={styles.accountEmptyCard} data-testid="shop-account-empty-buyer-messages">
+            <Ionicons name="chatbubble-ellipses-outline" size={42} color={Colors.muted} />
+            <Text style={styles.accountEmptyTitle}>No buyer chats yet</Text>
+            <Text style={styles.accountEmptyText}>When you message a seller from a listing, the conversation will appear here.</Text>
+          </View>
+        ) : (
+          buyerConversations.map((conversation) => (
+            <Pressable
+              key={conversation.id}
+              style={styles.accountConversationCard}
+              onPress={() => router.push(`/marketplace/chat?chatId=${conversation.id}`)}
+              data-testid={`shop-account-conversation-${conversation.id}`}
+            >
+              <View style={styles.accountConversationAvatar}>
+                <Ionicons name="person" size={18} color={Colors.accent} />
+              </View>
+              <View style={styles.accountConversationBody}>
+                <View style={styles.accountConversationHeader}>
+                  <Text style={styles.accountConversationTitle} numberOfLines={1}>{conversation.listing_title}</Text>
+                  <Text style={styles.accountConversationTime}>{new Date(conversation.last_message_at).toLocaleDateString()}</Text>
+                </View>
+                <Text style={styles.accountConversationSeller} numberOfLines={1}>Seller: {conversation.other_username}</Text>
+                <Text style={styles.accountConversationPreview} numberOfLines={1}>{conversation.last_message || "Open chat"}</Text>
+              </View>
+              {conversation.unread_count > 0 ? (
+                <View style={styles.accountUnreadBadge}>
+                  <Text style={styles.accountUnreadBadgeText}>{conversation.unread_count}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          ))
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
@@ -765,6 +875,11 @@ export default function ShopScreen() {
             name="SecondHand" 
             component={SecondHandTab}
             options={{ tabBarLabel: "Second Hand" }}
+          />
+          <TopTabs.Screen
+            name="Account"
+            component={AccountTab}
+            options={{ tabBarLabel: "Account" }}
           />
         </TopTabs.Navigator>
       </SafeAreaView>
@@ -1322,4 +1437,78 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_700Bold",
   },
+  accountTabContent: {
+    padding: 16,
+    gap: 16,
+    paddingBottom: 40,
+  },
+  accountHeroCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 18,
+    padding: 16,
+  },
+  accountHeroIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: `${Colors.accent}15`,
+  },
+  accountHeroInfo: { flex: 1, gap: 2 },
+  accountHeroTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
+  accountHeroSub: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  accountSection: { gap: 10 },
+  accountSectionTitle: { color: Colors.text, fontSize: 16, fontFamily: "Inter_900Black" },
+  accountSectionSub: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  accountEmptyCard: {
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 18,
+    padding: 24,
+    alignItems: "center",
+    gap: 10,
+  },
+  accountEmptyTitle: { color: Colors.text, fontSize: 15, fontFamily: "Inter_700Bold" },
+  accountEmptyText: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold", textAlign: "center" },
+  accountConversationCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 14,
+  },
+  accountConversationAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.card2,
+  },
+  accountConversationBody: { flex: 1, gap: 3 },
+  accountConversationHeader: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
+  accountConversationTitle: { color: Colors.text, fontSize: 14, fontFamily: "Inter_700Bold", flex: 1 },
+  accountConversationTime: { color: Colors.muted, fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  accountConversationSeller: { color: Colors.accent, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  accountConversationPreview: { color: Colors.muted, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  accountUnreadBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    backgroundColor: Colors.danger,
+  },
+  accountUnreadBadgeText: { color: "#fff", fontSize: 11, fontFamily: "Inter_900Black" },
 });
